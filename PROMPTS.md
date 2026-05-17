@@ -15,6 +15,7 @@
 | [04](#tache-04) | Routing — Navigation Navbar vers Statistic | 2026-05-17 |
 | [05](#tache-05) | DataGrid — Table MUI → MUI X DataGrid | 2026-05-17 |
 | [06](#tache-06) | Layout — Alignement Typography "Compteurs vélo" à gauche | 2026-05-17 |
+| [07](#tache-07) | About.jsx — Page "À propos" + route /a-propos | 2026-05-17 |
 
 ---
 
@@ -455,5 +456,129 @@ possible de l'écran.
 | Décision | Raison |
 |----------|--------|
 | `justifyContent: 'space-between'` sur le Box parent | Garantit que la Typography est au bord gauche du Container et les contrôles au bord droit. Il s'agit d'une correction esthétique. |
+
+---
+
+## Tâche 07 — About.jsx : page "À propos" {#tache-07}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`. La route `/a-propos` était déjà déclarée dans `NAV_LINKS` de la Navbar mais pointait vers une page inexistante.
+
+---
+
+### 💬 Prompt
+
+```
+Génère uniquement le fichier src/pages/About.jsx.
+
+Contexte: Je développe une application web React + Vite appelée "MTL Vélo"
+(visualisation du réseau cyclable de Montréal). Le projet utilise déjà
+src/HomePage.jsx et src/Theme.js. MUI (@mui/icons-material @mui/material
+@emotion/styled @emotion/react) est disponible dans le projet.
+
+Tâche: Génère le fichier suivant:
+  - src/pages/About.jsx → page "À propos" présentant les informations sur
+    l'application MTL Vélo.
+
+--- PAGE About.jsx ---
+
+Importe <Navbar activePage="À propos" /> en haut de page.
+
+Structure HTML5 sémantique obligatoire:
+
+1. <header> contenant <Navbar activePage="À propos" />
+
+2. <main> encapsulé dans <Container maxWidth="lg"> contenant:
+
+   Une seule carte (Paper ou Card MUI) centrée horizontalement avec padding
+   généreux, contenant les sections suivantes dans l'ordre:
+
+   a) Titre principal:
+      - Typography variant="h4" fontWeight=700 : "À propos de MTL Vélo"
+
+   b) Section "Source des données":
+      - Typography variant="h6" fontWeight=700 couleur verte (theme primary) : "Source des données"
+      - Paragraphe introductif : "Les données utilisées dans cette application
+        proviennent des Données ouvertes de la Ville de Montréal :"
+        ("Données ouvertes de la Ville de Montréal" en gras)
+      - Liste à puces (<ul>) avec les items suivants:
+          • Compteurs de vélos (emplacements et passages)
+          • Réseau cyclable (9 100+ segments de pistes)
+          • Fontaines d'eau potable
+          • Délimitations des arrondissements
+
+   c) Section "Technologies":
+      - Typography variant="h6" fontWeight=700 couleur verte (theme primary) : "Technologies"
+      - Liste à puces (<ul>) avec les items suivants (label en gras, valeur normal):
+          • Dorsale : Node.js 18+, Express 4, SQLite (better-sqlite3)
+          • Authentification : bcrypt, JSON Web Tokens (JWT)
+          • Cartographie : Leaflet 1.9 avec tuiles OpenStreetMap
+          • Graphiques : Chart.js 4
+          • Interface : HTML5, CSS moderne, JavaScript ES2020 (modules ES)
+
+   d) Section "Contexte pédagogique":
+      - Typography variant="h6" fontWeight=700 couleur verte (theme primary) : "Contexte pédagogique"
+      - Paragraphe : "Ce projet est réalisé dans le cadre du cours GTI525 —
+        Technologies des applications web. Il illustre l'intégration d'un
+        front-end SPA, d'une API REST sécurisée et d'un assistant
+        conversationnel ancré sur des données réelles."
+        ("GTI525 — Technologies des applications web" en gras)
+
+   e) Section "Compte de démonstration":
+      - Typography variant="h6" fontWeight=700 couleur verte (theme primary) : "Compte de démonstration"
+      - Deux lignes de texte couleur grise :
+          • Courriel :  demo@gti525.ca  (valeur en monospace/code)
+          • Mot de passe :  Demo2026!   (valeur en monospace/code)
+
+3. <footer> reproduction exacte du footer présent dans src/HomePage.jsx
+
+--- THÈME theme.js ---
+
+Importe et applique theme.js via ThemeProvider pour garantir la cohérence
+visuelle de l'ensemble de l'application.
+
+Contraintes obligatoires:
+  - Contraste minimal 4.5:1 WCAG 2.1 AA sur tous les éléments colorés
+  - Zone de contenu via MUI Container maxWidth="lg" (≈1280px)
+  - Responsive via MUI Grid et sx breakpoints (xs, sm, md)
+  - Aucun fichier CSS séparé — tout le style via sx props ou ThemeProvider
+  - Aucun console.log dans le code final
+
+Retourne uniquement le code source complet de About.jsx.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+| Fichier | Contenu généré |
+|---------|---------------|
+| `src/pages/About.jsx` | `Paper` centré (`maxWidth: 720, mx: 'auto'`) ; composant interne `SectionTitle` pour éviter la répétition des `sx` ; constantes `DATA_SOURCES` et `TECHNOLOGIES` hors composant ; valeurs monospace via `<Box component="code">` ; footer identique à `HomePage.jsx` |
+| `src/App.jsx` | Ajout de `import About` + `<Route path="/a-propos" element={<About />} />` |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Ajout de `textAlign: 'left'` sur le `Paper`
+
+---
+
+### 🧠 Justification
+
+| Décision | Raison |
+|----------|--------|
+| `textAlign: 'left'`| Ajout de `textAlign: 'left' sur le `Paper` pour corriger l'alignement du texte |
 
 ---

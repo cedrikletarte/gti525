@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import theme from './theme';
 import HomePage from './pages/HomePage';
 import Statistic from './pages/Statistic';
+import About from './pages/About';
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/statistiques" element={<Statistic />} />
+          <Route path="/a-propos" element={<About />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
