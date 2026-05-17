@@ -11,6 +11,10 @@
 |---|-------|-------|
 | [01](#tache-01) | Scaffold UI — Navbar, HomePage, thème MUI | 2026-05-14 |
 | [02](#tache-02) | Navbar color — Change theme color | 2026-05-14 |
+| [03](#tache-03) | Statistic.jsx — Page compteurs vélo avec DataGrid | 2026-05-17 |
+| [04](#tache-04) | Routing — Navigation Navbar vers Statistic | 2026-05-17 |
+| [05](#tache-05) | DataGrid — Table MUI → MUI X DataGrid | 2026-05-17 |
+| [06](#tache-06) | Layout — Alignement Typography "Compteurs vélo" à gauche | 2026-05-17 |
 
 ---
 
@@ -194,3 +198,262 @@ Un fichier `src/components/Navbar.jsx` mis à jour :
 
 ---
 
+## Tâche 03 — Statistic.jsx : page compteurs vélo {#tache-03}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`. Données source : `src/data/compteurs.csv` (colonnes réelles : `ID, Nom, Statut, Latitude, Longitude, Annee_implante`).
+
+---
+
+### 💬 Prompt
+
+```
+Génère uniquement le fichier src/pages/Statistic.jsx,
+
+Contexte: Je développe une application web React + Vite appelée "MTL Vélo"
+(visualisation du réseau cyclable de Montréal). Le projet utilise déjà
+src/HomePage.jsx et src/Theme.js. MUI (@mui/icons-material @mui/material @emotion/styled @emotion/react) est disponible dans le projet.
+
+Tâche: Génère le fichier suivant:
+  - src/pages/Statistic.jsx  →  page de statistiques pour visualiser les compteurs vélo via les données src/data/compteurs.csv
+
+Colonnes disponibles dans compteurs.csv: id, nom, statut, annee, arrondissement
+  - Ex: id = 1000054073
+  - Ex: nom = Bord-du-lac vers est
+  - Ex: statut = Actif | En maintenance | Inactif_déplacé
+  - Ex: annee = 2012
+  - Ex: arrondissement = Verdun
+
+--- PAGE Statistic.jsx ---
+
+Importe <Navbar activePage="Accueil" /> en haut de page.
+Parse le fichier CSV côté client avec papaparse (import statique via Vite ou fetch vers /src/data/compteurs.csv).
+Tout le filtrage est effectué en mémoire, sans appel réseau supplémentaire.
+
+Structure HTML5 sémantique obligatoire:
+
+1. <header> contenant <Navbar activePage="Statistiques" />
+
+2. <main> encapsulé dans <Container maxWidth="lg"> contenant:
+
+   a) Section filtres (une seule ligne horizontale):
+      - À gauche: Typography variant="h2" avec le texte "Compteurs vélo"
+      - À droite dans cet ordre:
+          1. TextField (label="Rechercher par nom", variant="outlined") — filtre en temps réel sur le champ nom
+          2. Button style identique au bouton "Connexion" du Navbar (outlined) —
+             libellé "Effacer les filtres" — remet TextField 
+
+   b) Section tableau:
+      Colonnes affichées: ID | Nom | Statut | Année | Actions
+
+      Rendu de la colonne Statut (Chip ou Box inline):
+        - "Actif"             → fond vert pâle, texte vert foncé (contraste WCAG AA ≥ 4.5:1)
+        - "En maintenance"    → fond gris pâle, texte gris foncé
+        - "Inactif_déplacé"  → fond gris pâle, texte gris foncé
+
+      Rendu de la colonne Actions (deux boutons par ligne):
+        - Bouton "Carte"     → style identique au bouton "Connexion" du Navbar (outlined)
+        - Bouton "Passages"  → style identique au bouton "Inscription" du Navbar (contained)
+
+3. <footer> reproduction exacte du footer présent dans src/HomePage.jsx
+
+--- THÈME theme.js ---
+
+Importe et applique theme.js via ThemeProvider pour garantir la cohérence visuelle de l'ensemble de l'application.
+
+Contraintes obligatoires:
+  - Contraste minimal 4.5:1 WCAG 2.1 AA sur tous les éléments colorés
+  - Zone de contenu via MUI Container maxWidth="lg" (≈1280px)
+  - Responsive via MUI Grid et sx breakpoints (xs, sm, md)
+  - Aucun fichier CSS séparé — tout le style via sx props ou ThemeProvider
+  - Aucun console.log dans le code final
+
+Retourne uniquement le code source complet de Statistic.jsx.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+| Fichier | Contenu généré |
+|---------|---------------|
+| `src/pages/Statistic.jsx` | Import statique `?raw` + parser CSV inline; `useMemo` pour le filtrage par nom ; composant `StatusBadge`; table MUI avec colonnes ID, Nom, Statut, Année, Actions ; ThemeProvider retiré ensuite (centralisé dans App.jsx) |
+
+**Adaptation des données :** le CSV réel ne contient pas de colonne `arrondissement` — la colonne `Annee_implante` est utilisée à la place pour la colonne Année.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+| Décision | Raison |
+|----------|--------|
+| Disposition des élémens | Disposition des éléments a été spécifiée : titre à gauche et filtres à droite sur une seule ligne horizontale, tableau en dessosu avec les colonnes dans un ordre précis pour corespondre à la maquette fournie dans le livrable |
+
+---
+
+## Tâche 04 — Routing : navigation Navbar → Statistic {#tache-04}
+
+### 🗂 Contexte
+
+La Navbar affichait des liens sans comportement de navigation. `react-router-dom` n'était pas installé.
+
+---
+
+### 💬 Prompt
+
+```
+Update Navbar afin que lorsque je clique sur "Statistiques" cela amène
+l'utilisateur sur la page Statistic.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+| Fichier | Contenu généré |
+|---------|---------------|
+| `src/App.jsx` | Ajout de `BrowserRouter` + `Routes` + `Route` ; routes `/` → `HomePage`, `/statistiques` → `Statistic` |
+| `src/components/Navbar.jsx` | `NAV_LINKS` transformé en tableau d'objets `{ label, path }` ; chaque bouton de nav et `ListItemButton` mobile utilisent `component={Link} to={path}` ; logo "MTL Vélo" devient aussi un `Link` vers `/` |
+| `src/pages/Statistic.jsx` | Retrait du `ThemeProvider` local (désormais centralisé dans `App.jsx`) |
+
+**Installation :** `npm install react-router-dom`
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+| Décision | Raison |
+|----------|--------|
+| `react-router-dom` | Standard pour le routing React; intégration native avec les composants MUI via la prop `component={Link}` |
+---
+
+## Tâche 05 — DataGrid : Table MUI → MUI X DataGrid {#tache-05}
+
+### 🗂 Contexte
+
+La page `Statistic.jsx` utilisait une `Table` MUI classique sans tri ni pagination. `@mui/x-data-grid` avait été installé manuellement par l'utilisateur.
+
+---
+
+### 💬 Prompt
+
+```
+Transforme la Table de Statistic en Data table.
+J'ai installé la dépendance : @mui/x-data-grid
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+| Fichier | Contenu généré |
+|---------|---------------|
+| `src/pages/Statistic.jsx` | `Table` / `TableHead` / `TableBody` / `TableRow` / `TableCell` / `TableContainer` / `Paper` remplacés par `<DataGrid>` ; définition `COLUMNS` avec `renderCell` pour `StatusBadge` et `ActionsCell` ; localisation `frFR` ; tri initial par Nom A→Z ; pagination 10/25/50/100 ; `disableRowSelectionOnClick` ; en-têtes colorés via `headerClassName` |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+| Décision | Raison |
+|----------|--------|
+| `DataGrid` de `@mui/x-data-grid` | Tri, pagination et redimensionnement des colonnes inclus sans code supplémentaire ; cohérent avec l'écosystème MUI déjà utilisé. |
+
+---
+
+## Tâche 06 — Layout : alignement Typography "Compteurs vélo" à gauche {#tache-06}
+
+### 🗂 Contexte
+
+La Typography "Compteurs vélo" dans la barre de filtres de `Statistic.jsx` n'était pas positionnée au bord gauche du Container.
+
+---
+
+### 💬 Prompt
+
+```
+La Typography "Compteur Vélo" ne se trouve pas sur la gauche le plus
+possible de l'écran.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Correction ciblée |
+
+---
+
+### 📦 Sortie obtenue
+
+| Fichier | Contenu généré |
+|---------|---------------|
+| `src/pages/Statistic.jsx` | Box filtre : `justifyContent: 'space-between'` remplace `flexGrow: 1` sur la Typography ; TextField + Button regroupés dans un Box imbriqué à droite. |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+| Décision | Raison |
+|----------|--------|
+| `justifyContent: 'space-between'` sur le Box parent | Garantit que la Typography est au bord gauche du Container et les contrôles au bord droit. Il s'agit d'une correction esthétique. |
+
+---
