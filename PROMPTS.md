@@ -15,6 +15,7 @@
 | [04](#tache-04) | Routing — Navigation Navbar vers Statistic | 2026-05-17 |
 | [05](#tache-05) | DataGrid — Table MUI → MUI X DataGrid | 2026-05-17 |
 | [06](#tache-06) | Layout — Alignement Typography "Compteurs vélo" à gauche | 2026-05-17 |
+| [07](#tache-07) | About.jsx — Page "À propos" + route /a-propos | 2026-05-17 |
 
 ---
 
@@ -131,16 +132,9 @@ Trois fichiers créés + `App.jsx` mis à jour :
 
 ### 🧠 Justification
 
-| Décision | Raison |
-|----------|--------|
-| MUI (@mui/material) comme bibliothèque de composants | Composants accessibles et responsives prêts à l'emploi ; évite de réinventer AppBar, Grid, Drawer, etc. Accélère le développement tout en restant cohérent avec les standards Material Design |
-| ThemeProvider + theme.js centralisé | Point de vérité unique pour les couleurs, la typographie et les variantes de composants ; un changement dans theme.js se propage à toute l'application sans toucher aux composants individuels |
-| CssBaseline inclus dans App.jsx | Normalise les styles navigateur (marges, box-sizing, typographie) de façon cohérente avec le thème MUI, sans fichier CSS global à maintenir |
-| Valeurs de stats en props avec fallback | Permet de brancher des données réelles sans modifier le composant |
-| Aucun fichier CSS séparé | Cohérence avec l'approche MUI `sx` ; réduit les conflits de spécificité |
-| Drawer hamburger plutôt que menu déroulant natif | Meilleure UX mobile, cohérent avec les patterns MUI |
-| Contraste WCAG AA (#2d6a4f sur blanc) | Accessibilité obligatoire ; ratio ≈ 5.8:1 ✅ |
-| Container maxWidth="lg" | Limite la largeur de lecture sur grands écrans (≈ 1280 px) |
+J'ai accepté l'essentiel de la sortie, car la structure générée était conforme aux exigences du livrable (HTML5 sémantique, responsive, thème centralisé) et le code était lisible et bien organisé. La prop `activePage` pour indiquer le lien actif était une bonne approche que je n'aurais pas pensé moi-même.
+
+J'ai retiré le bouton `Explorer` dans les feature cards. L'IA l'a généré sans que je le demande. Ce bouton n'apparaissait pas dans la maquette fournie et n'avait aucun comportement. J'ai préféré supprimer plutôt que de laisser du code mort.
 
 ---
 
@@ -192,9 +186,7 @@ Un fichier `src/components/Navbar.jsx` mis à jour :
 
 ### 🧠 Justification
 
-| Décision | Raison |
-|----------|--------|
-| Ajustement des couleurs du Navbar | cohésion des couleurs utilisées dans l'application |
+J'ai accepté la sortie sans modification. L'IA a correctement traduit mes exigences visuelles en code MUI : supprimer `color=primary` sur l'`AppBar` pour passer à un fond blanc, puis ajuster chaque élément (logo, liens, boutons, hamburger). J'ai vérifié que l'approche `variant="outlined" color="primary"` sur les boutons Connexion/Inscription était bien cohérent avec la maquette fournie.
 
 ---
 
@@ -302,9 +294,11 @@ Retourne uniquement le code source complet de Statistic.jsx.
 
 ### 🧠 Justification
 
-| Décision | Raison |
-|----------|--------|
-| Disposition des élémens | Disposition des éléments a été spécifiée : titre à gauche et filtres à droite sur une seule ligne horizontale, tableau en dessosu avec les colonnes dans un ordre précis pour corespondre à la maquette fournie dans le livrable |
+J'ai accepté la sortie sans modification. L'IA a fait un choix en utilisant une fonction d'extraction des données du CSV à la place de l'utilisation d'une dépendance. J'ai jugé que ce choix était correct pour la taille et la complexité des données.
+
+En revanche, l'IA a détecté que le CSV réel ne contenait pas de colonne `arrondissement` et a adapté en conséquence. J'ai accepté, car la maquette demandée ne correspondait pas aux données disponibles. L'IA a pris une décision raisonnable sans bloquer.
+
+Ce que j'aurais dû corriger mais que j'ai laissé passer : le `StatusBadge` initial utilisait `display: 'inline-block'` qui ne s'alignait pas bien dans une row DataGrid. Ce n'était pas visible avec la Table MUI, mais c'est devenu un détail problématique à la tâche 05.
 
 ---
 
@@ -355,9 +349,8 @@ l'utilisateur sur la page Statistic.
 
 ### 🧠 Justification
 
-| Décision | Raison |
-|----------|--------|
-| `react-router-dom` | Standard pour le routing React; intégration native avec les composants MUI via la prop `component={Link}` |
+J'ai accepté la sortie sans modification. L'IA a non seulement ajouté le routing pour Statistiques comme demandé, mais a aussi transformé tous les liens de la Navbar en `Link` react-router-dom et fait du logo un lien vers `/`. C'est un comportement standard attendu dans les pages web ue j'ai pas explicitement demandé. J'aurais dû le spécifier, mais le résultat était correct et j'ai donc conservé ces ajouts. J'ai aussi apprécié que l'IA ait centralisé le `ThemeProvider` dans `App.jsx` en retirant le double wrapping de `Statistic.jsx`, ce qui améliorait la cohérence de l'architecture.
+
 ---
 
 ## Tâche 05 — DataGrid : Table MUI → MUI X DataGrid {#tache-05}
@@ -403,9 +396,7 @@ J'ai installé la dépendance : @mui/x-data-grid
 
 ### 🧠 Justification
 
-| Décision | Raison |
-|----------|--------|
-| `DataGrid` de `@mui/x-data-grid` | Tri, pagination et redimensionnement des colonnes inclus sans code supplémentaire ; cohérent avec l'écosystème MUI déjà utilisé. |
+J'ai accepté la structure globale de la sortie (colonnes, pagination, localisation `frFR`, tri initial), mais j'ai dû corriger le rendu du `StatusBadge` : l'IA avait conservé le `display: 'inline-block'` et `px/py` de la tâche 03, qui ne s'aligne pas correctement dans une cellule DataGrid (hauteur fixe de 52px). J'ai modifié le composant pour utiliser `display: 'block'` avec `lineHeight: '52px'` et ajouté un `Box` wrapper dans `renderCell` pour centrer verticalement.
 
 ---
 
@@ -452,8 +443,128 @@ possible de l'écran.
 
 ### 🧠 Justification
 
-| Décision | Raison |
-|----------|--------|
-| `justifyContent: 'space-between'` sur le Box parent | Garantit que la Typography est au bord gauche du Container et les contrôles au bord droit. Il s'agit d'une correction esthétique. |
+J'ai accepté la correction sans modification. Le problème venait du `flexGrow: 1` sur la `Typography` qui, combiné au `gap: 2` du Box parent, ne garantissait pas un ancrage strict à gauche dans tous les contextes. L'IA a remplacé cela par `justifyContent: 'space-between'` avec un Box imbriqué regroupant TextField et Button.
+
+---
+
+## Tâche 07 — About.jsx : page "À propos" {#tache-07}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`. La route `/a-propos` était déjà déclarée dans `NAV_LINKS` de la Navbar mais pointait vers une page inexistante.
+
+---
+
+### 💬 Prompt
+
+```
+Génère uniquement le fichier src/pages/About.jsx.
+
+Contexte: Je développe une application web React + Vite appelée "MTL Vélo"
+(visualisation du réseau cyclable de Montréal). Le projet utilise déjà
+src/HomePage.jsx, src/Statistic.jsx et src/Theme.js. MUI (@mui/icons-material @mui/material
+@emotion/styled @emotion/react @mui/x-data-grid) est disponible dans le projet.
+
+Tâche: Génère le fichier suivant:
+  - src/pages/About.jsx → page "À propos" présentant les informations sur
+    l'application MTL Vélo.
+
+--- PAGE About.jsx ---
+
+Importe <Navbar activePage="À propos" /> en haut de page.
+
+Structure HTML5 sémantique obligatoire:
+
+1. <header> contenant <Navbar activePage="À propos" />
+
+2. <main> encapsulé dans <Container maxWidth="lg"> contenant:
+
+   Une seule carte (Paper ou Card MUI) centrée horizontalement avec padding
+   généreux, contenant les sections suivantes dans l'ordre:
+
+   a) Titre principal:
+      - Typography variant="h4" fontWeight=700 : "À propos de MTL Vélo"
+
+   b) Section "Source des données":
+      - Typography variant="h6" fontWeight=700 couleur verte (theme primary) : "Source des données"
+      - Paragraphe introductif : "Les données utilisées dans cette application
+        proviennent des Données ouvertes de la Ville de Montréal :"
+        ("Données ouvertes de la Ville de Montréal" en gras)
+      - Liste à puces (<ul>) avec les items suivants:
+          • Compteurs de vélos (emplacements et passages)
+          • Réseau cyclable (9 100+ segments de pistes)
+          • Fontaines d'eau potable
+          • Délimitations des arrondissements
+
+   c) Section "Technologies":
+      - Typography variant="h6" fontWeight=700 couleur verte (theme primary) : "Technologies"
+      - Liste à puces (<ul>) avec les items suivants (label en gras, valeur normal):
+          • Dorsale : Node.js 18+, Express 4, SQLite (better-sqlite3)
+          • Authentification : bcrypt, JSON Web Tokens (JWT)
+          • Cartographie : Leaflet 1.9 avec tuiles OpenStreetMap
+          • Graphiques : Chart.js 4
+          • Interface : HTML5, CSS moderne, JavaScript ES2020 (modules ES)
+
+   d) Section "Contexte pédagogique":
+      - Typography variant="h6" fontWeight=700 couleur verte (theme primary) : "Contexte pédagogique"
+      - Paragraphe : "Ce projet est réalisé dans le cadre du cours GTI525 —
+        Technologies des applications web. Il illustre l'intégration d'un
+        front-end SPA, d'une API REST sécurisée et d'un assistant
+        conversationnel ancré sur des données réelles."
+        ("GTI525 — Technologies des applications web" en gras)
+
+   e) Section "Compte de démonstration":
+      - Typography variant="h6" fontWeight=700 couleur verte (theme primary) : "Compte de démonstration"
+      - Deux lignes de texte couleur grise :
+          • Courriel :  demo@gti525.ca  (valeur en monospace/code)
+          • Mot de passe :  Demo2026!   (valeur en monospace/code)
+
+3. <footer> reproduction exacte du footer présent dans src/HomePage.jsx
+
+--- THÈME theme.js ---
+
+Importe et applique theme.js via ThemeProvider pour garantir la cohérence
+visuelle de l'ensemble de l'application.
+
+Contraintes obligatoires:
+  - Contraste minimal 4.5:1 WCAG 2.1 AA sur tous les éléments colorés
+  - Zone de contenu via MUI Container maxWidth="lg" (≈1280px)
+  - Responsive via MUI Grid et sx breakpoints (xs, sm, md)
+  - Aucun fichier CSS séparé — tout le style via sx props ou ThemeProvider
+  - Aucun console.log dans le code final
+
+Retourne uniquement le code source complet de About.jsx.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+| Fichier | Contenu généré |
+|---------|---------------|
+| `src/pages/About.jsx` | `Paper` centré (`maxWidth: 720, mx: 'auto'`) ; composant interne `SectionTitle` pour éviter la répétition des `sx` ; constantes `DATA_SOURCES` et `TECHNOLOGIES` hors composant ; valeurs monospace via `<Box component="code">` ; footer identique à `HomePage.jsx` |
+| `src/App.jsx` | Ajout de `import About` + `<Route path="/a-propos" element={<About />} />` |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Ajout de `textAlign: 'left'` sur le `Paper`
+
+---
+
+### 🧠 Justification
+
+J'ai accepté la structure et le contenu de la page, mais j'ai ajouté `textAlign: 'left'` sur le `Paper`. L'IA n'avait pas spécifié d'alignement explicite sur le conteneur principal, ce qui laissait certains éléments (notamment les listes) hériter d'un alignement centré venant du composant `Paper`. La correction était mineure mais a permis d'améliorer la lisibilité.
 
 ---
