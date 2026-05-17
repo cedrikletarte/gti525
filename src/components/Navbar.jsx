@@ -14,14 +14,15 @@ import {
   Divider,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+import { Link } from 'react-router-dom';
 
 const NAV_LINKS = [
-  'Accueil',
-  'Réseau',
-  'Statistiques',
-  "Points d'intérêt",
-  'Assistant',
-  'À propos',
+  { label: 'Accueil', path: '/' },
+  { label: 'Réseau', path: '/reseau' },
+  { label: 'Statistiques', path: '/statistiques' },
+  { label: "Points d'intérêt", path: '/points-interet' },
+  { label: 'Assistant', path: '/assistant' },
+  { label: 'À propos', path: '/a-propos' },
 ];
 
 export default function Navbar({ activePage }) {
@@ -50,9 +51,11 @@ export default function Navbar({ activePage }) {
       </Box>
       <Divider />
       <List>
-        {NAV_LINKS.map((label) => (
+        {NAV_LINKS.map(({ label, path }) => (
           <ListItem key={label} disablePadding>
             <ListItemButton
+              component={Link}
+              to={path}
               selected={activePage === label}
               onClick={() => setDrawerOpen(false)}
               sx={{
@@ -85,16 +88,23 @@ export default function Navbar({ activePage }) {
       <Toolbar>
         <Typography
           variant="h6"
-          component="span"
-          sx={{ fontWeight: 700, color: 'primary.main', flexGrow: { xs: 1, md: 0 }, mr: { md: 4 } }}
+          component={Link}
+          to="/"
+          sx={{
+            fontWeight: 700,
+            color: 'primary.main',
+            flexGrow: { xs: 1, md: 0 },
+            mr: { md: 4 },
+            textDecoration: 'none',
+          }}
         >
           🚲 MTL Vélo
         </Typography>
 
         {/* Desktop nav links */}
         <Box sx={{ display: { xs: 'none', md: 'flex' }, flexGrow: 1 }}>
-          {NAV_LINKS.map((label) => (
-            <Button key={label} sx={linkSx(label)}>
+          {NAV_LINKS.map(({ label, path }) => (
+            <Button key={label} component={Link} to={path} sx={linkSx(label)}>
               {label}
             </Button>
           ))}
