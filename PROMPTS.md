@@ -568,3 +568,122 @@ Retourne uniquement le code source complet de About.jsx.
 J'ai accepté la structure et le contenu de la page, mais j'ai ajouté `textAlign: 'left'` sur le `Paper`. L'IA n'avait pas spécifié d'alignement explicite sur le conteneur principal, ce qui laissait certains éléments (notamment les listes) hériter d'un alignement centré venant du composant `Paper`. La correction était mineure mais a permis d'améliorer la lisibilité.
 
 ---
+## Tâche 08 — Reseau.jsx : Icone de cercle {#tache-07}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx (en cours)`.
+
+---
+
+### 💬 Prompt
+
+```
+<FormControlLabel control={<Checkbox />} label="REV"/> I would like to have a blue circle icon between the checkbox and the label
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | ChatGPT |
+| **Modèle** | GPT-5.5 |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+```
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import CircleIcon from "@mui/icons-material/Circle";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+
+<FormControlLabel
+  control={<Checkbox />}
+  label={
+    <Box display="flex" alignItems="center" gap={1}>
+      <CircleIcon sx={{ color: "blue", fontSize: 12 }} />
+      <Typography>REV</Typography>
+    </Box>
+  }
+/>
+```
+
+
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Garde seulement le import suivant : import CircleIcon from "@mui/icons-material/Circle";
+- Changement de la couleur pour chaque cercle utilisés
+- Changement de la taille pour chaque cercle (18)
+
+---
+
+### 🧠 Justification
+
+J'ai gardé l'allignent proposé, car c'est exactement ce que j'avais besoin. J'ai aussi décider l'icone de cercle de mui, car cela évitais d'ajouter une image d'icone au projet. J'ai changé la couleur pour respecté les couleurs de la maquette. J'ai changé la taille des cercles, car je les trouvais trop petits.
+
+---
+
+## Tâche 09 — Reseau.jsx : Allignement du texte des bouton à gauche {#tache-07}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx (en cours)`.
+
+---
+
+### 💬 Prompt
+
+```
+text allign left button mui
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | ChatGPT |
+| **Modèle** | GPT-5.5 |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+```
+<Button
+  fullWidth
+  sx={{
+    justifyContent: "flex-start",
+    textAlign: "left",
+  }}
+>
+  LABEL
+</Button>
+```
+
+
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- J'ai enlevé le textAllign : left
+
+---
+
+### 🧠 Justification
+
+Je n'arrivais pas à alligner le texte avec un allign left. J'ai réussis avec un justifyContent : "flexStart".
+
+---
