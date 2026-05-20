@@ -26,3 +26,11 @@ J'ai pu remarquer que les formulaires sont créer avec un FormGroup ainsi que de
 
 Pour alligner mes DatePicker à l'horizontal, j'ai consulté cette page pour me rappeler comment faire :
 https://www.w3schools.com/css/css_align.asp
+
+### Tâche 3 : Ajustement des datepicker de la page reseau
+
+Je devais changer la taille des datepicker pour les rendre plus petits. J'ai trouvé cette page qui disait comment modifier leur taille :
+https://mui.com/x/react-date-pickers/custom-field/
+
+Je devais aussi changer le format de date pour utiliser des tiret. Cette page de la documentation m'a permis de m'indiquer comment faire :
+https://mui.com/x/react-date-pickers/adapters-locale/
