@@ -22,6 +22,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DataGrid } from '@mui/x-data-grid';
 import { frFR } from '@mui/x-data-grid/locales';
 import Navbar from '../components/Navbar';
+import { MapContainer, TileLayer } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 
 
 
@@ -40,11 +42,11 @@ export default function Reseau() {
         <Box component="section" sx={{ py: { xs: 4, md: 3 }, backgroundColor: '#ffffff' }}>
           <Container maxWidth="lg">
             <Grid container spacing={2}>
-                <Grid size={3} sx={{textAlign: 'left'}}>
+                <Grid size={4} sx={{textAlign: 'left'}}>
                   <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#000000', marginBottom: 3}}>Filtres</Typography>
-                    <FormGroup>
+                    <FormGroup sx={{width:"100%"}}>
 
-                      <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191'}}>CATÉGORIES</Typography>
+                      <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', width: "100%"}}>CATÉGORIES</Typography>
                       
                       <FormControlLabel
                         control={<Checkbox defaultChecked />}
@@ -54,6 +56,7 @@ export default function Reseau() {
                             <Typography>REV</Typography>
                           </Grid>
                         }
+                        sx={{width:"100%"}}
                         
                       />
                       <FormControlLabel
@@ -64,6 +67,7 @@ export default function Reseau() {
                             <Typography>Voie partagée</Typography>
                           </Grid>
                         }
+                         sx={{width:"100%"}}
                         
                       />
                       <FormControlLabel
@@ -74,6 +78,7 @@ export default function Reseau() {
                             <Typography>Voie protégée</Typography>
                           </Grid>
                         }
+                         sx={{width:"100%"}}
                         
                       />
                       <FormControlLabel
@@ -84,34 +89,35 @@ export default function Reseau() {
                             <Typography>Sentier polyvalent</Typography>
                           </Grid>
                         }
+                         sx={{width:"100%"}}
                         
                       />
 
-                      <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', marginTop: 4}}>SAISON</Typography>
+                      <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', marginTop: 4,  width:"100%"}}>SAISON</Typography>
                       
-                      <RadioGroup defaultValue="all">
+                      <RadioGroup defaultValue="all"  sx={{width:"100%"}}>
                           <FormControlLabel value="all" control={<Radio/>} label="Toutes les pistes"/>
                           <FormControlLabel value="4-seasons" control={<Radio/>} label="4 saisons"/>
                           <FormControlLabel value="3-seasons" control={<Radio/>} label="3 saisons"/>
                       </RadioGroup>
 
-                      <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', marginTop: 4, marginBottom: 1}}>ARRONDISSEMENT</Typography>
+                      <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', marginTop: 4, marginBottom: 1, width:"100%"}}>ARRONDISSEMENT</Typography>
                       
-                      <FormControl>
+                      <FormControl  sx={{width:"100%"}}>
                         <Select value="all">
                           <MenuItem value="all">Tous</MenuItem>
                         </Select>
                       </FormControl>
                       
-                      <Box sx={{backgroundColor: "#8cc5984f", marginTop: 4, padding: 2, borderRadius: 4}}>
+                      <Box sx={{backgroundColor: "#8cc5984f", marginTop: 4, padding: 2, borderRadius: 4, width:"100%"}}>
                         <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191'}}>PISTES POPULAIRES</Typography>
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                           <Box sx={{display: "flex", alignItems : "center", gap: 1, maxWidth: 350}}>
-                            <DatePicker format="DD-MM-YYYY" sx={{backgroundColor: "#ffffff", marginTop : 0.5}} slotProps={{ textField: { size: 'small' } }} />
-                            <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191'}}>à</Typography>
-                            <DatePicker sx={{backgroundColor: "#ffffff", marginTop : 0.5}} slotProps={{ textField: { size: 'small' } }} />
+                            <DatePicker label="De" format="DD-MM-YYYY" sx={{backgroundColor: "#ffffff", marginTop : 1, marginBottom : 1,width : "100%"}} slotProps={{ textField: { size: 'small' } }} />
                           </Box>
-
+                          <Box sx={{display: "flex", alignItems : "center", gap: 1, maxWidth: 350}}>
+                            <DatePicker label="À" format="DD-MM-YYYY" sx={{backgroundColor: "#ffffff",marginTop : 1, marginBottom : 1,width : "100%"}} slotProps={{ textField: { size: 'small' } }} />
+                          </Box>
                         </LocalizationProvider>
                         <Button variant="contained" size="small" sx={{width:  '100%', justifyContent: "flex-start", marginBottom : 1,  marginTop : 1}}>Mettre en surbrillance</Button>
                         <Button variant="outlined" size="small" sx={{width:  '100%', justifyContent: "flex-start", marginBottom : 1, backgroundColor: "#ffffff", borderWidth: 2}}>Réinitialiser</Button>
@@ -120,8 +126,17 @@ export default function Reseau() {
 
                     </FormGroup>
                 </Grid>
-                <Grid size={9}>
-
+                <Grid size={8}>
+                  <MapContainer
+                    center={[45.5017, -73.5673]} // Montreal
+                    zoom={10}
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='© OpenStreetMap contributors'
+                    />
+                  </MapContainer>
                 </Grid>
             </Grid>
           </Container>

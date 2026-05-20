@@ -568,7 +568,7 @@ Retourne uniquement le code source complet de About.jsx.
 J'ai accepté la structure et le contenu de la page, mais j'ai ajouté `textAlign: 'left'` sur le `Paper`. L'IA n'avait pas spécifié d'alignement explicite sur le conteneur principal, ce qui laissait certains éléments (notamment les listes) hériter d'un alignement centré venant du composant `Paper`. La correction était mineure mais a permis d'améliorer la lisibilité.
 
 ---
-## Tâche 08 — Reseau.jsx : Icone de cercle {#tache-07}
+## Tâche 08 — Reseau.jsx : Icone de cercle {#tache-08}
 
 ### 🗂 Contexte
 
@@ -632,7 +632,7 @@ J'ai gardé l'allignent proposé, car c'est exactement ce que j'avais besoin. J'
 
 ---
 
-## Tâche 09 — Reseau.jsx : Allignement du texte des bouton à gauche {#tache-07}
+## Tâche 09 — Reseau.jsx : Allignement du texte des bouton à gauche {#tache-09}
 
 ### 🗂 Contexte
 
@@ -685,5 +685,167 @@ text allign left button mui
 ### 🧠 Justification
 
 Je n'arrivais pas à alligner le texte avec un allign left. J'ai réussis avec un justifyContent : "flexStart".
+
+---
+
+## Tâche 10 — Reseau.jsx : Ajout d'une carte dans la page Reseau {#tache-10}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx`.
+
+---
+
+### 💬 Prompt
+
+```
+I want to add a map component to my react project. I am using MUI
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude |
+| **Modèle** | Sonnet 4.6 |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+
+There's no single "MUI Map" component — MUI doesn't ship one natively, so you'll pair a mapping library with MUI's styling. Here are the most popular options:
+
+---
+
+## Option 1: `react-leaflet` (free, no API key)
+
+Best for most projects — open source, no billing required.
+
+```bash
+npm install react-leaflet leaflet
+```
+
+```jsx
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import { Box, Paper, Typography } from '@mui/material';
+
+export default function MapComponent() {
+  return (
+    <Paper elevation={3}>
+      <Box sx={{ height: 400, width: '100%' }}>
+        <MapContainer
+          center={[45.5017, -73.5673]} // Montreal
+          zoom={13}
+          style={{ height: '100%', width: '100%' }}
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='© OpenStreetMap contributors'
+          />
+          <Marker position={[45.5017, -73.5673]}>
+            <Popup>You are here</Popup>
+          </Marker>
+        </MapContainer>
+      </Box>
+    </Paper>
+  );
+}
+```
+
+> **Note:** If markers appear broken, add this fix for Leaflet's default icon issue:
+> ```js
+> import L from 'leaflet';
+> import markerIcon from 'leaflet/dist/images/marker-icon.png';
+> import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+> 
+> L.Icon.Default.mergeOptions({ iconUrl: markerIcon, shadowUrl: markerShadow });
+> ```
+
+---
+
+## Option 2: `@vis.gl/react-google-maps` (Google Maps, requires API key)
+
+Best if you need Google Maps specifically.
+
+```bash
+npm install @vis.gl/react-google-maps
+```
+
+```jsx
+import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
+import { Box, Paper } from '@mui/material';
+
+export default function MapComponent() {
+  return (
+    <Paper elevation={3}>
+      <Box sx={{ height: 400, width: '100%' }}>
+        <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_KEY}>
+          <Map
+            defaultCenter={{ lat: 45.5017, lng: -73.5673 }}
+            defaultZoom={13}
+            style={{ height: '100%', width: '100%' }}
+          >
+            <Marker position={{ lat: 45.5017, lng: -73.5673 }} />
+          </Map>
+        </APIProvider>
+      </Box>
+    </Paper>
+  );
+}
+```
+
+---
+
+## Option 3: `react-map-gl` (Mapbox)
+
+Best for highly customized, beautiful maps.
+
+```bash
+npm install react-map-gl mapbox-gl
+```
+
+```jsx
+import Map from 'react-map-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+
+<Map
+  initialViewState={{ longitude: -73.5673, latitude: 45.5017, zoom: 13 }}
+  style={{ width: '100%', height: 400 }}
+  mapStyle="mapbox://styles/mapbox/streets-v11"
+  mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
+/>
+```
+
+---
+
+## Which should I pick?
+
+| | Leaflet | Google Maps | Mapbox |
+|---|---|---|---|
+| **Cost** | Free | Pay-as-you-go | Free tier available |
+| **API Key** | ❌ Not needed | ✅ Required | ✅ Required |
+| **Customization** | Medium | Medium | High |
+| **Ease of setup** | Easiest | Easy | Medium |
+
+**Leaflet** is the go-to for most projects. Go with **Google Maps** if you need Places/Directions APIs, or **Mapbox** for custom map styles.
+
+
+### ✏️ Modifications apportées par l'humain
+
+- J'ai opté pour l'option 1
+- J'ajouté les 2 premiers imports
+- J'ai seulement gardé la partie du MapContainer et le TileLayer
+- Modification du zoom (changé pour un zoom de 10)
+
+---
+
+### 🧠 Justification
+
+Je suis aller avec l'option 1 parce que c'était l'option utilisé dans l'énoncé et cette option d'utilise pas d'API donc elle est très simple à implémenter. J'ai gardé seulement les imports pour afficher la carte. J'avais seulement besoin des balise pour afficher la carte, donc j'ai garder le MapContainer et le TileLayer. L'exemple pointait sur Montréal comme je voulais, donc j'ai gardé les coordonnées. J'enlevé le marqueur, car je ne voulais pas l'afficher. J'ai modifié le zoom, car je trouvais qu'on voyais pas bien l'ile de Montréal.
 
 ---
