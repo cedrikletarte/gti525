@@ -107,9 +107,9 @@ export default function Reseau() {
                         <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191'}}>PISTES POPULAIRES</Typography>
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                           <Box sx={{display: "flex", alignItems : "center", gap: 1, maxWidth: 350}}>
-                            <DatePicker sx={{backgroundColor: "#ffffff", marginTop : 0.5}}/>
+                            <DatePicker format="DD-MM-YYYY" sx={{backgroundColor: "#ffffff", marginTop : 0.5}} slotProps={{ textField: { size: 'small' } }} />
                             <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191'}}>à</Typography>
-                            <DatePicker sx={{backgroundColor: "#ffffff", marginTop : 0.5}}/>
+                            <DatePicker sx={{backgroundColor: "#ffffff", marginTop : 0.5}} slotProps={{ textField: { size: 'small' } }} />
                           </Box>
 
                         </LocalizationProvider>
