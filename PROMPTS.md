@@ -567,4 +567,52 @@ Retourne uniquement le code source complet de About.jsx.
 
 J'ai accepté la structure et le contenu de la page, mais j'ai ajouté `textAlign: 'left'` sur le `Paper`. L'IA n'avait pas spécifié d'alignement explicite sur le conteneur principal, ce qui laissait certains éléments (notamment les listes) hériter d'un alignement centré venant du composant `Paper`. La correction était mineure mais a permis d'améliorer la lisibilité.
 
+
+## Tâche: Création de la page Points d'intérêt (Phase 1)
+
+### 💬 Prompt utilisé
+> "Agis en tant que développeur front-end expert spécialisé , En utilisant la tech stack du projet MTL velo. Genere la page point interet dans src/pages/PointInteret.Voici les livrable a accomplir Charger compteurs.csv et poi.csv côté client qui se trouve dans le dosser /src/data et afficher les données dans un tableau triable (clic sur l'en-tête). Points d'intérêt: arrondissement, type, nom du lieu, adresse, jouter un filtre par arrondissement (menu déroulant, alimenté par territoires.csv) pour « Points d'intérêt , Pour chaque élément, ajouter un bouton « Voir sur la carte » ouvrant sa position dans Google Maps ou OpenStreetMap à partir des coordonnées. Limiter l'affichage des points d'intérêt à 20 par page (pagination ou défilement). Utilise le la maquette UI_pointInteret.png dans le fichier src/UIMock. tu dois Suivre a la lettre la structure des elements dans l'image."
+
+### 🛠 Outil & modèle
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | GitHub Copilot — VS Code |
+| **Modèle** | Gemini 3.1 Pro (Preview) |
+
+### 📦 Sortie obtenue
+Création d'un composant de base `PointInteret.jsx` avec un parseur CSV fait main et implémentation du filtrage par arrondissement.
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+### 🧠 Justification
+
+- J’ai accepté les modifications faites par l’IA, car celles-ci respectaient les besoins que j’avais spécifiés dans le prompt. J’ai également analysé le code généré par l’IA afin de m’assurer que l’implémentation n’était pas trop complexe et que nous pouvions bien comprendre le fonctionnement du filtrage par arrondissement.
+---
+
+## Tâche: Ajustement aux maquettes UI et retrait des éléments non-sollicités (Phase 2 & 3)
+
+### 💬 Prompt utilisé
+> "Il manque le bouton Nouveau point d’intérêt en haut à droite, et il manque la recherche par nom. L’arrangement du tableau devrait être : Type, Nom, Arrondissement, Intersection, Actions. Le bouton Actions est nommé Carte et ne contient pas d’icône. Il manque aussi le filtre par type à côté de Filtrer par arrondissement. Enfin, le type Fontaine devrait être affiché en bleu."
+
+### 🛠 Outil & modèle
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | GitHub Copilot — VS Code |
+| **Modèle** | Gemini 3.1 Pro (Preview) |
+
+### 📦 Sortie obtenue
+Ajout de l'élément pour le filtrage par nom 
+Ajout du boutton Nouveau point intérêt 
+Re-arrangement des elements pour suivre la maquettre fournie dans l'enonce du laboratoire 
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+### 🧠 Justification
+
+- Justification : J'ai accepte
+
 ---
