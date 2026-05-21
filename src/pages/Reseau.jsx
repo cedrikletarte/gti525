@@ -2,10 +2,8 @@ import {
   Box,
   Button,
   Container,
-  TextField,
   Typography,
   Grid,
-  Paper,
   Checkbox,
   FormGroup,
   FormControl,
@@ -19,8 +17,6 @@ import CircleIcon from "@mui/icons-material/Circle";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DataGrid } from '@mui/x-data-grid';
-import { frFR } from '@mui/x-data-grid/locales';
 import Navbar from '../components/Navbar';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -42,7 +38,7 @@ export default function Reseau() {
         <Box component="section" sx={{ py: { xs: 4, md: 3 }, backgroundColor: '#ffffff' }}>
           <Container maxWidth="lg">
             <Grid container spacing={2}>
-                <Grid size={4} sx={{textAlign: 'left'}}>
+                <Grid size={{ xs: 0, md : 4 }} sx={{textAlign: 'left', display: { xs: 'none', md: 'block' }}}>
                   <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#000000', marginBottom: 3}}>Filtres</Typography>
                     <FormGroup sx={{width:"100%"}}>
 
@@ -126,11 +122,11 @@ export default function Reseau() {
 
                     </FormGroup>
                 </Grid>
-                <Grid size={8}>
+                <Grid size={{ xs: 12, md : 8 }}>
                   <MapContainer
                     center={[45.5017, -73.5673]} // Montreal
                     zoom={10}
-                    style={{ height: '100%', width: '100%' }}
+                    style={{ height: '80vh', width: '100%' }}
                   >
                     <TileLayer
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

@@ -849,3 +849,285 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 Je suis aller avec l'option 1 parce que c'était l'option utilisé dans l'énoncé et cette option d'utilise pas d'API donc elle est très simple à implémenter. J'ai gardé seulement les imports pour afficher la carte. J'avais seulement besoin des balise pour afficher la carte, donc j'ai garder le MapContainer et le TileLayer. L'exemple pointait sur Montréal comme je voulais, donc j'ai gardé les coordonnées. J'enlevé le marqueur, car je ne voulais pas l'afficher. J'ai modifié le zoom, car je trouvais qu'on voyais pas bien l'ile de Montréal.
 
 ---
+
+## Tâche 11 — Reseau.jsx : Changement du comportement de la page sur petit écran {#tache-11}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx`.
+
+---
+
+### 💬 Prompt
+
+```
+Where in this code does it tell the navbar to use the hamburger on mobile?
+
+import { useState } from 'react';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Box,
+  Divider,
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { Link } from 'react-router-dom';
+
+const NAV_LINKS = [
+  { label: 'Accueil', path: '/' },
+  { label: 'Réseau', path: '/reseau' },
+  { label: 'Statistiques', path: '/statistiques' },
+  { label: "Points d'intérêt", path: '/points-interet' },
+  { label: 'Assistant', path: '/assistant' },
+  { label: 'À propos', path: '/a-propos' },
+];
+
+export default function Navbar({ activePage }) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const linkSx = (label) => ({
+    color: activePage === label ? 'primary.main' : 'grey.500',
+    mx: 0.5,
+    borderBottom: activePage === label ? '2px solid' : '2px solid transparent',
+    borderColor: activePage === label ? 'primary.main' : 'transparent',
+    borderRadius: 0,
+    '&:hover': {
+      backgroundColor: 'rgba(45,106,79,0.06)',
+      color: 'primary.main',
+      borderBottom: '2px solid',
+      borderColor: 'primary.main',
+    },
+  });
+
+  const drawer = (
+    <Box sx={{ width: 260 }} role="presentation">
+      <Box sx={{ p: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+          🚲 MTL Vélo
+        </Typography>
+      </Box>
+      <Divider />
+      <List>
+        {NAV_LINKS.map(({ label, path }) => (
+          <ListItem key={label} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={path}
+              selected={activePage === label}
+              onClick={() => setDrawerOpen(false)}
+              sx={{
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(45,106,79,0.12)',
+                  borderLeft: '3px solid',
+                  borderColor: 'primary.main',
+                },
+              }}
+            >
+              <ListItemText primary={label} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
+      <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Button variant="outlined" color="primary" fullWidth>
+          Connexion
+        </Button>
+        <Button variant="contained" color="primary" fullWidth>
+          Inscription
+        </Button>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <AppBar position="static" elevation={1} sx={{ backgroundColor: 'white' }}>
+      <Toolbar>
+        <Typography
+          variant="h6"
+          component={Link}
+          to="/"
+          sx={{
+            fontWeight: 700,
+            color: 'primary.main',
+            flexGrow: { xs: 1, md: 0 },
+            mr: { md: 4 },
+            textDecoration: 'none',
+          }}
+        >
+          🚲 MTL Vélo
+        </Typography>
+
+        {/* Desktop nav links */}
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, flexGrow: 1 }}>
+          {NAV_LINKS.map(({ label, path }) => (
+            <Button key={label} component={Link} to={path} sx={linkSx(label)}>
+              {label}
+            </Button>
+          ))}
+        </Box>
+
+        {/* Desktop auth buttons */}
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
+          <Button variant="outlined" color="primary">
+            Connexion
+          </Button>
+          <Button variant="contained" color="primary">
+            Inscription
+          </Button>
+        </Box>
+
+        {/* Mobile hamburger */}
+        <IconButton
+          edge="end"
+          onClick={() => setDrawerOpen(true)}
+          sx={{ display: { md: 'none' }, color: 'primary.main' }}
+          aria-label="Ouvrir le menu"
+        >
+          <MenuIcon />
+        </IconButton>
+      </Toolbar>
+
+      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+        {drawer}
+      </Drawer>
+    </AppBar>
+  );
+}
+
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur                          |
+|-------|---------------------------------|
+| **Outil** | ChatGPT                         |
+| **Modèle** | GPT-5.5                         |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+You only need to change this part:
+
+```jsx
+<Grid size={4} sx={{textAlign: 'left'}}>
+```
+
+to:
+
+```jsx
+<Grid
+  size={{ xs: 0, md: 4 }}
+  sx={{
+    textAlign: 'left',
+    display: { xs: 'none', md: 'block' },
+  }}
+>
+```
+
+That will:
+
+* hide the filters/sidebar on mobile
+* keep it visible on desktop
+* leave the map visible
+
+Then make the map take full width on mobile by changing:
+
+```jsx
+<Grid size={8}>
+```
+
+to:
+
+```jsx
+<Grid size={{ xs: 12, md: 8 }}>
+```
+
+So the final layout becomes:
+
+```jsx
+<Grid container spacing={2}>
+  
+  {/* Sidebar */}
+  <Grid
+    size={{ xs: 0, md: 4 }}
+    sx={{
+      textAlign: 'left',
+      display: { xs: 'none', md: 'block' },
+    }}
+  >
+    {/* filters */}
+  </Grid>
+
+  {/* Map */}
+  <Grid size={{ xs: 12, md: 8 }}>
+    <MapContainer
+      center={[45.5017, -73.5673]}
+      zoom={10}
+      style={{ height: '100%', width: '100%' }}
+    >
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution="© OpenStreetMap contributors"
+      />
+    </MapContainer>
+  </Grid>
+
+</Grid>
+```
+
+You may also want to give the map a fixed mobile height because `height: 100%` sometimes collapses on smaller screens.
+
+Example:
+
+```jsx
+<MapContainer
+  center={[45.5017, -73.5673]}
+  zoom={10}
+  style={{
+    height: '80vh',
+    width: '100%',
+  }}
+>
+```
+
+That usually works much better on phones.
+
+
+### ✏️ Modifications apportées par l'humain
+
+- J'ai seulement utilisé la partie  display: { xs: 'none', md: 'block' }
+
+---
+
+### 🧠 Justification
+
+Je ne comprenais pas comment notre menu Hamburger fonctionnait 
+donc j'ai demandé à l'IA. Il m'a expliqué que xs est le comportement 
+à avoir pour les petits écran et md pour les ordinateur de bureau. J'ai donc 
+utilisé cela pour dire à mon menu de filtre de ne pas occuper d'espace dans le grid
+quand on est en mobile et à la carte d'utiliser toute l'espace dans celle-ci.
+
+Pour le menu de filtre :
+```jsx
+<Grid size={{ xs: 0, md : 4 }} sx={{textAlign: 'left', display: { xs: 'none', md: 'block' }}}>
+```
+
+Pour la carte :
+```jsx
+ <Grid size={{ xs: 12, md : 8 }}>
+```
+
+---
