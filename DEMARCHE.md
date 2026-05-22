@@ -34,3 +34,13 @@ https://mui.com/x/react-date-pickers/custom-field/
 
 Je devais aussi changer le format de date pour utiliser des tiret. Cette page de la documentation m'a permis de m'indiquer comment faire :
 https://mui.com/x/react-date-pickers/adapters-locale/
+
+### Tâche 4 : Cacher le menu de filtre en mobile pour la page Reseau
+
+J'ai regardé comment faire de l'affichage conditionel sur react avec la documentation officiel de React :
+https://react.dev/learn/conditional-rendering
+
+Pour le reste, j'ai utilisé un useState afin de garder l'état booléen du menu pour savoir si il est ouvert ou non
+
+Pour l'icone, je l'ai pris dans les icones fournis par MUI ici :
+https://mui.com/material-ui/material-icons/?theme=Sharp&query=expan&selected=ExpandLessSharp
