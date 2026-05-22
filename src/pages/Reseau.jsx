@@ -23,7 +23,20 @@ import Navbar from '../components/Navbar';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import {useState} from "react";
+import csvRaw from '../data/territoires.csv?raw';
 
+function parseCSV(raw) {
+    const lines = raw.split(/\r?\n/);
+    return lines
+        .map(line => {
+            return line.split(',')[0];
+        })
+        .filter(line => {
+            return line !== '';
+        });
+}
+
+const territoires = parseCSV(csvRaw);
 
 
 
@@ -31,6 +44,11 @@ import {useState} from "react";
 export default function Reseau() {
     const [isExpanded, setIsExpanded] = useState(false);
 
+    const [arrondissment, setArrondissment] = useState('all');
+
+    const handleChange = (event) => {
+        setArrondissment(event.target.value);
+    };
 
     const filterMenu =
         (
@@ -95,8 +113,12 @@ export default function Reseau() {
         <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', marginTop: 4, marginBottom: 1, width:"100%", textAlign: "left"}}>ARRONDISSEMENT</Typography>
 
         <FormControl  sx={{width:"100%"}}>
-            <Select value="all" sx={{textAlign: "left"}}>
+            <Select value={arrondissment} sx={{textAlign: "left"}} onChange={handleChange}>
                 <MenuItem value="all">Tous</MenuItem>
+                {
+                    territoires.map((item) => (
+                        <MenuItem key={item} value={item}>{item}</MenuItem>
+                    ))}
             </Select>
         </FormControl>
 
@@ -141,7 +163,6 @@ export default function Reseau() {
 
       <main>
         <Container maxWidth="lg" sx={{ py: { xs: 3, md: 0.1 } }}>
-
         <Box component="section" sx={{ py: { xs: 4, md: 3 }, backgroundColor: '#ffffff' }}>
           <Container maxWidth="lg">
             <Grid container spacing={2}>
