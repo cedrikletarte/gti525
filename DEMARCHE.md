@@ -44,3 +44,8 @@ Pour le reste, j'ai utilisé un useState afin de garder l'état booléen du menu
 
 Pour l'icone, je l'ai pris dans les icones fournis par MUI ici :
 https://mui.com/material-ui/material-icons/?theme=Sharp&query=expan&selected=ExpandLessSharp
+
+### Tâche 5 : Obtenir la liste d'arrondissement pour le menu dans la page réseau
+
+Je me suis beacoup inspiré de la méthode ParseCSV dans la page statistique et je l'ai adapté pour les arrondissments. Je commence par faire un split sur les sauts de lignes puisque chaque arrondissements est séparé de cette façon. Cela me permet de les séparé en élément de tableau. Ensuite je devais faire un map pour obtenir seulement le premier élément avant la virgule de chaque ligne, car cela correspond au nom de l'établissement et c'est ce que je veux afficher pour les  choix dans mon menu. J'ai terminé par un filtre pour enlever les éléments vide puisque j'avais un élément vide à la fin. Je me suis finalement basé sur cette page de la documentation de MUI pour savoir comment les ajouté au Select :
+https://mui.com/material-ui/react-select/
