@@ -1,17 +1,18 @@
 import {
-  Box,
-  Button,
-  Container,
-  Typography,
-  Grid,
-  Checkbox,
-  FormGroup,
-  FormControl,
-  FormControlLabel,
-  RadioGroup,
-  Radio,
-  Select,
-  MenuItem
+    Box,
+    Button,
+    Container,
+    Typography,
+    Grid,
+    Checkbox,
+    FormGroup,
+    FormControl,
+    FormControlLabel,
+    RadioGroup,
+    Radio,
+    Select,
+    MenuItem,
+    Paper
 } from '@mui/material';
 import CircleIcon from "@mui/icons-material/Circle";
 import ExpandMoreSharpIcon from '@mui/icons-material/ExpandMoreSharp';
@@ -22,7 +23,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Navbar from '../components/Navbar';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import csvRaw from '../data/territoires.csv?raw';
 
 function parseCSV(raw) {
@@ -38,17 +39,51 @@ function parseCSV(raw) {
 
 const territoires = parseCSV(csvRaw);
 
+function countCircuits(data) {
+    if(data != null) {
+        return data.length
+    }
+}
+
+function sumCircuitDistance(data) {
+
+    let totalDistance = 0;
+    if(data != null) {
+        for (let i = 0; i < data.length; i++) {
+            totalDistance += data[i].properties.LONGUEUR;
+
+        }
+    }
+
+    return totalDistance;
+}
+
+
 
 
 
 export default function Reseau() {
     const [isExpanded, setIsExpanded] = useState(false);
-
     const [arrondissment, setArrondissment] = useState('all');
 
     const handleChange = (event) => {
         setArrondissment(event.target.value);
     };
+
+    const [reseauData, setReseauData] = useState(null);
+
+    useEffect(() => {
+        fetch("/data/reseau_cyclable.geojson")
+            .then((res) => res.json())
+            .then((data) => {
+                setReseauData(data.features);
+            })
+            .catch((err) => console.error(err));
+    }, []);
+
+
+
+
 
     const filterMenu =
         (
@@ -113,7 +148,7 @@ export default function Reseau() {
         <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', marginTop: 4, marginBottom: 1, width:"100%", textAlign: "left"}}>ARRONDISSEMENT</Typography>
 
         <FormControl  sx={{width:"100%"}}>
-            <Select value={arrondissment} sx={{textAlign: "left"}} onChange={handleChange}>
+            <Select value={arrondissment} sx={{textAlign: "left"}} onChange={handleChange} variant="outlined">
                 <MenuItem value="all">Tous</MenuItem>
                 {
                     territoires.map((item) => (
@@ -140,6 +175,10 @@ export default function Reseau() {
 
     const interactiveMap =
         (
+        <Box
+        sx = {{
+            position: "relative",
+        }}>
             <MapContainer
                 center={[45.5017, -73.5673]} // Montreal
                 zoom={10}
@@ -150,6 +189,25 @@ export default function Reseau() {
                     attribution='© OpenStreetMap contributors'
                 />
             </MapContainer>
+            <Paper
+                sx={{
+                    position: "absolute",
+                    backgroundColor: "#ffffff",
+                    zIndex: 1000,
+                    bottom : 25,
+                    right : 10,
+                    display : "flex",
+                    justifyContent: "space-between",
+                    padding: 1
+                }}
+            >
+                <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#000000', paddingRight : 0.5}}>{countCircuits(reseauData)}</Typography>
+                <Typography sx={{ fontSize: 15, color: '#000000', paddingRight : 0.5}}>pistes affichés, </Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#000000', paddingRight : 0.5}}>{sumCircuitDistance(reseauData)}</Typography>
+                <Typography sx={{ fontSize: 15, color: '#000000'}}> km</Typography>
+            </Paper>
+        </Box>
+
         );
 
 

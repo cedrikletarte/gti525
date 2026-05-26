@@ -1131,3 +1131,144 @@ Pour la carte :
 ```
 
 ---
+
+## Tâche 11 — Reseau.jsx : Chargement d'un fichier geojson {#tache-11}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx`.
+
+---
+
+### 💬 Prompt
+
+```
+
+
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur                          |
+|-------|---------------------------------|
+| **Outil** | ChatGPT                         |
+| **Modèle** | GPT-5.5                         |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+If by “display a GeoJSON file in the console with React” you literally mean logging and inspecting the data, the basic pattern is:
+
+```jsx
+import { useEffect, useState } from "react";
+
+export default function App() {
+  const [geojson, setGeojson] = useState(null);
+
+  useEffect(() => {
+    fetch("/data/map.geojson")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("GeoJSON data:", data);
+        setGeojson(data);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
+  return <div>Check the browser console</div>;
+}
+```
+
+Place your file like:
+
+```text
+public/
+  data/
+    map.geojson
+```
+
+Then open the browser DevTools console.
+
+---
+
+If you actually want to **render the GeoJSON on a map in React**, the most common approach is using [React Leaflet](https://react-leaflet.js.org/?utm_source=chatgpt.com) with [Leaflet](https://leafletjs.com/?utm_source=chatgpt.com).
+
+Example:
+
+```bash
+npm install react-leaflet leaflet
+```
+
+```jsx
+import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import { useEffect, useState } from "react";
+import "leaflet/dist/leaflet.css";
+
+export default function MapView() {
+  const [geoData, setGeoData] = useState(null);
+
+  useEffect(() => {
+    fetch("/data/map.geojson")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data);
+        setGeoData(data);
+      });
+  }, []);
+
+  return (
+    <MapContainer
+      center={[45.5017, -73.5673]}
+      zoom={10}
+      style={{ height: "100vh", width: "100%" }}
+    >
+      <TileLayer
+        attribution='&copy; OpenStreetMap contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+
+      {geoData && <GeoJSON data={geoData} />}
+    </MapContainer>
+  );
+}
+```
+
+That will:
+
+* load the `.geojson` file
+* print it in the browser console
+* render the features on the map
+
+Useful docs:
+
+* [GeoJSON specification](https://geojson.org/?utm_source=chatgpt.com)
+* [React Leaflet GeoJSON example](https://react-leaflet.js.org/docs/example-vector-layers/?utm_source=chatgpt.com)
+
+
+
+### ✏️ Modifications apportées par l'humain
+
+- J'ai seulement utilisé le premier bout de code
+- J'ai changé le nom de quelques variable
+- Jen'ai pas utilisé la partie HTML
+
+---
+
+### 🧠 Justification
+
+J'ai fais ce prompt, car je n'arrivais pas à importer le fichier geojson. 
+J'ai demandé à l'IA de m'indiquer comment l'afficher dans la console, car à partir
+de cela, je savais comment obtenir l'information que je voulais. J'ai seulement
+gardé la partie du fetch avec le useEffect, car c'est ce qui me permet d'accéder
+aux données. Une autre alternative était de changer l'extension du fichier pour JSON,
+mais ce n'était pas vraiment une option, car on aura besoin d'un fichier 
+GeoJson pour la carte plus tard. j'aurais pu aussi le charger comme une chaine de caractère, 
+mais ça aurait été très difficile de la traiter.
+
+
+
+
