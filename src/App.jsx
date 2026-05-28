@@ -4,6 +4,7 @@ import theme from './theme';
 import HomePage from './pages/HomePage';
 import Statistic from './pages/Statistic';
 import About from './pages/About';
+import Reseau from './pages/Reseau'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/statistiques" element={<Statistic />} />
           <Route path="/a-propos" element={<About />} />
+          <Route path="/reseau" element={<Reseau />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

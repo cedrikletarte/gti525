@@ -568,3 +568,714 @@ Retourne uniquement le code source complet de About.jsx.
 J'ai accepté la structure et le contenu de la page, mais j'ai ajouté `textAlign: 'left'` sur le `Paper`. L'IA n'avait pas spécifié d'alignement explicite sur le conteneur principal, ce qui laissait certains éléments (notamment les listes) hériter d'un alignement centré venant du composant `Paper`. La correction était mineure mais a permis d'améliorer la lisibilité.
 
 ---
+## Tâche 08 — Reseau.jsx : Icone de cercle {#tache-08}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx (en cours)`.
+
+---
+
+### 💬 Prompt
+
+```
+<FormControlLabel control={<Checkbox />} label="REV"/> I would like to have a blue circle icon between the checkbox and the label
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | ChatGPT |
+| **Modèle** | GPT-5.5 |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+```
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import CircleIcon from "@mui/icons-material/Circle";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+
+<FormControlLabel
+  control={<Checkbox />}
+  label={
+    <Box display="flex" alignItems="center" gap={1}>
+      <CircleIcon sx={{ color: "blue", fontSize: 12 }} />
+      <Typography>REV</Typography>
+    </Box>
+  }
+/>
+```
+
+
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Garde seulement le import suivant : import CircleIcon from "@mui/icons-material/Circle";
+- Changement de la couleur pour chaque cercle utilisés
+- Changement de la taille pour chaque cercle (18)
+
+---
+
+### 🧠 Justification
+
+J'ai gardé l'allignent proposé, car c'est exactement ce que j'avais besoin. J'ai aussi décider l'icone de cercle de mui, car cela évitais d'ajouter une image d'icone au projet. J'ai changé la couleur pour respecté les couleurs de la maquette. J'ai changé la taille des cercles, car je les trouvais trop petits.
+
+---
+
+## Tâche 09 — Reseau.jsx : Allignement du texte des bouton à gauche {#tache-09}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx (en cours)`.
+
+---
+
+### 💬 Prompt
+
+```
+text allign left button mui
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | ChatGPT |
+| **Modèle** | GPT-5.5 |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+```
+<Button
+  fullWidth
+  sx={{
+    justifyContent: "flex-start",
+    textAlign: "left",
+  }}
+>
+  LABEL
+</Button>
+```
+
+
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- J'ai enlevé le textAllign : left
+
+---
+
+### 🧠 Justification
+
+Je n'arrivais pas à alligner le texte avec un allign left. J'ai réussis avec un justifyContent : "flexStart".
+
+---
+
+## Tâche 10 — Reseau.jsx : Ajout d'une carte dans la page Reseau {#tache-10}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx`.
+
+---
+
+### 💬 Prompt
+
+```
+I want to add a map component to my react project. I am using MUI
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude |
+| **Modèle** | Sonnet 4.6 |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+
+There's no single "MUI Map" component — MUI doesn't ship one natively, so you'll pair a mapping library with MUI's styling. Here are the most popular options:
+
+---
+
+## Option 1: `react-leaflet` (free, no API key)
+
+Best for most projects — open source, no billing required.
+
+```bash
+npm install react-leaflet leaflet
+```
+
+```jsx
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import { Box, Paper, Typography } from '@mui/material';
+
+export default function MapComponent() {
+  return (
+    <Paper elevation={3}>
+      <Box sx={{ height: 400, width: '100%' }}>
+        <MapContainer
+          center={[45.5017, -73.5673]} // Montreal
+          zoom={13}
+          style={{ height: '100%', width: '100%' }}
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='© OpenStreetMap contributors'
+          />
+          <Marker position={[45.5017, -73.5673]}>
+            <Popup>You are here</Popup>
+          </Marker>
+        </MapContainer>
+      </Box>
+    </Paper>
+  );
+}
+```
+
+> **Note:** If markers appear broken, add this fix for Leaflet's default icon issue:
+> ```js
+> import L from 'leaflet';
+> import markerIcon from 'leaflet/dist/images/marker-icon.png';
+> import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+> 
+> L.Icon.Default.mergeOptions({ iconUrl: markerIcon, shadowUrl: markerShadow });
+> ```
+
+---
+
+## Option 2: `@vis.gl/react-google-maps` (Google Maps, requires API key)
+
+Best if you need Google Maps specifically.
+
+```bash
+npm install @vis.gl/react-google-maps
+```
+
+```jsx
+import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
+import { Box, Paper } from '@mui/material';
+
+export default function MapComponent() {
+  return (
+    <Paper elevation={3}>
+      <Box sx={{ height: 400, width: '100%' }}>
+        <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_KEY}>
+          <Map
+            defaultCenter={{ lat: 45.5017, lng: -73.5673 }}
+            defaultZoom={13}
+            style={{ height: '100%', width: '100%' }}
+          >
+            <Marker position={{ lat: 45.5017, lng: -73.5673 }} />
+          </Map>
+        </APIProvider>
+      </Box>
+    </Paper>
+  );
+}
+```
+
+---
+
+## Option 3: `react-map-gl` (Mapbox)
+
+Best for highly customized, beautiful maps.
+
+```bash
+npm install react-map-gl mapbox-gl
+```
+
+```jsx
+import Map from 'react-map-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+
+<Map
+  initialViewState={{ longitude: -73.5673, latitude: 45.5017, zoom: 13 }}
+  style={{ width: '100%', height: 400 }}
+  mapStyle="mapbox://styles/mapbox/streets-v11"
+  mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
+/>
+```
+
+---
+
+## Which should I pick?
+
+| | Leaflet | Google Maps | Mapbox |
+|---|---|---|---|
+| **Cost** | Free | Pay-as-you-go | Free tier available |
+| **API Key** | ❌ Not needed | ✅ Required | ✅ Required |
+| **Customization** | Medium | Medium | High |
+| **Ease of setup** | Easiest | Easy | Medium |
+
+**Leaflet** is the go-to for most projects. Go with **Google Maps** if you need Places/Directions APIs, or **Mapbox** for custom map styles.
+
+
+### ✏️ Modifications apportées par l'humain
+
+- J'ai opté pour l'option 1
+- J'ajouté les 2 premiers imports
+- J'ai seulement gardé la partie du MapContainer et le TileLayer
+- Modification du zoom (changé pour un zoom de 10)
+
+---
+
+### 🧠 Justification
+
+Je suis aller avec l'option 1 parce que c'était l'option utilisé dans l'énoncé et cette option d'utilise pas d'API donc elle est très simple à implémenter. J'ai gardé seulement les imports pour afficher la carte. J'avais seulement besoin des balise pour afficher la carte, donc j'ai garder le MapContainer et le TileLayer. L'exemple pointait sur Montréal comme je voulais, donc j'ai gardé les coordonnées. J'enlevé le marqueur, car je ne voulais pas l'afficher. J'ai modifié le zoom, car je trouvais qu'on voyais pas bien l'ile de Montréal.
+
+---
+
+## Tâche 11 — Reseau.jsx : Changement du comportement de la page sur petit écran {#tache-11}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx`.
+
+---
+
+### 💬 Prompt
+
+```
+Where in this code does it tell the navbar to use the hamburger on mobile?
+
+import { useState } from 'react';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Box,
+  Divider,
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { Link } from 'react-router-dom';
+
+const NAV_LINKS = [
+  { label: 'Accueil', path: '/' },
+  { label: 'Réseau', path: '/reseau' },
+  { label: 'Statistiques', path: '/statistiques' },
+  { label: "Points d'intérêt", path: '/points-interet' },
+  { label: 'Assistant', path: '/assistant' },
+  { label: 'À propos', path: '/a-propos' },
+];
+
+export default function Navbar({ activePage }) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const linkSx = (label) => ({
+    color: activePage === label ? 'primary.main' : 'grey.500',
+    mx: 0.5,
+    borderBottom: activePage === label ? '2px solid' : '2px solid transparent',
+    borderColor: activePage === label ? 'primary.main' : 'transparent',
+    borderRadius: 0,
+    '&:hover': {
+      backgroundColor: 'rgba(45,106,79,0.06)',
+      color: 'primary.main',
+      borderBottom: '2px solid',
+      borderColor: 'primary.main',
+    },
+  });
+
+  const drawer = (
+    <Box sx={{ width: 260 }} role="presentation">
+      <Box sx={{ p: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+          🚲 MTL Vélo
+        </Typography>
+      </Box>
+      <Divider />
+      <List>
+        {NAV_LINKS.map(({ label, path }) => (
+          <ListItem key={label} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={path}
+              selected={activePage === label}
+              onClick={() => setDrawerOpen(false)}
+              sx={{
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(45,106,79,0.12)',
+                  borderLeft: '3px solid',
+                  borderColor: 'primary.main',
+                },
+              }}
+            >
+              <ListItemText primary={label} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
+      <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Button variant="outlined" color="primary" fullWidth>
+          Connexion
+        </Button>
+        <Button variant="contained" color="primary" fullWidth>
+          Inscription
+        </Button>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <AppBar position="static" elevation={1} sx={{ backgroundColor: 'white' }}>
+      <Toolbar>
+        <Typography
+          variant="h6"
+          component={Link}
+          to="/"
+          sx={{
+            fontWeight: 700,
+            color: 'primary.main',
+            flexGrow: { xs: 1, md: 0 },
+            mr: { md: 4 },
+            textDecoration: 'none',
+          }}
+        >
+          🚲 MTL Vélo
+        </Typography>
+
+        {/* Desktop nav links */}
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, flexGrow: 1 }}>
+          {NAV_LINKS.map(({ label, path }) => (
+            <Button key={label} component={Link} to={path} sx={linkSx(label)}>
+              {label}
+            </Button>
+          ))}
+        </Box>
+
+        {/* Desktop auth buttons */}
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
+          <Button variant="outlined" color="primary">
+            Connexion
+          </Button>
+          <Button variant="contained" color="primary">
+            Inscription
+          </Button>
+        </Box>
+
+        {/* Mobile hamburger */}
+        <IconButton
+          edge="end"
+          onClick={() => setDrawerOpen(true)}
+          sx={{ display: { md: 'none' }, color: 'primary.main' }}
+          aria-label="Ouvrir le menu"
+        >
+          <MenuIcon />
+        </IconButton>
+      </Toolbar>
+
+      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+        {drawer}
+      </Drawer>
+    </AppBar>
+  );
+}
+
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur                          |
+|-------|---------------------------------|
+| **Outil** | ChatGPT                         |
+| **Modèle** | GPT-5.5                         |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+You only need to change this part:
+
+```jsx
+<Grid size={4} sx={{textAlign: 'left'}}>
+```
+
+to:
+
+```jsx
+<Grid
+  size={{ xs: 0, md: 4 }}
+  sx={{
+    textAlign: 'left',
+    display: { xs: 'none', md: 'block' },
+  }}
+>
+```
+
+That will:
+
+* hide the filters/sidebar on mobile
+* keep it visible on desktop
+* leave the map visible
+
+Then make the map take full width on mobile by changing:
+
+```jsx
+<Grid size={8}>
+```
+
+to:
+
+```jsx
+<Grid size={{ xs: 12, md: 8 }}>
+```
+
+So the final layout becomes:
+
+```jsx
+<Grid container spacing={2}>
+  
+  {/* Sidebar */}
+  <Grid
+    size={{ xs: 0, md: 4 }}
+    sx={{
+      textAlign: 'left',
+      display: { xs: 'none', md: 'block' },
+    }}
+  >
+    {/* filters */}
+  </Grid>
+
+  {/* Map */}
+  <Grid size={{ xs: 12, md: 8 }}>
+    <MapContainer
+      center={[45.5017, -73.5673]}
+      zoom={10}
+      style={{ height: '100%', width: '100%' }}
+    >
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution="© OpenStreetMap contributors"
+      />
+    </MapContainer>
+  </Grid>
+
+</Grid>
+```
+
+You may also want to give the map a fixed mobile height because `height: 100%` sometimes collapses on smaller screens.
+
+Example:
+
+```jsx
+<MapContainer
+  center={[45.5017, -73.5673]}
+  zoom={10}
+  style={{
+    height: '80vh',
+    width: '100%',
+  }}
+>
+```
+
+That usually works much better on phones.
+
+
+### ✏️ Modifications apportées par l'humain
+
+- J'ai seulement utilisé la partie  display: { xs: 'none', md: 'block' }
+
+---
+
+### 🧠 Justification
+
+Je ne comprenais pas comment notre menu Hamburger fonctionnait 
+donc j'ai demandé à l'IA. Il m'a expliqué que xs est le comportement 
+à avoir pour les petits écran et md pour les ordinateur de bureau. J'ai donc 
+utilisé cela pour dire à mon menu de filtre de ne pas occuper d'espace dans le grid
+quand on est en mobile et à la carte d'utiliser toute l'espace dans celle-ci.
+
+Pour le menu de filtre :
+```jsx
+<Grid size={{ xs: 0, md : 4 }} sx={{textAlign: 'left', display: { xs: 'none', md: 'block' }}}>
+```
+
+Pour la carte :
+```jsx
+ <Grid size={{ xs: 12, md : 8 }}>
+```
+
+---
+
+## Tâche 11 — Reseau.jsx : Chargement d'un fichier geojson {#tache-11}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx`.
+
+---
+
+### 💬 Prompt
+
+```
+
+
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur                          |
+|-------|---------------------------------|
+| **Outil** | ChatGPT                         |
+| **Modèle** | GPT-5.5                         |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+If by “display a GeoJSON file in the console with React” you literally mean logging and inspecting the data, the basic pattern is:
+
+```jsx
+import { useEffect, useState } from "react";
+
+export default function App() {
+  const [geojson, setGeojson] = useState(null);
+
+  useEffect(() => {
+    fetch("/data/map.geojson")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("GeoJSON data:", data);
+        setGeojson(data);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
+  return <div>Check the browser console</div>;
+}
+```
+
+Place your file like:
+
+```text
+public/
+  data/
+    map.geojson
+```
+
+Then open the browser DevTools console.
+
+---
+
+If you actually want to **render the GeoJSON on a map in React**, the most common approach is using [React Leaflet](https://react-leaflet.js.org/?utm_source=chatgpt.com) with [Leaflet](https://leafletjs.com/?utm_source=chatgpt.com).
+
+Example:
+
+```bash
+npm install react-leaflet leaflet
+```
+
+```jsx
+import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import { useEffect, useState } from "react";
+import "leaflet/dist/leaflet.css";
+
+export default function MapView() {
+  const [geoData, setGeoData] = useState(null);
+
+  useEffect(() => {
+    fetch("/data/map.geojson")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data);
+        setGeoData(data);
+      });
+  }, []);
+
+  return (
+    <MapContainer
+      center={[45.5017, -73.5673]}
+      zoom={10}
+      style={{ height: "100vh", width: "100%" }}
+    >
+      <TileLayer
+        attribution='&copy; OpenStreetMap contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+
+      {geoData && <GeoJSON data={geoData} />}
+    </MapContainer>
+  );
+}
+```
+
+That will:
+
+* load the `.geojson` file
+* print it in the browser console
+* render the features on the map
+
+Useful docs:
+
+* [GeoJSON specification](https://geojson.org/?utm_source=chatgpt.com)
+* [React Leaflet GeoJSON example](https://react-leaflet.js.org/docs/example-vector-layers/?utm_source=chatgpt.com)
+
+
+
+### ✏️ Modifications apportées par l'humain
+
+- J'ai seulement utilisé le premier bout de code
+- J'ai changé le nom de quelques variable
+- Je n'ai pas utilisé la partie HTML
+
+---
+
+### 🧠 Justification
+
+J'ai fais ce prompt, car je n'arrivais pas à importer le fichier geojson. 
+J'ai demandé à l'IA de m'indiquer comment l'afficher dans la console, car à partir
+de cela, je savais comment obtenir l'information que je voulais. J'ai seulement
+gardé la partie du fetch avec le useEffect, car c'est ce qui me permet d'accéder
+aux données. Une autre alternative était de changer l'extension du fichier pour JSON,
+mais ce n'était pas vraiment une option, car on aura besoin d'un fichier 
+GeoJson pour la carte plus tard. j'aurais pu aussi le charger comme une chaine de caractère, 
+mais ça aurait été très difficile de la traiter.
+
+[MISE À JOUR] 
+
+Après une discussion avec un collègue pour l'emplacement du fichier qui n'était pas cohérent avec les autres fichiers
+de donnée, je me suis rappeler de la méthode parse JSON. J'ai donc importé le fichier en chaine de caractère
+et ensuite j'ai transformé cette chaine em JSON. Cela permet de rester cohérent, de ne pas faire une requête
+pour rien et est beacoup plus commun en Web. Je n'ai donc pas utilisé ce que l'IA me proposait.
+
+
+
+
