@@ -288,13 +288,15 @@ Retourne uniquement le code source complet de Statistic.jsx.
 
 ### ✏️ Modifications apportées par l'humain
 
-- Aucune
+- Ajout de la logique d’ouverture du lien Google Maps lors du clic sur le bouton « Carte ».
 
 ---
 
 ### 🧠 Justification
 
-J'ai accepté la sortie sans modification. L'IA a fait un choix en utilisant une fonction d'extraction des données du CSV à la place de l'utilisation d'une dépendance. J'ai jugé que ce choix était correct pour la taille et la complexité des données.
+J'ai accepté la sortie de l'IA. L'IA a fait un choix en utilisant une fonction d'extraction des données du CSV à la place de l'utilisation d'une dépendance. J'ai jugé que ce choix était correct pour la taille et la complexité des données.
+
+J'ai ajouté la logique d'ouveture du lien Google Maps lors du clic sur le bouton « Carte ». J'avais oublié cette fonctionnalité lors de mon Prompt.
 
 En revanche, l'IA a détecté que le CSV réel ne contenait pas de colonne `arrondissement` et a adapté en conséquence. J'ai accepté, car la maquette demandée ne correspondait pas aux données disponibles. L'IA a pris une décision raisonnable sans bloquer.
 
