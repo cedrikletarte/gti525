@@ -1254,7 +1254,7 @@ Useful docs:
 
 - J'ai seulement utilisé le premier bout de code
 - J'ai changé le nom de quelques variable
-- Jen'ai pas utilisé la partie HTML
+- Je n'ai pas utilisé la partie HTML
 
 ---
 
@@ -1268,6 +1268,13 @@ aux données. Une autre alternative était de changer l'extension du fichier pou
 mais ce n'était pas vraiment une option, car on aura besoin d'un fichier 
 GeoJson pour la carte plus tard. j'aurais pu aussi le charger comme une chaine de caractère, 
 mais ça aurait été très difficile de la traiter.
+
+[MISE À JOUR] 
+
+Après une discussion avec un collègue pour l'emplacement du fichier qui n'était pas cohérent avec les autres fichiers
+de donnée, je me suis rappeler de la méthode parse JSON. J'ai donc importé le fichier en chaine de caractère
+et ensuite j'ai transformé cette chaine em JSON. Cela permet de rester cohérent, de ne pas faire une requête
+pour rien et est beacoup plus commun en Web. Je n'ai donc pas utilisé ce que l'IA me proposait.
 
 
 

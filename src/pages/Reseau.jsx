@@ -23,8 +23,11 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Navbar from '../components/Navbar';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import {useState, useEffect} from "react";
+import {useState} from "react";
 import csvRaw from '../data/territoires.csv?raw';
+import reseau_cyclable_raw from '../data/reseau_cyclable.geojson?raw';
+
+const reseau_cyclable_json = JSON.parse(reseau_cyclable_raw);
 
 function parseCSV(raw) {
     const lines = raw.split(/\r?\n/);
@@ -41,8 +44,9 @@ const territoires = parseCSV(csvRaw);
 
 function countCircuits(data) {
     if(data != null) {
-        return data.length
+        return data.length;
     }
+    return 0;
 }
 
 function sumCircuitDistance(data) {
@@ -64,25 +68,13 @@ function sumCircuitDistance(data) {
 
 export default function Reseau() {
     const [isExpanded, setIsExpanded] = useState(false);
-    const [arrondissment, setArrondissment] = useState('all');
+    const [arrondissement, setArrondissement] = useState('all');
 
     const handleChange = (event) => {
-        setArrondissment(event.target.value);
+        setArrondissement(event.target.value);
     };
 
-    const [reseauData, setReseauData] = useState(null);
-
-    useEffect(() => {
-        fetch("/data/reseau_cyclable.geojson")
-            .then((res) => res.json())
-            .then((data) => {
-                setReseauData(data.features);
-            })
-            .catch((err) => console.error(err));
-    }, []);
-
-
-
+    const [reseauData, setReseauData] = useState(reseau_cyclable_json.features);
 
 
     const filterMenu =
@@ -148,7 +140,7 @@ export default function Reseau() {
         <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', marginTop: 4, marginBottom: 1, width:"100%", textAlign: "left"}}>ARRONDISSEMENT</Typography>
 
         <FormControl  sx={{width:"100%"}}>
-            <Select value={arrondissment} sx={{textAlign: "left"}} onChange={handleChange} variant="outlined">
+            <Select value={arrondissement} sx={{textAlign: "left"}} onChange={handleChange} variant="outlined">
                 <MenuItem value="all">Tous</MenuItem>
                 {
                     territoires.map((item) => (
