@@ -58,7 +58,7 @@ function ActionsCell({ params }) {
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${Latitude},${Longitude}`;
   return (
     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
-      <Button variant="outlined" color="primary" size="small" href={mapsUrl}>
+      <Button variant="outlined" color="primary" size="small" href={mapsUrl} target="_blank" rel="noopener noreferrer">
         Carte
       </Button>
       <Button variant="contained" color="primary" size="small">
