@@ -4,6 +4,7 @@ import theme from './theme';
 import HomePage from './pages/HomePage';
 import Statistic from './pages/Statistic';
 import About from './pages/About';
+import Reseau from './pages/Reseau'
 import PointInteret from './pages/PointInteret';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/statistiques" element={<Statistic />} />
           <Route path="/points-interet" element={<PointInteret />} />
           <Route path="/a-propos" element={<About />} />
+          <Route path="/reseau" element={<Reseau />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

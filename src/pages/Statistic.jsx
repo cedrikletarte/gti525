@@ -52,10 +52,13 @@ function StatusBadge({ value }) {
   );
 }
 
-function ActionsCell() {
+function ActionsCell({ params }) {
+  const { Latitude, Longitude } = params.row;
+  if (!Latitude || !Longitude) return null;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${Latitude},${Longitude}`;
   return (
     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
-      <Button variant="outlined" color="primary" size="small">
+      <Button variant="outlined" color="primary" size="small" href={mapsUrl} target="_blank" rel="noopener noreferrer">
         Carte
       </Button>
       <Button variant="contained" color="primary" size="small">
@@ -106,7 +109,7 @@ const COLUMNS = [
     sortable: false,
     filterable: false,
     headerClassName: 'grid-header',
-    renderCell: () => <ActionsCell />,
+    renderCell: (params) => <ActionsCell params={params} />,
   },
 ];
 
