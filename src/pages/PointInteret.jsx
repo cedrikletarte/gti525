@@ -127,7 +127,7 @@ export default function PointInteret() {
       
       <Container maxWidth="lg" sx={{ flexGrow: 1, py: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
             Points d'intérêt cyclable
           </Typography>
           <Button variant="contained" color="primary" startIcon={<AddIcon />}>
