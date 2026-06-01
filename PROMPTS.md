@@ -21,8 +21,7 @@
 
 | [10](#tache-10) | Ajout d'une carte dans la page Reseau | 2026-05-20 |
 | [10](#tache-10) | Page "Point Interet" | 2026-05-21 |
-| [10](#tache-11) |Reseau.jsx : Chargement d'un fichier geojson | 2026-05-21 |
-Reseau.jsx : Changement du comportement de la page sur petit écran
+| [11](#tache-11) |Reseau.jsx : Chargement d'un fichier geojson | 2026-05-21 |
 
 | [12](#tache-12) | Assistant.jsx : Création de la page Assistant | 2026-06-01 |
 | [13](#tache-13) | Assistant.jsx : Retrait de l'historique | 2026-06-01 |
@@ -1430,8 +1429,5 @@ Enleve la section historique car cette partie n'est pas requis
 
 ### 🧠 Justification
 
-La suppression a été faite de façon nette et propre, et limiter la largeur de la fenêtre à `md` était une excellente initiative pour s'assurer que l'application reste visuellement agréable sans le menu d'historique.
-
-
-
+Il a fallu enlever une section historique dans la barre de conversation, car celle-ci n’était pas dans la mock UI fournie pour l’IA, donc ce n’était pas un livrable. 
 
