@@ -16,8 +16,16 @@
 | [05](#tache-05) | DataGrid — Table MUI → MUI X DataGrid | 2026-05-17 |
 | [06](#tache-06) | Layout — Alignement Typography "Compteurs vélo" à gauche | 2026-05-17 |
 | [07](#tache-07) | About.jsx — Page "À propos" + route /a-propos | 2026-05-17 |
+| [07](#tache-08) | Reseau.jsx : Icone de cercle | 2026-05-20 |
+| [07](#tache-09) | Allignement du texte des bouton à gauche | 2026-05-20 |
+
+| [10](#tache-10) | Ajout d'une carte dans la page Reseau | 2026-05-20 |
 | [10](#tache-10) | Page "Point Interet" | 2026-05-21 |
-| [10](#tache-11) | Correction Element Page "Point Interet" | 2026-05-21 |
+| [10](#tache-11) |Reseau.jsx : Chargement d'un fichier geojson | 2026-05-21 |
+Reseau.jsx : Changement du comportement de la page sur petit écran
+
+| [12](#tache-12) | Assistant.jsx : Création de la page Assistant | 2026-06-01 |
+| [13](#tache-13) | Assistant.jsx : Retrait de l'historique | 2026-06-01 |
 
   
 
@@ -597,7 +605,7 @@ Création d'un composant de base `PointInteret.jsx` avec un parseur CSV fait mai
 - J’ai accepté les modifications faites par l’IA, car celles-ci respectaient les besoins que j’avais spécifiés dans le prompt. J’ai également analysé le code généré par l’IA afin de m’assurer que l’implémentation n’était pas trop complexe et que nous pouvions bien comprendre le fonctionnement du filtrage par arrondissement.
 ---
 
-## Tâche 11: Ajustement aux maquettes UI et retrait des éléments non-sollicités (Phase 2 & 3)
+## Tâche 10: Ajustement aux maquettes UI et retrait des éléments non-sollicités (Phase 2 & 3)
 
 ### 💬 Prompt utilisé
 > "Il manque le bouton Nouveau point d’intérêt en haut à droite, et il manque la recherche par nom. L’arrangement du tableau devrait être : Type, Nom, Arrondissement, Intersection, Actions. Le bouton Actions est nommé Carte et ne contient pas d’icône. Il manque aussi le filtre par type à côté de Filtrer par arrondissement. Enfin, le type Fontaine devrait être affiché en bleu."
@@ -1329,6 +1337,100 @@ Après une discussion avec un collègue pour l'emplacement du fichier qui n'éta
 de donnée, je me suis rappeler de la méthode parse JSON. J'ai donc importé le fichier en chaine de caractère
 et ensuite j'ai transformé cette chaine em JSON. Cela permet de rester cohérent, de ne pas faire une requête
 pour rien et est beacoup plus commun en Web. Je n'ai donc pas utilisé ce que l'IA me proposait.
+
+---
+
+## Tâche 12 — Assistant.jsx : Création de la page Assistant {#tache-12}
+
+### 🗂 Contexte
+
+Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`. Le but est de créer la page de l'assistant de conversation.
+
+---
+
+### 💬 Prompt
+
+```
+Agis en tant que développeur front-end expert spécialisé , En utilisant la tech stack du projet MTL velo. Genere la page Assistant dans src/pages/Assistant.jsx. Utilise la mockUI src\UIMock\page_assistant.png pour te guider sur les composante UI. Genere du code qui est facile a faire une revue dessus
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | GitHub Copilot — VS Code |
+| **Modèle** | Gemini 3.1 Pro (Preview) |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+Création du composant `Assistant.jsx` dans `src/pages/` reproduisant la maquette :
+- Mise en page `display: flex` inspirée de la maquette avec un volet latéral Historique et une zone principale de Chat.
+- Utilisation des composants Material-UI (`Container`, `Paper`, `Box`, `Typography`). 
+- Ajout de quelques données "dummy" reproduisant celles de l'image.
+- Ajout de la route dans `src/App.jsx`.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune.
+
+---
+
+### 🧠 Justification
+
+La page générée correspondait à l'image fournie et à la stack MUI du projet. Le code respectait toutes les instructions, il était bien structuré et commenté.
+
+---
+
+## Tâche 13 — Assistant.jsx : Retrait de l'historique {#tache-13}
+
+### 🗂 Contexte
+
+La page Assistant générée possédait un volet avec l'historique de la conversation, or cette fonctionnalité n'était finalement pas requise.
+
+---
+
+### 💬 Prompt
+
+```
+Enleve la section historique car cette partie n'est pas requis 
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | GitHub Copilot — VS Code |
+| **Modèle** | Gemini 3.1 Pro (Preview) |
+| **Mode** | Édition ciblée |
+
+---
+
+### 📦 Sortie obtenue
+
+- Suppression de la barre latérale "Historique" dans `src/pages/Assistant.jsx`.
+- Modification de la largeur de la zone principale (`maxWidth="lg"` vers `maxWidth="md"`) pour que le chat ne s'étire pas de manière démesurée sur les grands écrans.
+- Suppression des données mockées `history` dans le code.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune.
+
+---
+
+### 🧠 Justification
+
+La suppression a été faite de façon nette et propre, et limiter la largeur de la fenêtre à `md` était une excellente initiative pour s'assurer que l'application reste visuellement agréable sans le menu d'historique.
 
 
 
