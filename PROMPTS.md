@@ -1194,8 +1194,7 @@ Pour la carte :
 ### 💬 Prompt
 
 ```
-
-
+How to display a geojson file in the console with react
 ```
 
 ---
