@@ -123,9 +123,10 @@ export default function Assistant() {
                     borderTopRightRadius: msg.sender === 'user' ? 0 : 16,
                     borderTopLeftRadius: msg.sender === 'bot' ? 0 : 16,
                     boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                    textAlign: 'left',
                   }}
                 >
-                  <Typography variant="body1">{msg.text}</Typography>
+                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>{msg.text}</Typography>
                   {msg.actionLabel && (
                     <Button
                       variant="outlined"
@@ -152,41 +153,52 @@ export default function Assistant() {
 
           {/* Formulaire de saisie - Input Area */}
           <Box sx={{ p: 2, borderTop: '1px solid #eee', bgcolor: 'white' }}>
-            <TextField
-              fullWidth
-              placeholder="Posez votre question sur MTL Vélo..."
-              variant="outlined"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 8,
-                  bgcolor: '#f4f6f8',
-                  '& fieldset': {
-                    borderColor: 'transparent',
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <TextField
+                fullWidth
+                multiline
+                minRows={1}
+                maxRows={4}
+                placeholder="Posez votre question sur MTL Vélo..."
+                variant="outlined"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                inputProps={{ maxLength: 1000 }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 4,
+                    bgcolor: '#f4f6f8',
+                    '& fieldset': {
+                      borderColor: 'transparent',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'primary.main',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: 'primary.main',
+                    }
                   },
-                  '&:hover fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
-                  }
-                },
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton 
-                      color="primary" 
-                      onClick={() => setInputText('')}
-                      disabled={!inputText.trim()}
-                    >
-                      <SendIcon />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+                }}
+              />
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={() => setInputText('')}
+                disabled={!inputText.trim()}
+                endIcon={<SendIcon />}
+                sx={{ height: 56, borderRadius: 4, px: 3, flexShrink: 0 }}
+              >
+                Envoyer
+              </Button>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, px: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                Les messages sont générés par l'IA et sont des suggestions basées sur les données disponibles.
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {inputText.length}/1000
+              </Typography>
+            </Box>
           </Box>
         </Paper>
       </Container>

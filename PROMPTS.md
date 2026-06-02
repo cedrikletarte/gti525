@@ -25,6 +25,7 @@
 
 | [12](#tache-12) | Assistant.jsx : Création de la page Assistant | 2026-06-01 |
 | [13](#tache-13) | Assistant.jsx : Retrait de l'historique | 2026-06-01 |
+| [14](#tache-14) | Assistant.jsx : Amélioration de la zone de saisie | 2026-06-01 |
 
   
 
@@ -1429,5 +1430,57 @@ Enleve la section historique car cette partie n'est pas requis
 
 ### 🧠 Justification
 
-Il a fallu enlever une section historique dans la barre de conversation, car celle-ci n’était pas dans la mock UI fournie pour l’IA, donc ce n’était pas un livrable. 
+Il a fallu enlever une section historique dans la barre de conversation, car celle-ci n’était pas dans la mock UI fournie pour l’IA, donc ce n’était pas un livrable.
+
+---
+
+## Tâche 14 — Assistant.jsx : Amélioration de la zone de saisie et bulles {#tache-14}
+
+### 🗂 Contexte
+
+La page de l'assistant nécessitait des améliorations pour l'expérience utilisateur et s'assurer que le contenu généré par l'IA était signalé à l'utilisateur.
+
+---
+
+### 💬 Prompt
+
+```
+Agis en tant que développeur front-end expert spécialisé , En utilisant la tech stack du projet MTL velo. Dans la page Assistant.jsx ajoute ces suggestions : - Alligner le texte des bulles à gauche au lieu de le centrer
+- Un bouton pour envoyer
+- Possibilité de faire des sauts de ligne dans le textArea
+- Avoir un nombre de caractère maximal et un compteur pour l'afficher près du textArea (ex 1/1000)
+- Avertissement que c'est du contenu généré par l'IA quelque part dans la page.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | GitHub Copilot — VS Code |
+| **Modèle** | Gemini 3.1 Pro (Preview) |
+| **Mode** | Édition ciblée |
+
+---
+
+### 📦 Sortie obtenue
+
+- Modification de l'alignement des bulles de texte pour un alignement à gauche (`textAlign: 'left'`).
+- Remplacement du simple `IconButton` par un bouton "Envoyer" clair à côté de la zone de saisie.
+- Modification du `TextField` pour qu'il soit multiligne (`multiline`, `minRows`, `maxRows`).
+- Ajout d'une limite de caractères (1000) et d'un compteur dynamique (`0/1000`).
+- Ajout d'un avertissement sur l'exactitude du contenu généré par l'IA sous le champ de saisie.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune.
+
+---
+
+### 🧠 Justification
+
+L'IA a implémenté toutes les suggestions demandées de manière efficace avec les propriétés Material-UI existantes (`multiline`, inputProps, etc.). Les ajouts respectent bien le design du projet. Le message de mise en garde et le compteur de caractères sont pertinents pour une interface de chat avec une IA. 
 
