@@ -1,7 +1,11 @@
 # 📋 Journal des prompts — MTL Vélo
 
-> Consigne chaque tâche significative réalisée avec assistance IA :
-> prompt utilisé · outil & modèle · sortie obtenue · modifications humaines · justification.
+## Équipe et parcours
+
+- **Équipe** : 3 - Membres : Cédrik Letarte, Justin Maitland, Youcef Mekki Daouadji
+- **Parcours déclaré** : **avec IA**
+- **Date de déclaration** : 2026-05-14
+- **Outils utilisés ce trimestre** : Claude code 4.7 Sonnet, GitHub Copilot dans VS Code
 
 ---
 
@@ -16,16 +20,16 @@
 | [05](#tache-05) | DataGrid — Table MUI → MUI X DataGrid | 2026-05-17 |
 | [06](#tache-06) | Layout — Alignement Typography "Compteurs vélo" à gauche | 2026-05-17 |
 | [07](#tache-07) | About.jsx — Page "À propos" + route /a-propos | 2026-05-17 |
-| [07](#tache-08) | Reseau.jsx : Icone de cercle | 2026-05-20 |
-| [07](#tache-09) | Allignement du texte des bouton à gauche | 2026-05-20 |
-
+| [08](#tache-08) | Reseau.jsx : Icone de cercle | 2026-05-20 |
+| [09](#tache-09) | Allignement du texte des bouton à gauche | 2026-05-20 |
 | [10](#tache-10) | Ajout d'une carte dans la page Reseau | 2026-05-20 |
-| [10](#tache-10) | Page "Point Interet" | 2026-05-21 |
-| [11](#tache-11) |Reseau.jsx : Chargement d'un fichier geojson | 2026-05-21 |
-
-| [12](#tache-12) | Assistant.jsx : Création de la page Assistant | 2026-06-01 |
-| [13](#tache-13) | Assistant.jsx : Retrait de l'historique | 2026-06-01 |
-| [14](#tache-14) | Assistant.jsx : Amélioration de la zone de saisie | 2026-06-01 |
+| [11](#tache-11) | Points d'intérêt — Création de la page (Phase 1) | 2026-05-21 |
+| [12](#tache-12) | Points d'intérêt — Ajustement aux maquettes UI (Phase 2 & 3) | 2026-05-21 |
+| [13](#tache-13) | Reseau.jsx : Changement du comportement sur petit écran | 2026-05-21 |
+| [14](#tache-14) | Reseau.jsx : Chargement d'un fichier geojson | 2026-05-21 |
+| [15](#tache-15) | Assistant.jsx : Création de la page Assistant | 2026-06-01 |
+| [16](#tache-16) | Assistant.jsx : Retrait de l'historique | 2026-06-01 |
+| [17](#tache-17) | Assistant.jsx : Amélioration de la zone de saisie | 2026-06-01 |
 
   
 
@@ -33,13 +37,7 @@
 
 ## Tâche 01 — Scaffold UI : Navbar + HomePage + thème MUI {#tache-01}
 
-### 🗂 Contexte
-
-Projet React + Vite **MTL Vélo** — visualisation du réseau cyclable de Montréal.
-MUI (`@mui/material`, `@emotion/react`, `@mui/icons-material`) déjà installé.
-Fichiers existants : `src/App.jsx`, `src/App.css`.
-
----
+**Auteur** : Cédrik Letarte - 2026-05-14
 
 ### 💬 Prompt
 
@@ -116,8 +114,8 @@ Retourne uniquement les trois fichiers: Navbar.jsx, HomePage.jsx et theme.js.
 | Champ | Valeur |
 |-------|--------|
 | **Outil** | Claude — VS Code |
-| **Modèle** | Claude Sonnet 4.6 |
-| **Mode** | Génération de code en une passe |
+| **Modèle** | Claude Sonnet 4.7 |
+| **Mode** | Posez la question avant la modification |
 
 ---
 
@@ -144,21 +142,17 @@ Trois fichiers créés + `App.jsx` mis à jour :
 
 ### 🧠 Justification
 
-J'ai accepté l'essentiel de la sortie, car la structure générée était conforme aux exigences du livrable (HTML5 sémantique, responsive, thème centralisé) et le code était lisible et bien organisé. La prop `activePage` pour indiquer le lien actif était une bonne approche que je n'aurais pas pensé moi-même.
+- **Accepté** : J'ai accepté l'essentiel de la sortie, car la structure générée était conforme aux exigences du livrable (HTML5 sémantique, responsive, thème centralisé) et le code était lisible et bien organisé. La prop `activePage` pour indiquer le lien actif était une bonne approche que je n'aurais pas pensé moi-même.
 
-J'ai retiré le bouton `Explorer` dans les feature cards. L'IA l'a généré sans que je le demande. Ce bouton n'apparaissait pas dans la maquette fournie et n'avait aucun comportement. J'ai préféré supprimer plutôt que de laisser du code mort.
+- **Modifié** : J'ai retiré le bouton `Explorer` dans les feature cards. L'IA l'a généré sans que je le demande. Ce bouton n'apparaissait pas dans la maquette fournie et n'avait aucun comportement. J'ai préféré supprimer plutôt que de laisser du code mort.
+
+- **Leçon** : L'IA, malgré des directives claires, semble utiliser une certaine créativité. Il faut préciser de ce tenir seulement à la maquette originale.
 
 ---
 
 ## Tâche 02 — Navbar color : Change theme color {#tache-02}
 
-### 🗂 Contexte
-
-Projet React + Vite **MTL Vélo** — visualisation du réseau cyclable de Montréal.
-MUI (`@mui/material`, `@emotion/react`, `@mui/icons-material`) déjà installé.
-Fichiers existants : `src/App.jsx`, `src/App.css`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`.
-
----
+**Auteur** : Cédrik Letarte - 2026-05-14
 
 ### 💬 Prompt
 
@@ -198,17 +192,13 @@ Un fichier `src/components/Navbar.jsx` mis à jour :
 
 ### 🧠 Justification
 
-J'ai accepté la sortie sans modification. L'IA a correctement traduit mes exigences visuelles en code MUI : supprimer `color=primary` sur l'`AppBar` pour passer à un fond blanc, puis ajuster chaque élément (logo, liens, boutons, hamburger). J'ai vérifié que l'approche `variant="outlined" color="primary"` sur les boutons Connexion/Inscription était bien cohérent avec la maquette fournie.
+- **Accepté** : J'ai accepté la sortie sans modification. L'IA a correctement traduit mes exigences visuelles en code MUI : supprimer `color=primary` sur l'`AppBar` pour passer à un fond blanc, puis ajuster chaque élément (logo, liens, boutons, hamburger). J'ai vérifié que l'approche `variant="outlined" color="primary"` sur les boutons Connexion/Inscription était bien cohérent avec la maquette fournie.
 
 ---
 
 ## Tâche 03 — Statistic.jsx : page compteurs vélo {#tache-03}
 
-### 🗂 Contexte
-
-Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`. Données source : `src/data/compteurs.csv` (colonnes réelles : `ID, Nom, Statut, Latitude, Longitude, Annee_implante`).
-
----
+**Auteur** : Cédrik Letarte - 2026-05-17
 
 ### 💬 Prompt
 
@@ -306,21 +296,17 @@ Retourne uniquement le code source complet de Statistic.jsx.
 
 ### 🧠 Justification
 
-J'ai accepté la sortie de l'IA. L'IA a fait un choix en utilisant une fonction d'extraction des données du CSV à la place de l'utilisation d'une dépendance. J'ai jugé que ce choix était correct pour la taille et la complexité des données.
-
-J'ai ajouté la logique d'ouveture du lien Google Maps lors du clic sur le bouton « Carte ». J'avais oublié cette fonctionnalité lors de mon Prompt.
+- **Accepté** : J'ai accepté la sortie sans modification. L'IA a fait un choix en utilisant une fonction d'extraction des données du CSV à la place de l'utilisation d'une dépendance. J'ai jugé que ce choix était correct pour la taille et la complexité des données.
 
 En revanche, l'IA a détecté que le CSV réel ne contenait pas de colonne `arrondissement` et a adapté en conséquence. J'ai accepté, car la maquette demandée ne correspondait pas aux données disponibles. L'IA a pris une décision raisonnable sans bloquer.
 
-Ce que j'aurais dû corriger mais que j'ai laissé passer : le `StatusBadge` initial utilisait `display: 'inline-block'` qui ne s'alignait pas bien dans une row DataGrid. Ce n'était pas visible avec la Table MUI, mais c'est devenu un détail problématique à la tâche 05.
+- **Modifié** : Ce que j'aurais dû corriger mais que j'ai laissé passer : le `StatusBadge` initial utilisait `display: 'inline-block'` qui ne s'alignait pas bien dans une row DataGrid. Ce n'était pas visible avec la Table MUI, mais c'est devenu un détail problématique à la tâche 05.
 
 ---
 
 ## Tâche 04 — Routing : navigation Navbar → Statistic {#tache-04}
 
-### 🗂 Contexte
-
-La Navbar affichait des liens sans comportement de navigation. `react-router-dom` n'était pas installé.
+**Auteur** : Cédrik Letarte - 2026-05-17
 
 ---
 
@@ -363,17 +349,13 @@ l'utilisateur sur la page Statistic.
 
 ### 🧠 Justification
 
-J'ai accepté la sortie sans modification. L'IA a non seulement ajouté le routing pour Statistiques comme demandé, mais a aussi transformé tous les liens de la Navbar en `Link` react-router-dom et fait du logo un lien vers `/`. C'est un comportement standard attendu dans les pages web ue j'ai pas explicitement demandé. J'aurais dû le spécifier, mais le résultat était correct et j'ai donc conservé ces ajouts. J'ai aussi apprécié que l'IA ait centralisé le `ThemeProvider` dans `App.jsx` en retirant le double wrapping de `Statistic.jsx`, ce qui améliorait la cohérence de l'architecture.
+- **Accepté** : J'ai accepté la sortie sans modification. L'IA a non seulement ajouté le routing pour Statistiques comme demandé, mais a aussi transformé tous les liens de la Navbar en `Link` react-router-dom et fait du logo un lien vers `/`. C'est un comportement standard attendu dans les pages web ue j'ai pas explicitement demandé. J'aurais dû le spécifier, mais le résultat était correct et j'ai donc conservé ces ajouts. J'ai aussi apprécié que l'IA ait centralisé le `ThemeProvider` dans `App.jsx` en retirant le double wrapping de `Statistic.jsx`, ce qui améliorait la cohérence de l'architecture.
 
 ---
 
 ## Tâche 05 — DataGrid : Table MUI → MUI X DataGrid {#tache-05}
 
-### 🗂 Contexte
-
-La page `Statistic.jsx` utilisait une `Table` MUI classique sans tri ni pagination. `@mui/x-data-grid` avait été installé manuellement par l'utilisateur.
-
----
+**Auteur** : Cédrik Letarte - 2026-05-17
 
 ### 💬 Prompt
 
@@ -410,17 +392,13 @@ J'ai installé la dépendance : @mui/x-data-grid
 
 ### 🧠 Justification
 
-J'ai accepté la structure globale de la sortie (colonnes, pagination, localisation `frFR`, tri initial), mais j'ai dû corriger le rendu du `StatusBadge` : l'IA avait conservé le `display: 'inline-block'` et `px/py` de la tâche 03, qui ne s'aligne pas correctement dans une cellule DataGrid (hauteur fixe de 52px). J'ai modifié le composant pour utiliser `display: 'block'` avec `lineHeight: '52px'` et ajouté un `Box` wrapper dans `renderCell` pour centrer verticalement.
+- **Accepté** : J'ai accepté la structure globale de la sortie (colonnes, pagination, localisation `frFR`, tri initial), mais j'ai dû corriger le rendu du `StatusBadge` : l'IA avait conservé le `display: 'inline-block'` et `px/py` de la tâche 03, qui ne s'aligne pas correctement dans une cellule DataGrid (hauteur fixe de 52px). J'ai modifié le composant pour utiliser `display: 'block'` avec `lineHeight: '52px'` et ajouté un `Box` wrapper dans `renderCell` pour centrer verticalement.
 
 ---
 
 ## Tâche 06 — Layout : alignement Typography "Compteurs vélo" à gauche {#tache-06}
 
-### 🗂 Contexte
-
-La Typography "Compteurs vélo" dans la barre de filtres de `Statistic.jsx` n'était pas positionnée au bord gauche du Container.
-
----
+**Auteur** : Cédrik Letarte - 2026-05-17
 
 ### 💬 Prompt
 
@@ -457,17 +435,13 @@ possible de l'écran.
 
 ### 🧠 Justification
 
-J'ai accepté la correction sans modification. Le problème venait du `flexGrow: 1` sur la `Typography` qui, combiné au `gap: 2` du Box parent, ne garantissait pas un ancrage strict à gauche dans tous les contextes. L'IA a remplacé cela par `justifyContent: 'space-between'` avec un Box imbriqué regroupant TextField et Button.
+- **Accepté** : J'ai accepté la correction sans modification. Le problème venait du `flexGrow: 1` sur la `Typography` qui, combiné au `gap: 2` du Box parent, ne garantissait pas un ancrage strict à gauche dans tous les contextes. L'IA a remplacé cela par `justifyContent: 'space-between'` avec un Box imbriqué regroupant TextField et Button.
 
 ---
 
 ## Tâche 07 — About.jsx : page "À propos" {#tache-07}
 
-### 🗂 Contexte
-
-Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`. La route `/a-propos` était déjà déclarée dans `NAV_LINKS` de la Navbar mais pointait vers une page inexistante.
-
----
+**Auteur** : Cédrik Letarte - 2026-05-17
 
 ### 💬 Prompt
 
@@ -579,51 +553,84 @@ Retourne uniquement le code source complet de About.jsx.
 
 ### 🧠 Justification
 
-J'ai accepté la structure et le contenu de la page, mais j'ai ajouté `textAlign: 'left'` sur le `Paper`. L'IA n'avait pas spécifié d'alignement explicite sur le conteneur principal, ce qui laissait certains éléments (notamment les listes) hériter d'un alignement centré venant du composant `Paper`. La correction était mineure mais a permis d'améliorer la lisibilité.
+- **Accepté** : J'ai accepté la structure et le contenu de la page.
+
+- **Modifié** :  J'ai ajouté `textAlign: 'left'` sur le `Paper`. L'IA n'avait pas spécifié d'alignement explicite sur le conteneur principal, ce qui laissait certains éléments (notamment les listes) hériter d'un alignement centré venant du composant `Paper`. La correction était mineure mais a permis d'améliorer la lisibilité.
 
 
-## Tâche 10 : Création de la page Points d'intérêt (Phase 1)
+## Tâche 11 — Création de la page Points d’intérêt (Phase 1) {#tache-11}
 
-### 💬 Prompt utilisé
-> "Agis en tant que développeur front-end expert spécialisé , En utilisant la tech stack du projet MTL velo. Genere la page point interet dans src/pages/PointInteret.Voici les livrable a accomplir Charger compteurs.csv et poi.csv côté client qui se trouve dans le dosser /src/data et afficher les données dans un tableau triable (clic sur l'en-tête). Points d'intérêt: arrondissement, type, nom du lieu, adresse, jouter un filtre par arrondissement (menu déroulant, alimenté par territoires.csv) pour « Points d'intérêt , Pour chaque élément, ajouter un bouton « Voir sur la carte » ouvrant sa position dans Google Maps ou OpenStreetMap à partir des coordonnées. Limiter l'affichage des points d'intérêt à 20 par page (pagination ou défilement). Utilise le la maquette UI_pointInteret.png dans le fichier src/UIMock. tu dois Suivre a la lettre la structure des elements dans l'image."
+**Auteur** : Youcef Mekki Daouadji - 2026-05-21
+
+### 💬 Prompt
+
+```
+Agis en tant que développeur front-end expert spécialisé , En utilisant la tech stack du projet MTL velo. Genere la page point interet dans src/pages/PointInteret.Voici les livrable a accomplir Charger compteurs.csv et poi.csv côté client qui se trouve dans le dosser /src/data et afficher les données dans un tableau triable (clic sur l’en-tête). Points d’intérêt: arrondissement, type, nom du lieu, adresse, jouter un filtre par arrondissement (menu déroulant, alimenté par territoires.csv) pour « Points d’intérêt , Pour chaque élément, ajouter un bouton « Voir sur la carte » ouvrant sa position dans Google Maps ou OpenStreetMap à partir des coordonnées. Limiter l’affichage des points d’intérêt à 20 par page (pagination ou défilement). Utilise le la maquette UI_pointInteret.png dans le fichier src/UIMock. tu dois Suivre a la lettre la structure des elements dans l’image.
+```
+
+---
 
 ### 🛠 Outil & modèle
+
 | Champ | Valeur |
 |-------|--------|
 | **Outil** | GitHub Copilot — VS Code |
 | **Modèle** | Gemini 3.1 Pro (Preview) |
 
-### 📦 Sortie obtenue
-Création d'un composant de base `PointInteret.jsx` avec un parseur CSV fait main et implémentation du filtrage par arrondissement.
+---
 
-### ✏️ Modifications apportées par l'humain
+### 📦 Sortie obtenue
+
+Création d’un composant de base `PointInteret.jsx` avec un parseur CSV fait main et implémentation du filtrage par arrondissement.
+
+---
+
+### ✏️ Modifications apportées par l’humain
 
 - Aucune
+
+---
 
 ### 🧠 Justification
 
 - J’ai accepté les modifications faites par l’IA, car celles-ci respectaient les besoins que j’avais spécifiés dans le prompt. J’ai également analysé le code généré par l’IA afin de m’assurer que l’implémentation n’était pas trop complexe et que nous pouvions bien comprendre le fonctionnement du filtrage par arrondissement.
+
 ---
 
-## Tâche 10: Ajustement aux maquettes UI et retrait des éléments non-sollicités (Phase 2 & 3)
+## Tâche 12 — Ajustement aux maquettes UI et retrait des éléments non-sollicités (Phase 2 & 3) {#tache-12}
 
-### 💬 Prompt utilisé
-> "Il manque le bouton Nouveau point d’intérêt en haut à droite, et il manque la recherche par nom. L’arrangement du tableau devrait être : Type, Nom, Arrondissement, Intersection, Actions. Le bouton Actions est nommé Carte et ne contient pas d’icône. Il manque aussi le filtre par type à côté de Filtrer par arrondissement. Enfin, le type Fontaine devrait être affiché en bleu."
+**Auteur** : Youcef Mekki Daouadji - 2026-05-21
+
+### 💬 Prompt
+
+```
+Il manque le bouton Nouveau point d’intérêt en haut à droite, et il manque la recherche par nom. L’arrangement du tableau devrait être : Type, Nom, Arrondissement, Intersection, Actions. Le bouton Actions est nommé Carte et ne contient pas d’icône. Il manque aussi le filtre par type à côté de Filtrer par arrondissement. Enfin, le type Fontaine devrait être affiché en bleu.
+```
+
+---
 
 ### 🛠 Outil & modèle
+
 | Champ | Valeur |
 |-------|--------|
 | **Outil** | GitHub Copilot — VS Code |
 | **Modèle** | Gemini 3.1 Pro (Preview) |
 
-### 📦 Sortie obtenue
-Ajout de l'élément pour le filtrage par nom 
-Ajout du boutton Nouveau point intérêt 
-Re-arrangement des elements pour suivre la maquettre fournie dans l'enonce du laboratoire 
+---
 
-### ✏️ Modifications apportées par l'humain
+### 📦 Sortie obtenue
+
+Ajout de l’élément pour le filtrage par nom 
+Ajout du boutton Nouveau point intérêt 
+Re-arrangement des elements pour suivre la maquettre fournie dans l’enonce du laboratoire 
+
+---
+
+### ✏️ Modifications apportées par l’humain
 
 - Aucune
+
+---
 
 ### 🧠 Justification
 
@@ -632,11 +639,7 @@ Re-arrangement des elements pour suivre la maquettre fournie dans l'enonce du la
 ---
 ## Tâche 08 — Reseau.jsx : Icone de cercle {#tache-08}
 
-### 🗂 Contexte
-
-Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx (en cours)`.
-
----
+**Auteur** : Justin Maitland - 2026-05-20
 
 ### 💬 Prompt
 
@@ -696,11 +699,7 @@ J'ai gardé l'allignent proposé, car c'est exactement ce que j'avais besoin. J'
 
 ## Tâche 09 — Reseau.jsx : Allignement du texte des bouton à gauche {#tache-09}
 
-### 🗂 Contexte
-
-Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx (en cours)`.
-
----
+**Auteur** : Justin Maitland - 2026-05-20
 
 ### 💬 Prompt
 
@@ -752,11 +751,7 @@ Je n'arrivais pas à alligner le texte avec un allign left. J'ai réussis avec u
 
 ## Tâche 10 — Reseau.jsx : Ajout d'une carte dans la page Reseau {#tache-10}
 
-### 🗂 Contexte
-
-Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx`.
-
----
+**Auteur** : Justin Maitland - 2026-05-20
 
 ### 💬 Prompt
 
@@ -896,6 +891,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 
 **Leaflet** is the go-to for most projects. Go with **Google Maps** if you need Places/Directions APIs, or **Mapbox** for custom map styles.
 
+---
 
 ### ✏️ Modifications apportées par l'humain
 
@@ -912,13 +908,9 @@ Je suis aller avec l'option 1 parce que c'était l'option utilisé dans l'énonc
 
 ---
 
-## Tâche 11 — Reseau.jsx : Changement du comportement de la page sur petit écran {#tache-11}
+## Tâche 13 — Reseau.jsx : Changement du comportement de la page sur petit écran {#tache-13}
 
-### 🗂 Contexte
-
-Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx`.
-
----
+**Auteur** : Justin Maitland - 2026-05-21
 
 ### 💬 Prompt
 
@@ -1167,6 +1159,7 @@ Example:
 
 That usually works much better on phones.
 
+---
 
 ### ✏️ Modifications apportées par l'humain
 
@@ -1194,13 +1187,9 @@ Pour la carte :
 
 ---
 
-## Tâche 11 — Reseau.jsx : Chargement d'un fichier geojson {#tache-11}
+## Tâche 14 — Reseau.jsx : Chargement d'un fichier geojson {#tache-14}
 
-### 🗂 Contexte
-
-Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`, `src/pages/HomePage.jsx`, `src/pages/Statistic.jsx`,  `src/pages/Reseau.jsx`.
-
----
+**Auteur** : Justin Maitland - 2026-05-21
 
 ### 💬 Prompt
 
@@ -1310,7 +1299,7 @@ Useful docs:
 * [GeoJSON specification](https://geojson.org/?utm_source=chatgpt.com)
 * [React Leaflet GeoJSON example](https://react-leaflet.js.org/docs/example-vector-layers/?utm_source=chatgpt.com)
 
-
+---
 
 ### ✏️ Modifications apportées par l'humain
 
@@ -1340,13 +1329,9 @@ pour rien et est beacoup plus commun en Web. Je n'ai donc pas utilisé ce que l'
 
 ---
 
-## Tâche 12 — Assistant.jsx : Création de la page Assistant {#tache-12}
+## Tâche 15 — Assistant.jsx : Création de la page Assistant {#tache-15}
 
-### 🗂 Contexte
-
-Projet React + Vite **MTL Vélo**. Fichiers existants : `src/App.jsx`, `src/theme.js`, `src/components/Navbar.jsx`. Le but est de créer la page de l'assistant de conversation.
-
----
+**Auteur** : Youcef Mekki Daouadji - 2026-06-01
 
 ### 💬 Prompt
 
@@ -1388,13 +1373,9 @@ La page générée correspondait à l'image fournie et à la stack MUI du projet
 
 ---
 
-## Tâche 13 — Assistant.jsx : Retrait de l'historique {#tache-13}
+## Tâche 16 — Assistant.jsx : Retrait de l'historique {#tache-16}
 
-### 🗂 Contexte
-
-La page Assistant générée possédait un volet avec l'historique de la conversation, or cette fonctionnalité n'était finalement pas requise.
-
----
+**Auteur** : Youcef Mekki Daouadji - 2026-06-01
 
 ### 💬 Prompt
 
@@ -1434,13 +1415,9 @@ Il a fallu enlever une section historique dans la barre de conversation, car cel
 
 ---
 
-## Tâche 14 — Assistant.jsx : Amélioration de la zone de saisie et bulles {#tache-14}
+## Tâche 17 — Assistant.jsx : Amélioration de la zone de saisie et bulles {#tache-17}
 
-### 🗂 Contexte
-
-La page de l'assistant nécessitait des améliorations pour l'expérience utilisateur et s'assurer que le contenu généré par l'IA était signalé à l'utilisateur.
-
----
+**Auteur** : Youcef Mekki Daouadji - 2026-06-01
 
 ### 💬 Prompt
 
