@@ -581,9 +581,11 @@ Agis en tant que développeur front-end expert spécialisé , En utilisant la te
 
 ### 📦 Sortie obtenue
 
-Création d’un composant de base `PointInteret.jsx` avec un parseur CSV fait main et implémentation du filtrage par arrondissement.
+- Création du composant `PointInteret.jsx` dans `src/pages/` reproduisant la structure de la maquette `UI_pointInteret.png` :
+- Import et parsing côté client de `poi.csv` et `territoires.csv` via Vite avec des parser (`parseCSV`, `csvToObjects`).
+- Création de la zone tableau (`DataGrid`) avec les différentes colonnes.
+- Creation de l'élément UI pour le filtrage d'arrondissement 
 
----
 
 ### ✏️ Modifications apportées par l’humain
 
@@ -593,7 +595,20 @@ Création d’un composant de base `PointInteret.jsx` avec un parseur CSV fait m
 
 ### 🧠 Justification
 
-- J’ai accepté les modifications faites par l’IA, car celles-ci respectaient les besoins que j’avais spécifiés dans le prompt. J’ai également analysé le code généré par l’IA afin de m’assurer que l’implémentation n’était pas trop complexe et que nous pouvions bien comprendre le fonctionnement du filtrage par arrondissement.
+**Accepté** : J’ai accepté les modifications apportées par l’IA, car elles répondaient aux besoins que j’avais spécifiés dans le prompt.
+
+J’ai accepté le filtrage par arrondissement, puisque l’utilisation d’un `useMemo()` qui parcourt l’ensemble des fontaines et conserve uniquement celles correspondant à l’arrondissement sélectionné constitue une solution simple, claire et efficace.
+
+J’ai également accepté l’ajout des fonctions `parseCSV` et `csvToObjects`, car elles sont nécessaires pour lire les fichiers `.csv` et en extraire les informations requises.
+
+Le tableau `DataGrid` contient les bonnes informations et affiche correctement les données demandées.
+
+**Rejeté** : L’ordre des colonnes du tableau `DataGrid` ne correspondait pas à celui attendu.
+
+**Leçon apprise** : Il est préférable de fournir le plus d’informations possible sous forme de texte dans le prompt. Bien que l’IA soit généralement performante pour interpréter des images, elle comprend mieux les exigences lorsqu’elles sont décrites explicitement en texte.
+
+J’ai également constaté que lorsqu’un trop grand nombre d’exigences est inclus dans un seul prompt, l’IA ne génère pas nécessairement tous les éléments demandés. Il peut donc être avantageux de diviser les demandes complexes en plusieurs prompts plus ciblés.
+
 
 ---
 
@@ -620,9 +635,13 @@ Il manque le bouton Nouveau point d’intérêt en haut à droite, et il manque 
 
 ### 📦 Sortie obtenue
 
-Ajout de l’élément pour le filtrage par nom 
-Ajout du boutton Nouveau point intérêt 
-Re-arrangement des elements pour suivre la maquettre fournie dans l’enonce du laboratoire 
+- Ajout de l’élément UI (barre de rechrche ) pour le filtrage par nom.
+- Ajout du boutton Nouveau point intérêt.
+- Modification du boutton en changeant le texte et enlevant l’icône.
+- Ajout du Filtre par type a côté du filtre du filtre arrondissement.
+- Re-arrangement des éléments pour suivre la maquette fournie dans l’énonce du laboratoire.  
+- Type « Fontaine » affiché en puce bleue (`Chip`).
+
 
 ---
 
@@ -634,7 +653,12 @@ Re-arrangement des elements pour suivre la maquettre fournie dans l’enonce du 
 
 ### 🧠 Justification
 
-- Justification : J’ai accepté les modifications, car elles répondaient au besoin de correction décrit dans le prompt.
+**Accepté** : 
+- J’ai accepté l’ajout du bouton « Nouveau point d'intérêt » en haut à droite, car il correspond à la structure de UI_pointInteret.png celui-ci etant simplement un `Chip`
+- J’ai accepté l’affichage du type « Fontaine » en puce bleue (Chip), car la consigne visuelle du prompt est respectée et améliore la lisibilité du tableau sans alourdir le code.
+- J’ai accepté l’ajout de la barre de recherche par nom. La liaison du TextField à searchName et son intégration dans filteredData permettent de retrouver rapidement un lieu parmi toutes les fontaines, en complément du filtre par arrondissement.
+- J’ai accepté le réarrangement des colonnes du tableau (Type, Nom, Arrondissement, Intersection, Actions), car il corrige le problème signalé en tâche 11 et respecte l’ordre demandé dans le prompt et la maquette.
+
 
 ---
 ## Tâche 08 — Reseau.jsx : Icone de cercle {#tache-08}
@@ -1368,7 +1392,15 @@ Création du composant `Assistant.jsx` dans `src/pages/` reproduisant la maquett
 
 ### 🧠 Justification
 
-La page générée correspondait à l'image fournie et à la stack MUI du projet. Le code respectait toutes les instructions, il était bien structuré et commenté.
+
+**Accepté** : La page générée correspondait à l'image fournie et à la stack MUI du projet. Le code respectait toutes les instructions, il était bien structuré et commenté.L'utilsation des composants MUI pour la generation de l'UI pour avoir une uniformité dans tous le projet. 
+
+**Rejeté**  : La section Historique n’était pas dans la mock UI. 
+
+**Leçon** : Préciser « seulement ce qui est sur la maquette » pour limiter les ajouts inventés par l’IA et ne pas utiliser des mots comme guide toi mais plustot des instruction d'execution
+
+### Hallucinations rencontrées 
+L'IA a generer une section non demande qui etait la section historique dans la page assistant pour permettre de de voir l'historique des messages. 
 
 ---
 
@@ -1379,7 +1411,7 @@ La page générée correspondait à l'image fournie et à la stack MUI du projet
 ### 💬 Prompt
 
 ```
-Enleve la section historique car cette partie n'est pas requis 
+Enleve la section historique car cette partie n'est pas requis. 
 ```
 
 ---
@@ -1410,18 +1442,26 @@ Enleve la section historique car cette partie n'est pas requis
 
 ### 🧠 Justification
 
-Il a fallu enlever une section historique dans la barre de conversation, car celle-ci n’était pas dans la mock UI fournie pour l’IA, donc ce n’était pas un livrable.
+**Accepté** : Il a fallu retirer la section d’historique dans la barre de conversation, puisqu’elle ne figurait pas dans la maquette (mock UI) fournie à l’IA et ne faisait donc pas partie des livrables attendus.
+
+L’IA a supprimé la composante UI correspondant à la zone latérale de gauche dédiée à l’historique des conversations.
+
+J’ai également accepté la modification de la largeur de la fenêtre de chat afin qu’elle s’adapte mieux aux différents types d’écrans grâce à l’utilisation de `maxWidth="md"`.
+
+La suppression des messages fictifs (mock) liés à l’historique constitue une bonne amélioration de la clarté de l’interface et permet d’éliminer du code non utilisé.
+
 
 ---
 
-## Tâche 17 — Assistant.jsx : Amélioration de la zone de saisie et bulles {#tache-17}
+## Tâche 17 — Assistant.jsx : Amélioration de la zone de saisie et bulles {#tache-17} 
 
 **Auteur** : Youcef Mekki Daouadji - 2026-06-01
 
 ### 💬 Prompt
 
 ```
-Agis en tant que développeur front-end expert spécialisé , En utilisant la tech stack du projet MTL velo. Dans la page Assistant.jsx ajoute ces suggestions : - Alligner le texte des bulles à gauche au lieu de le centrer
+Agis en tant que développeur front-end expert spécialisé , En utilisant la tech stack du projet MTL velo. Dans la page Assistant.jsx ajoute ces suggestions : 
+- Alligner le texte des bulles à gauche au lieu de le centrer
 - Un bouton pour envoyer
 - Possibilité de faire des sauts de ligne dans le textArea
 - Avoir un nombre de caractère maximal et un compteur pour l'afficher près du textArea (ex 1/1000)
@@ -1458,5 +1498,14 @@ Agis en tant que développeur front-end expert spécialisé , En utilisant la te
 
 ### 🧠 Justification
 
-L'IA a implémenté toutes les suggestions demandées de manière efficace avec les propriétés Material-UI existantes (`multiline`, inputProps, etc.). Les ajouts respectent bien le design du projet. Le message de mise en garde et le compteur de caractères sont pertinents pour une interface de chat avec une IA. 
+**Accepté** : L'IA a implémenté toutes les suggestions demandées de manière efficace en utilisant les propriétés Material-UI existantes.Les ajouts respectent bien le design du projet.
+
+L'ajout d'un message de mise en garde via un composant `Typography` est une manière très simple d'informer l'utilisateur qu'il interagit avec une IA.
+
+Le compteur de caractères est pertinent pour une interface de chat avec une IA comportant une limite de caractères.
+
+L'ajout d'un bouton permet d'indiquer clairement à l'utilisateur qu'il doit cliquer dessus plutôt que d'utiliser la touche Entrée du clavier.
+
+
+
 
