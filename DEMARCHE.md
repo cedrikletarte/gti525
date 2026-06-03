@@ -86,16 +86,19 @@
 
 **Auteur** : Justin Maitland - 2026-05-26
 
+
 **Sources consultées** :
 - MUI, *React Grid* - https://mui.com/material-ui/react-grid/
 
 **Justification** :
 
-Pour débuter cette page, j'ai analyser la page d'accueil (HomePage.jsx) pour me rappeler un peu comment faire du React et comment fonctione MUI. J'ajouté les même imports, le même container, la barre de navigation ansi que le footer. J'ai aussi ajouter la page Reseau à la liste de route qui existait déjà pour notre router. 
+Pour débuter cette page, j'ai analyser la page d'accueil (HomePage.jsx) pour me rappeler un peu comment faire du React et comment fonctione MUI. J'ajouté les même imports, le même container, la barre de navigation ainsi que le footer. J'ai aussi ajouter la page Reseau à la liste de route qui existait déjà pour notre router. 
 
 Ensuite j'ai consulté cette page pour savoir comment fonctionne les Grid :  https://mui.com/material-ui/react-grid/ 
 
 Une fois que j'ai réussis à placer les sections comme voulu (carte à droite et filtre à gauche), je me suis lancer sur les filtres.
+
+Une alternative aurait été d'utiliser le display grid en CSS sur des box, mais selon moi c'était plus cohérent et plus simple d'utiliser les grid de MUI.
 
 ---
 
@@ -123,6 +126,8 @@ Date Picker : https://mui.com/x/react-date-pickers/date-picker/
 
 J'ai pu remarquer que les formulaires sont créer avec un FormGroup ainsi que des FormControl et des FormControlLabel. Pour le DatePicker, il y avait des dépendance de plus que j'ai du télécharger avec npm : @mui/x-date-pickers et dayjs. J'ai trouvé qu'il fallait ces dépendances, car j'avais une erreur dans la console sans un dateAdapter. J'ai donc analysé les dépendances de la documentation et réalisé qu'il me le manquais. Le reste du travail pour cette section était beacoup d'ajustement de marge, de taille et de couleur pour les différents éléments.
 
+Une alternative aurait été d'utiliser les balises classique disponible en HTML, mais les éléments offert par MUI venait avec une belle apparence dès le départ ainsi que des props utile. Je jugeais également que c'était plus cohérent. Si on voudrait plus tard des éléments plus personnaliser, on pourrait partir d'élément HTML de base et les modifier à souhait, mais pour l'instant ceux-ci font très bien l'affaire.
+
 Pour alligner mes DatePicker à l'horizontal, j'ai consulté cette page pour me rappeler comment faire :
 https://www.w3schools.com/css/css_align.asp
 
@@ -141,8 +146,12 @@ https://www.w3schools.com/css/css_align.asp
 Je devais changer la taille des datepicker pour les rendre plus petits. J'ai trouvé cette page qui disait comment modifier leur taille :
 https://mui.com/x/react-date-pickers/custom-field/
 
+J'ai esssayé plusieurs autres alternative comme changer la taille du texte par exemple, mais je n'était pas capable d'écraser la classe CSS qui l'affectait. J'ai vu rapidement en ligne qu'il faut modifier une classe special nommé MuiPickersPopper-root pour le faire, mais je trouvais que l'apparence small offert par MUI offrait quand même de bon résultats, donc je ne suis pas aller plus loin et c'était plus facile à comprendre dans le code.
+
 Je devais aussi changer le format de date pour utiliser des tiret. Cette page de la documentation m'a permis de m'indiquer comment faire :
 https://mui.com/x/react-date-pickers/adapters-locale/
+
+Il y avait plusieurs options, mais j'ai choisi cette apadateur, car il est utiliser dans l'exemple de la documentation et ils se ressemblent tous.
 
 ---
 
@@ -159,10 +168,14 @@ https://mui.com/x/react-date-pickers/adapters-locale/
 J'ai regardé comment faire de l'affichage conditionel sur react avec la documentation officiel de React :
 https://react.dev/learn/conditional-rendering
 
-Pour le reste, j'ai utilisé un useState afin de garder l'état booléen du menu pour savoir si il est ouvert ou non
+Selon la documentation, je devrais utiliser un état pour savoir si je retourne le composant ou non, mais j'ai plutôt décider de faire un display none en mode grand écran, car je trouvais que c'était plus simple de faire la gestion de la taille d'écran de cette façon. Un désavantage est que le composant existe toujours donc ça pourrait être potentiellement problématique, donc je le changerai si cela cause des problème plus tard.
+
+Pour le reste, j'ai utilisé un useState afin de garder l'état booléen du menu pour savoir si il est ouvert ou non. Je ne voyais pas l'intérêt de faire autrement et c'est plus cohérent avec les pratiques utilisés en React et avec notre menu hamburger qui utilisait déjà cette logique.
 
 Pour l'icone, je l'ai pris dans les icones fournis par MUI ici :
 https://mui.com/material-ui/material-icons/?theme=Sharp&query=expan&selected=ExpandLessSharp
+
+Par cohérence encore, j'ai choisis leur icône au lieux d'en prendre une sur fontawesome par exemple.
 
 ---
 
@@ -177,3 +190,5 @@ https://mui.com/material-ui/material-icons/?theme=Sharp&query=expan&selected=Exp
 
 Je me suis beacoup inspiré de la méthode ParseCSV dans la page statistique et je l'ai adapté pour les arrondissments. Je commence par faire un split sur les sauts de lignes puisque chaque arrondissements est séparé de cette façon. Cela me permet de les séparé en élément de tableau. Ensuite je devais faire un map pour obtenir seulement le premier élément avant la virgule de chaque ligne, car cela correspond au nom de l'établissement et c'est ce que je veux afficher pour les  choix dans mon menu. J'ai terminé par un filtre pour enlever les éléments vide puisque j'avais un élément vide à la fin. Je me suis finalement basé sur cette page de la documentation de MUI pour savoir comment les ajouté au Select :
 https://mui.com/material-ui/react-select/
+
+Une alternative aurait été d'utiliser une librairie externe pour s'en charger, mais puisque c'était un fichier très simple, j'ai décidé de le faire moi même pour éviter d'importer une autre librairie. Se fier sur son propre code offre plus de contrôle et empêche des problèmes de dépendance et de mise à jour qui pourrait survenir.
