@@ -3,6 +3,8 @@ import {
   Box,
   Button,
   Container,
+  Paper,
+  Stack,
   TextField,
   Typography,
 } from '@mui/material';
@@ -125,7 +127,7 @@ export default function Statistic() {
   const handleClear = () => setSearch('');
 
   return (
-    <>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
       <header>
         <Navbar activePage="Statistiques" />
       </header>
@@ -133,87 +135,60 @@ export default function Statistic() {
       <main>
         <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
 
-          {/* Filtres */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 2,
-              mb: 3,
-            }}
-          >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
               Compteurs vélo
             </Typography>
+          </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* Filtres */}
+          <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }} elevation={1}>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
               <TextField
                 label="Rechercher par nom..."
                 variant="outlined"
                 size="small"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                sx={{ minWidth: 220 }}
+                sx={{ minWidth: 220, flexGrow: { md: 1 } }}
               />
               <Button variant="outlined" color="primary" onClick={handleClear}>
                 Effacer les filtres
               </Button>
-            </Box>
-          </Box>
+            </Stack>
+          </Paper>
 
           {/* Data Grid */}
-          <Box
-            sx={{
-              width: '100%',
-              '& .grid-header': {
-                color: 'primary.main',
-                fontWeight: 700,
-              },
-            }}
-          >
+          <Paper sx={{ width: '100%', height: 650, borderRadius: 2, overflow: 'hidden' }} elevation={1}>
             <DataGrid
               rows={rows}
               columns={COLUMNS}
               getRowId={(row) => row._id}
               localeText={frFR.components.MuiDataGrid.defaultProps.localeText}
               initialState={{
-                pagination: { paginationModel: { pageSize: 25 } },
+                pagination: { paginationModel: { pageSize: 20, page: 0 } },
                 sorting: { sortModel: [{ field: 'Nom', sort: 'asc' }] },
               }}
-              pageSizeOptions={[10, 25, 50, 100]}
+              pageSizeOptions={[20]}
               disableRowSelectionOnClick
+              disableColumnMenu
               sx={{
                 border: 'none',
                 '& .MuiDataGrid-columnHeaders': {
                   backgroundColor: '#f5f5f5',
+                  borderBottom: '1px solid rgba(224, 224, 224, 1)',
+                },
+                '& .MuiDataGrid-columnHeaderTitle': {
+                  fontWeight: 600,
                 },
                 '& .MuiDataGrid-row:hover': {
                   backgroundColor: 'rgba(45,106,79,0.04)',
                 },
               }}
             />
-          </Box>
+          </Paper>
         </Container>
       </main>
-
-      <Box
-        component="footer"
-        sx={{
-          py: 3,
-          textAlign: 'center',
-          borderTop: '1px solid',
-          borderColor: 'divider',
-          backgroundColor: '#f5f5f5',
-        }}
-      >
-        <Container maxWidth="lg">
-          <Typography variant="body2" color="text.secondary">
-            © {new Date().getFullYear()} MTL Vélo — Données ouvertes Ville de Montréal
-          </Typography>
-        </Container>
-      </Box>
-    </>
+    </Box>
   );
 }
