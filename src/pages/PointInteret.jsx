@@ -89,7 +89,7 @@ export default function PointInteret() {
         <Chip 
           label={params.value} 
           size="small" 
-          sx={params.value === 'Fontaine' ? { bgcolor: '#e3f2fd', color: '#0288d1', fontWeight: 'bold' } : {}}
+          sx={params.value === 'Fontaine' ? { bgcolor: '#e3f2fd', color: '#01579b', fontWeight: 'bold' } : {}}
         />
       )
     },

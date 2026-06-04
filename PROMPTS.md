@@ -30,6 +30,7 @@
 | [15](#tache-15) | Assistant.jsx : Création de la page Assistant | 2026-06-01 |
 | [16](#tache-16) | Assistant.jsx : Retrait de l'historique | 2026-06-01 |
 | [17](#tache-17) | Assistant.jsx : Amélioration de la zone de saisie | 2026-06-01 |
+| [18](#tache-18) | Accessibilité : Correction des contrastes WCAG 2.1 AA | 2026-06-04 |
 
   
 
@@ -1506,6 +1507,56 @@ Le compteur de caractères est pertinent pour une interface de chat avec une IA 
 
 L'ajout d'un bouton permet d'indiquer clairement à l'utilisateur qu'il doit cliquer dessus plutôt que d'utiliser la touche Entrée du clavier.
 
+---
 
+## Tâche 18 — Accessibilité : Correction des contrastes WCAG 2.1 AA {#tache-18}
 
+**Auteur** : Cédrik Letarte - 2026-06-04
+
+### 💬 Prompt
+
+```
+Le livrable me demande de vérifier le contraste de couleur afin de respecter
+WCAG 2.1 AA. Est-ce que tu peux faire le tour de l'ensemble des pages src/pages/
+et de src/theme.js pour vérifier le tout ? Est-ce que tu peux corriger les contrastes et utiliser l'avantage de theme.js?
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Audit puis correction ciblée |
+
+---
+
+### 📦 Sortie obtenue
+
+Audit complet de toutes les pages et du thème. Quatre paires de couleurs en échec identifiées, trois valeurs distinctes à corriger :
+
+| Fichier | Modification |
+|---------|-------------|
+| `src/theme.js` | Ajout de `palette.text.muted: '#595959'` — token centralisé pour le texte secondaire accessible (ratio 7.0:1 sur blanc) |
+| `src/components/Navbar.jsx` | Liens inactifs : `'grey.500'` (#9e9e9e, 2.68:1 ❌) → `'text.muted'` (7.0:1 ✅) |
+| `src/pages/Reseau.jsx` | 4 labels de filtres : `'#919191'` (3.15:1 ❌) → `'text.muted'` (7.0:1 ✅) |
+| `src/pages/PointInteret.jsx` | Chip Fontaine : `'#0288d1'` sur `#e3f2fd` (3.38:1 ❌) → `'#01579b'` (6.48:1 ✅) |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune.
+
+---
+
+### 🧠 Justification
+
+- **Accepté** : J'ai accepté l'ensemble des corrections. L'IA a correctement identifié les trois couleurs défaillantes (#9e9e9e, #919191 et #0288d1) parmi toutes les paires texte/fond présentes dans le projet.
+
+- **Centralisation dans le thème** : L'ajout du token `text.muted` dans `theme.js` est la décision la plus pertinente. Les couleurs `#9e9e9e` (Navbar) et `#919191` (Reseau) servaient le même rôle du texte secondaire discret, mais utilisaient deux valeurs hardcodées différentes. Les regrouper sous un seul token garantit la cohérence et facilite les ajustements futurs.
+
+- **Chip Fontaine hardcodé** : L'IA a choisi de ne pas centraliser la couleur `#01579b` dans le thème, ce qui est justifié : cette couleur est spécifique au type « Fontaine » et ne représente pas un rôle partagé à l'échelle de l'application. La laisser dans `PointInteret.jsx` évite de polluer le thème avec des couleurs purement contextuelles.
 
