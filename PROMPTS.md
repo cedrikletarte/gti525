@@ -31,6 +31,10 @@
 | [16](#tache-16) | Assistant.jsx : Retrait de l'historique | 2026-06-01 |
 | [17](#tache-17) | Assistant.jsx : Amélioration de la zone de saisie | 2026-06-01 |
 | [18](#tache-18) | Accessibilité : Correction des contrastes WCAG 2.1 AA | 2026-06-04 |
+| [19](#tache-19) | Backend Node.js + Express — 4 routes API | 2026-06-11 |
+| [20](#tache-20) | PointInteret.jsx — Migration vers l'API REST | 2026-06-11 |
+| [21](#tache-21) | Statistic.jsx — Migration vers l'API REST | 2026-06-11 |
+| [22](#tache-22) | Reseau.jsx — Carte GeoJSON catégorisée et filtres | 2026-06-11 |
 
   
 
@@ -1562,7 +1566,7 @@ Audit complet de toutes les pages et du thème. Quatre paires de couleurs en éc
 
 ---
 
-## Tâche 19 —  {#tache-19} 
+## Tâche 19 — Backend Node.js + Express — 4 routes API {#tache-19}
 
 **Auteur** : Cédrik Letarte - 2026-06-11
 
@@ -1619,68 +1623,13 @@ objet { erreur: "..." }, sans fuite de stack trace au client. les données actue
 
 ### 🧠 Justification
 
----
+- **Accepté** : Le proxy Vite (`/gti525 → localhost:8080`) est l'approche correcte pour respecter la politique d'origine identique sans configurer CORS : le navigateur ne voit qu'une seule origine (le serveur Vite), qui transfère les requêtes au backend. Toutes les routes utilisent des paramètres liés (`?`) et le format d'erreur `{ erreur: "..." }` est appliqué. C'est conforme aux contraintes du livrable.
 
-## Tâche 18 —  {#tache-18} 
-
-**Auteur** : Cédrik Letarte - 2026-06-11
-
-### 💬 Prompt
-
-```
-Tâche: Création d'un backend Node.js + Express sur http://localhost:8080/ . Aucune configuration CORS est attendue, mais il faut respecter la politique d'origione identique @GTI525 - Livrable 2.pdf  
-
-Entrée: fichier comptage_velo.db, reseau_cyclable.geojson, poi.csv
-
-Sortie attendue: 3 routes API 
-
-GET /gti525/v1/compteurs/:id?debut=YYMMDD&fin=YYMMDD (retourne les passages agrégés par jour pour le compteur :id filtré sur la période demandée)
-GET /gti525/v1/pistes (retourne le contenu de reseau_cyclable.geojson)
-GET /gti525/v1/pointsdinteret (retourne retourne poi.csv converti en JSON)
-GET /gti525/v1/compteurs/: (retourne la collection des compteurs)
-
-Contraintes spécifiques: toutes les requêtes SQL doivent utiliser des paramètres liés (jamais de
-concaténation de chaînes). La gestion d'erreurs côté serveur retourne un statut HTTP approprié et un
-objet { erreur: "..." }, sans fuite de stack trace au client. les données actuelles se trouve dans /src/data (il est possible de les déplacers dans le backend pour la suite)
-
-À la fin, génère un bloc pour mes réponses textuelles:
-  - Prompt utilisé : [le prompt ci-dessus]
-  - Résumé de la sortie : [nb lignes, fonctions, ce qu'elles font]
-  - Hypothèses faites : [liste]
-  - Justification (à compléter par moi) : [laisser vide]
-```
+- **Modifié** : J'ai mis à jour le `DATA_DIR` après avoir déplacé les fichiers de données de `src/data/` vers `backend/data/`, afin que le serveur trouve les fichiers au bon emplacement.
 
 ---
 
-### 🛠 Outil & modèle
-
-| Champ | Valeur |
-|-------|--------|
-| **Outil** | Claude — VS Code |
-| **Modèle** | Claude Sonnet 4.7 |
-| **Mode** | Posez la question avant la modification |
-
----
-
-### 📦 Sortie obtenue
-
-- backend/package.json	Configuration npm du backend (Express + sql.js)
-- backend/server.js	Serveur Express — 4 routes + gestion d'erreurs
-- vite.config.js	Proxy Vite /gti525 → localhost:8080
-
----
-
-### ✏️ Modifications apportées par l'humain
-
-- Modification de la localisation des données
-
----
-
-### 🧠 Justification
-
----
-
-## Tâche 20 —  {#tache-20} 
+## Tâche 20 — PointInteret.jsx — Migration vers l'API REST {#tache-20}
 
 **Auteur** : Cédrik Letarte - 2026-06-11
 
@@ -1719,10 +1668,11 @@ modifie la page point d'intérêt pour utiliser un fetch GET sur la route  http:
 
 ### 🧠 Justification
 
+- **Accepté** : La suppression des imports CSV et des fonctions de parsing (`parseCSV`, `csvToObjects`). On délègue le parsing au backend pour respecter la séparation des responsabilités. Dériver la liste des arrondissements depuis les POI fetchés (plutôt que `territoires.csv`) est intelligent. Les données sont déjà présentes dans la réponse, faire une route pour récupérés les territoires à partir du fichier csv serait moins performant. L'ajout des états `loading` et `error` avec `CircularProgress` et `Alert` améliore l'UX en cas de lenteur du backend.
 
 ---
 
-## Tâche 21 —  {#tache-21} 
+## Tâche 21 — Statistic.jsx — Migration vers l'API REST {#tache-21}
 
 **Auteur** : Cédrik Letarte - 2026-06-11
 
@@ -1762,10 +1712,11 @@ Fait la même chose avec la page statistic et routes faite pour les compteurs
 
 ### 🧠 Justification
 
+- **Accepté** : Même raisonnement que la tâche 20 pour la migration vers l'API. Supprimer le parsing CSV du front-end et centraliser cette logique dans le backend. Le passage de `row._id` à `row.ID` (identifiant réel du compteur fourni par l'API). L'identifiant de ligne provient maintenant des données source.
 
 ---
 
-## Tâche 22 —  {#tache-22} 
+## Tâche 22 — Reseau.jsx — Carte GeoJSON catégorisée et filtres {#tache-22} 
 
 **Auteur** : Cédrik Letarte - 2026-06-11
 
@@ -1837,161 +1788,4 @@ Couleur suggérée : #B958D9
 
 ### 🧠 Justification
 
----
-
-## Tâche 19 —  {#tache-19} 
-
-**Auteur** : Cédrik Letarte - 2026-06-11
-
-### 💬 Prompt
-
-```
-modifie la page point d'intérêt pour utiliser un fetch GET sur la route  http://localhost:8080/gti525/v1/pointsdinteret qui retourne le poi.csv converti en JSON
-```
-
----
-
-### 🛠 Outil & modèle
-
-| Champ | Valeur |
-|-------|--------|
-| **Outil** | Claude — VS Code |
-| **Modèle** | Claude Sonnet 4.7 |
-| **Mode** | Posez la question avant la modification |
-
----
-
-### 📦 Sortie obtenue
-
-- Supprimé : les deux imports CSV (poi.csv?raw, territoires.csv?raw) et les fonctions parseCSV / csvToObjects
-- Ajouté : useEffect qui fait un fetch('/gti525/v1/pointsdinteret') au montage du composant
-- Dérivé : la liste des arrondissements est maintenant calculée depuis les données fetched (plus besoin de territoires.csv)
-- Ajouté : spinner (CircularProgress) pendant le chargement et une Alert en cas d'erreur
-
----
-
-### ✏️ Modifications apportées par l'humain
-
-- Aucune
-
----
-
-### 🧠 Justification
-
-
----
-
-## Tâche 20 —  {#tache-20} 
-
-**Auteur** : Cédrik Letarte - 2026-06-11
-
-### 💬 Prompt
-
-```
-Fait la même chose avec la page statistic et routes faite pour les compteurs
-```
-
----
-
-### 🛠 Outil & modèle
-
-| Champ | Valeur |
-|-------|--------|
-| **Outil** | Claude — VS Code |
-| **Modèle** | Claude Sonnet 4.7 |
-| **Mode** | Posez la question avant la modification |
-
----
-
-### 📦 Sortie obtenue
-
-- Supprimé : import compteurs.csv?raw, fonction parseCSV, et la constante module-level ALL_ROWS
-- Ajouté : useEffect qui fetch /gti525/v1/compteurs au montage, avec états loading et error
-- getRowId : utilise maintenant row.ID (l'ID unique du compteur) au lieu de row._id synthétique
-- rows : filtre sur compteurs (l'état fetchée) plutôt que sur ALL_ROWS
-- UI : spinner pendant le chargement, Alert en cas d'erreur — comportement identique au reste
-
----
-
-### ✏️ Modifications apportées par l'humain
-
-- Aucune
-
----
-
-### 🧠 Justification
-
-
----
-
-## Tâche 21 —  {#tache-21} 
-
-**Auteur** : Cédrik Letarte - 2026-06-11
-
-### 💬 Prompt
-
-```
-modifie la page réseau pour utiliser les routes API fetch. Nous utilisons la bibliothèques leaflet.  Voici les tâches :
-
-Il faut Tracer les pistes du fichier reseau_cyclable.geojson sur la carte avec une couleur correspondant à leur catégorie (REV, voie partagée, voie protégée, sentier polyvalent). 
-
-Afficher en bas de la carte un panneau récapitulatif dynamique: nombre de pistes visibles,
-longueur totale en kilomètres.
-
- Une fenêtre modale (overlay) doit s'ouvrir au clic sur une icône d'aide et présenter une légende
-des catégories de pistes.
-
-Implémenter le filtrage des pistes selon le type de voie (cases à cocher) et selon l'accessibilité 4
-saisons (boutons), avec mise à jour en direct du panneau récapitulatif.
-
-Catégorie : REV
-Critère : REV_AVANCEMENT_CODE ∈ {'EV', 'PE', 'TR'}
-Couleur suggérée : #2AC7DD
-
-Catégorie : Voie partagée
-Critère : AVANCEMENT_CODE = 'E' et TYPE_VOIE_CODE ∈ {1, 3, 8, 9}
-Couleur suggérée : #84CA4B
-
-Catégorie : Voie protégée
-Critère : AVANCEMENT_CODE = 'E' et TYPE_VOIE_CODE ∈ {4, 5, 6} et REV_AVANCEMENT_CODE ∉ {'EV', 'PE', 'TR'}
-Couleur suggérée : #025D29
-
-Catégorie : Sentier polyvalent
-Critère : AVANCEMENT_CODE = 'E' et TYPE_VOIE_CODE = {7}
-Couleur suggérée : #B958D9
-```
-
----
-
-### 🛠 Outil & modèle
-
-| Champ | Valeur |
-|-------|--------|
-| **Outil** | Claude — VS Code |
-| **Modèle** | Claude Sonnet 4.7 |
-| **Mode** | Posez la question avant la modification |
-
----
-
-### 📦 Sortie obtenue
-
-- Supprimé les imports ?raw — remplacé par fetch('/gti525/v1/pistes') avec spinner pendant le chargement Arrondissements dérivés des propriétés ARRONDISSEMENT du GeoJSON fetchée
-- Composant GeoJSON de react-leaflet avec style={styleFeature} — colorie chaque segment selon sa catégorie
-- getCategory() applique les critères exacts (REV_AVANCEMENT_CODE, AVANCEMENT_CODE, TYPE_VOIE_CODE)
-- key={geoJsonKey} force le remontage de la couche quand les filtres changent
-- Checkboxes des catégories connectées à checked — calcule filteredFeatures via useMemo
-- Radio saison filtre sur SAISON_PISTE (valeurs 3 ou 4)
-- Filtre arrondissement sur ARRONDISSEMENT
-- anneau récapitulatif — nombre de pistes et km calculés depuis filteredFeatures (mis à jour en direct)
-- Modale légende — Dialog MUI ouvert par l'icône HelpOutlineIcon positionnée en haut à droite de la carte
-
-
----
-
-### ✏️ Modifications apportées par l'humain
-
-- Aucune
-
----
-
-### 🧠 Justification
+- **Accepté** : J'ai accepté l'ensemble de la sortie. La logique de classification par catégorie correspond aux critères du livrable et les couleurs suggérées ont été respectées. Cependant, des modifications dans le filtrage dynamique va être nécessaire. Certaines fonctionnalités de filtrage ne semble pas fonctionner correctement
