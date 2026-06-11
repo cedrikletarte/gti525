@@ -82,7 +82,7 @@ export default function Reseau() {
 
     <FormGroup sx={{width:"100%", marginBottom:"1rem"}}>
 
-        <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', width: "100%", textAlign: "left"}}>CATÉGORIES</Typography>
+        <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.muted', width: "100%", textAlign: "left"}}>CATÉGORIES</Typography>
 
         <FormControlLabel
             control={<Checkbox defaultChecked />}
@@ -129,7 +129,7 @@ export default function Reseau() {
 
         />
 
-        <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', marginTop: 4,  width:"100%", textAlign: "left"}}>SAISON</Typography>
+        <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.muted', marginTop: 4,  width:"100%", textAlign: "left"}}>SAISON</Typography>
 
         <RadioGroup defaultValue="all"  sx={{width:"100%"}}>
             <FormControlLabel value="all" control={<Radio/>} label="Toutes les pistes"/>
@@ -137,7 +137,7 @@ export default function Reseau() {
             <FormControlLabel value="3-seasons" control={<Radio/>} label="3 saisons"/>
         </RadioGroup>
 
-        <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', marginTop: 4, marginBottom: 1, width:"100%", textAlign: "left"}}>ARRONDISSEMENT</Typography>
+        <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.muted', marginTop: 4, marginBottom: 1, width:"100%", textAlign: "left"}}>ARRONDISSEMENT</Typography>
 
         <FormControl  sx={{width:"100%"}}>
             <Select value={arrondissement} sx={{textAlign: "left"}} onChange={handleChange} variant="outlined">
@@ -150,7 +150,7 @@ export default function Reseau() {
         </FormControl>
 
         <Box sx={{backgroundColor: "#8cc5984f", marginTop: 4, padding: 2, borderRadius: 4, width:"100%"}}>
-            <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', textAlign: "left"}}>PISTES POPULAIRES</Typography>
+            <Typography sx={{ fontSize: 15, fontWeight: 700, color: 'text.muted', textAlign: "left"}}>PISTES POPULAIRES</Typography>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <Box sx={{display: "flex", alignItems : "center", gap: 1}}>
                     <DatePicker label="De" format="DD-MM-YYYY" sx={{backgroundColor: "#ffffff", marginTop : 1, marginBottom : 1,width : "100%"}} slotProps={{ textField: { size: 'small' } }} />

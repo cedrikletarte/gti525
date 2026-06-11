@@ -29,7 +29,7 @@ export default function Navbar({ activePage }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const linkSx = (label) => ({
-    color: activePage === label ? 'primary.main' : 'grey.500',
+    color: activePage === label ? 'primary.main' : 'text.muted',
     mx: 0.5,
     borderBottom: activePage === label ? '2px solid' : '2px solid transparent',
     borderColor: activePage === label ? 'primary.main' : 'transparent',
