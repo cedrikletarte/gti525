@@ -1,15 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Button, Container, Paper, Chip, TextField, Stack, CircularProgress, Alert } from '@mui/material';
-import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Button, Container, Paper, Chip, TextField, Stack, CircularProgress, Alert } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import Navbar from '../components/Navbar';
 
 export default function PointInteret() {
-  const [pois, setPois] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [pois, setPois] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,32 +19,20 @@ export default function PointInteret() {
       .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load points of interest.'); setLoading(false); });
   }, []);
 
-  useEffect(() => {
-    fetch('/gti525/v1/pointsdinteret')
-      .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
-      .then(data => { setPois(data); setLoading(false); })
-      .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load points of interest.'); setLoading(false); });
-  }, []);
-
   const territoires = useMemo(() => {
-    return [...new Set(pois.map(r => r.Arrondissement).filter(Boolean))].sort();
-  }, [pois]);
     return [...new Set(pois.map(r => r.Arrondissement).filter(Boolean))].sort();
   }, [pois]);
 
   const data = useMemo(() => {
     return pois.filter(r => r.ID).map(row => ({
-    return pois.filter(r => r.ID).map(row => ({
       id: `f_${row.ID}`,
       arrondissement: row.Arrondissement || 'Non spécifié',
-      type: 'Fontaine',
       type: 'Fontaine',
       nom: row.Nom_parc_lieu || '',
       adresse: row.Intersection || '',
       latitude: row.Latitude,
       longitude: row.Longitude,
     }));
-  }, [pois]);
   }, [pois]);
 
   const filteredData = useMemo(() => {
@@ -65,14 +48,11 @@ export default function PointInteret() {
     {
       field: 'type',
       headerName: 'Type',
-    {
-      field: 'type',
-      headerName: 'Type',
       width: 140,
       renderCell: (params) => (
-        <Chip 
-          label={params.value} 
-          size="small" 
+        <Chip
+          label={params.value}
+          size="small"
           sx={params.value === 'Fontaine' ? { bgcolor: '#e3f2fd', color: '#01579b', fontWeight: 'bold' } : {}}
         />
       )
@@ -90,14 +70,7 @@ export default function PointInteret() {
         if (!latitude || !longitude) return null;
         const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
         return (
-          <Button
-            variant="outlined"
-            size="small"
-            href={mapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            color="primary"
-          >
+          <Button variant="outlined" size="small" href={mapsUrl} target="_blank" rel="noopener noreferrer" color="primary">
             Carte
           </Button>
         );
@@ -108,7 +81,6 @@ export default function PointInteret() {
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
       <Navbar activePage="Points d'intérêt" />
-
 
       <Container maxWidth="lg" sx={{ flexGrow: 1, py: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -122,14 +94,8 @@ export default function PointInteret() {
 
         {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
-        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-
         <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }} elevation={1}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
-            <TextField
-              size="small"
-              label="Rechercher par nom"
-              variant="outlined"
             <TextField
               size="small"
               label="Rechercher par nom"
@@ -137,18 +103,11 @@ export default function PointInteret() {
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
               sx={{ minWidth: 250, flexGrow: { md: 1 } }}
-              sx={{ minWidth: 250, flexGrow: { md: 1 } }}
             />
-
 
             <FormControl size="small" sx={{ minWidth: 150 }}>
               <InputLabel id="type-select-label">Type</InputLabel>
-              <Select
-                labelId="type-select-label"
-                value={selectedType}
-                label="Type"
-                onChange={(e) => setSelectedType(e.target.value)}
-              >
+              <Select labelId="type-select-label" value={selectedType} label="Type" onChange={(e) => setSelectedType(e.target.value)}>
                 <MenuItem value="Tous">Tous</MenuItem>
                 <MenuItem value="Fontaine">Fontaine</MenuItem>
               </Select>
@@ -156,15 +115,8 @@ export default function PointInteret() {
 
             <FormControl size="small" sx={{ minWidth: 250 }}>
               <InputLabel id="arrondissement-select-label">Filtrer par arrondissement</InputLabel>
-              <Select
-                labelId="arrondissement-select-label"
-                value={selectedArrondissement}
-                label="Filtrer par arrondissement"
-                onChange={(e) => setSelectedArrondissement(e.target.value)}
-              >
-                <MenuItem value="Tous">
-                  <em>Tous les arrondissements</em>
-                </MenuItem>
+              <Select labelId="arrondissement-select-label" value={selectedArrondissement} label="Filtrer par arrondissement" onChange={(e) => setSelectedArrondissement(e.target.value)}>
+                <MenuItem value="Tous"><em>Tous les arrondissements</em></MenuItem>
                 {territoires.map((terr, index) => (
                   <MenuItem key={index} value={terr}>{terr}</MenuItem>
                 ))}
@@ -185,30 +137,7 @@ export default function PointInteret() {
                 disableColumnMenu
                 sx={{
                   border: 'none',
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: '#f5f5f5',
-                    borderBottom: '1px solid rgba(224, 224, 224, 1)',
-                  },
-                  '& .MuiDataGrid-columnHeaderTitle': { fontWeight: 600 }
-                }}
-              />
-          }
-        <Paper sx={{ width: '100%', height: 650, borderRadius: 2, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }} elevation={1}>
-          {loading
-            ? <CircularProgress />
-            : <DataGrid
-                rows={filteredData}
-                columns={columns}
-                initialState={{ pagination: { paginationModel: { pageSize: 20, page: 0 } } }}
-                pageSizeOptions={[20]}
-                disableRowSelectionOnClick
-                disableColumnMenu
-                sx={{
-                  border: 'none',
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: '#f5f5f5',
-                    borderBottom: '1px solid rgba(224, 224, 224, 1)',
-                  },
+                  '& .MuiDataGrid-columnHeaders': { backgroundColor: '#f5f5f5', borderBottom: '1px solid rgba(224, 224, 224, 1)' },
                   '& .MuiDataGrid-columnHeaderTitle': { fontWeight: 600 }
                 }}
               />

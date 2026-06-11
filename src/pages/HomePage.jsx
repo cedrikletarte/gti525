@@ -38,7 +38,7 @@ export default function HomePage({ segmentsCount, totalKm, countersCount }) {
   ];
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
       <header>
         <Navbar activePage="Accueil" />
       </header>
@@ -49,7 +49,7 @@ export default function HomePage({ segmentsCount, totalKm, countersCount }) {
           component="section"
           sx={{
             background: 'linear-gradient(to right, #1f5b2c, #2a763b)',
-            py: { xs: 6, md: 10 },
+            py: { xs: 2, md: 4 },
             textAlign: 'center',
           }}
         >
@@ -65,7 +65,7 @@ export default function HomePage({ segmentsCount, totalKm, countersCount }) {
         </Box>
 
         {/* Stats */}
-        <Box component="section" sx={{ py: { xs: 4, md: 6 }, backgroundColor: '#f5f5f5' }}>
+        <Box component="section" sx={{ py: { xs: 2, md: 4 }, backgroundColor: '#f5f5f5' }}>
           <Container maxWidth="lg">
             <Grid container spacing={3}>
               {stats.map(({ value, label }) => (
@@ -91,7 +91,7 @@ export default function HomePage({ segmentsCount, totalKm, countersCount }) {
               {FEATURES.map(({ icon, title, description }) => (
                 <Grid key={title} size={{ xs: 12, sm: 4 }}>
                   <Card elevation={1} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <CardContent sx={{ flexGrow: 1, textAlign: 'center', pt: 4 }}>
+                    <CardContent sx={{ flexGrow: 1, textAlign: 'center', pt: 2 }}>
                       <Typography variant="h2" component="span" role="img" aria-label={title}>
                         {icon}
                       </Typography>

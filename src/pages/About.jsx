@@ -9,11 +9,10 @@ const DATA_SOURCES = [
 ];
 
 const TECHNOLOGIES = [
-  { label: 'Dorsale', value: 'Node.js 18+, Express 4, SQLite (better-sqlite3)' },
-  { label: 'Authentification', value: 'bcrypt, JSON Web Tokens (JWT)' },
-  { label: 'Cartographie', value: 'Leaflet 1.9 avec tuiles OpenStreetMap' },
-  { label: 'Graphiques', value: 'Chart.js 4' },
-  { label: 'Interface', value: 'HTML5, CSS moderne, JavaScript ES2020 (modules ES)' },
+  { label: 'Dorsale', value: 'Node.js, Express, SQLite' },
+  { label: 'Cartographie', value: 'Leaflet' },
+  { label: 'Graphiques', value: 'Material UI' },
+  { label: 'Interface', value: 'Vite + React' },
 ];
 
 function SectionTitle({ children }) {
@@ -36,13 +35,13 @@ export default function About() {
       </header>
 
       <main>
-        <Container maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
+        <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
           <Paper
             elevation={1}
             sx={{
               maxWidth: 720,
               mx: 'auto',
-              p: { xs: 3, sm: 5 },
+              p: { xs: 2, sm: 3 },
               borderRadius: 2,
               textAlign: 'left',
             }}
