@@ -1,7 +1,10 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Box,
   Button,
+  CircularProgress,
+  Alert,
   CircularProgress,
   Alert,
   Container,
@@ -30,6 +33,7 @@ function StatusBadge({ value }) {
         width: '100%',
         height: '100%',
         textAlign: 'center',
+        lineHeight: '52px',
         lineHeight: '52px',
         fontSize: '0.78rem',
         fontWeight: 500,
@@ -81,6 +85,10 @@ const COLUMNS = [
         <StatusBadge value={params.value} />
       </Box>
     ),
+      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
+        <StatusBadge value={params.value} />
+      </Box>
+    ),
   },
   {
     field: 'Annee_implante',
@@ -106,7 +114,17 @@ export default function Statistic() {
   const [compteurs, setCompteurs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [compteurs, setCompteurs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    fetch('/gti525/v1/compteurs')
+      .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
+      .then(data => { setCompteurs(data); setLoading(false); })
+      .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load counters.'); setLoading(false); });
+  }, []);
 
   useEffect(() => {
     fetch('/gti525/v1/compteurs')
@@ -117,6 +135,9 @@ export default function Statistic() {
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
+    if (!q) return compteurs;
+    return compteurs.filter((r) => r.Nom.toLowerCase().includes(q));
+  }, [search, compteurs]);
     if (!q) return compteurs;
     return compteurs.filter((r) => r.Nom.toLowerCase().includes(q));
   }, [search, compteurs]);

@@ -1,10 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Button, Container, Paper, Chip, TextField, Stack, CircularProgress, Alert } from '@mui/material';
+import { useState, useEffect, useMemo } from 'react';
+import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Button, Container, Paper, Chip, TextField, Stack, CircularProgress, Alert } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import Navbar from '../components/Navbar';
 
 export default function PointInteret() {
+  const [pois, setPois] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [pois, setPois] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,20 +24,32 @@ export default function PointInteret() {
       .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load points of interest.'); setLoading(false); });
   }, []);
 
+  useEffect(() => {
+    fetch('/gti525/v1/pointsdinteret')
+      .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
+      .then(data => { setPois(data); setLoading(false); })
+      .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load points of interest.'); setLoading(false); });
+  }, []);
+
   const territoires = useMemo(() => {
+    return [...new Set(pois.map(r => r.Arrondissement).filter(Boolean))].sort();
+  }, [pois]);
     return [...new Set(pois.map(r => r.Arrondissement).filter(Boolean))].sort();
   }, [pois]);
 
   const data = useMemo(() => {
     return pois.filter(r => r.ID).map(row => ({
+    return pois.filter(r => r.ID).map(row => ({
       id: `f_${row.ID}`,
       arrondissement: row.Arrondissement || 'Non spécifié',
+      type: 'Fontaine',
       type: 'Fontaine',
       nom: row.Nom_parc_lieu || '',
       adresse: row.Intersection || '',
       latitude: row.Latitude,
       longitude: row.Longitude,
     }));
+  }, [pois]);
   }, [pois]);
 
   const filteredData = useMemo(() => {
@@ -45,6 +62,9 @@ export default function PointInteret() {
   }, [data, selectedArrondissement, selectedType, searchName]);
 
   const columns = [
+    {
+      field: 'type',
+      headerName: 'Type',
     {
       field: 'type',
       headerName: 'Type',
@@ -89,6 +109,7 @@ export default function PointInteret() {
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
       <Navbar activePage="Points d'intérêt" />
 
+
       <Container maxWidth="lg" sx={{ flexGrow: 1, py: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
@@ -101,8 +122,14 @@ export default function PointInteret() {
 
         {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
+        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
         <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }} elevation={1}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+            <TextField
+              size="small"
+              label="Rechercher par nom"
+              variant="outlined"
             <TextField
               size="small"
               label="Rechercher par nom"
@@ -110,7 +137,9 @@ export default function PointInteret() {
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
               sx={{ minWidth: 250, flexGrow: { md: 1 } }}
+              sx={{ minWidth: 250, flexGrow: { md: 1 } }}
             />
+
 
             <FormControl size="small" sx={{ minWidth: 150 }}>
               <InputLabel id="type-select-label">Type</InputLabel>
@@ -144,6 +173,26 @@ export default function PointInteret() {
           </Stack>
         </Paper>
 
+        <Paper sx={{ width: '100%', height: 650, borderRadius: 2, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }} elevation={1}>
+          {loading
+            ? <CircularProgress />
+            : <DataGrid
+                rows={filteredData}
+                columns={columns}
+                initialState={{ pagination: { paginationModel: { pageSize: 20, page: 0 } } }}
+                pageSizeOptions={[20]}
+                disableRowSelectionOnClick
+                disableColumnMenu
+                sx={{
+                  border: 'none',
+                  '& .MuiDataGrid-columnHeaders': {
+                    backgroundColor: '#f5f5f5',
+                    borderBottom: '1px solid rgba(224, 224, 224, 1)',
+                  },
+                  '& .MuiDataGrid-columnHeaderTitle': { fontWeight: 600 }
+                }}
+              />
+          }
         <Paper sx={{ width: '100%', height: 650, borderRadius: 2, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }} elevation={1}>
           {loading
             ? <CircularProgress />

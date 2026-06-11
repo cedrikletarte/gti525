@@ -1619,6 +1619,64 @@ objet { erreur: "..." }, sans fuite de stack trace au client. les données actue
 
 ### 🧠 Justification
 
+---
+
+## Tâche 18 —  {#tache-18} 
+
+**Auteur** : Cédrik Letarte - 2026-06-11
+
+### 💬 Prompt
+
+```
+Tâche: Création d'un backend Node.js + Express sur http://localhost:8080/ . Aucune configuration CORS est attendue, mais il faut respecter la politique d'origione identique @GTI525 - Livrable 2.pdf  
+
+Entrée: fichier comptage_velo.db, reseau_cyclable.geojson, poi.csv
+
+Sortie attendue: 3 routes API 
+
+GET /gti525/v1/compteurs/:id?debut=YYMMDD&fin=YYMMDD (retourne les passages agrégés par jour pour le compteur :id filtré sur la période demandée)
+GET /gti525/v1/pistes (retourne le contenu de reseau_cyclable.geojson)
+GET /gti525/v1/pointsdinteret (retourne retourne poi.csv converti en JSON)
+GET /gti525/v1/compteurs/: (retourne la collection des compteurs)
+
+Contraintes spécifiques: toutes les requêtes SQL doivent utiliser des paramètres liés (jamais de
+concaténation de chaînes). La gestion d'erreurs côté serveur retourne un statut HTTP approprié et un
+objet { erreur: "..." }, sans fuite de stack trace au client. les données actuelles se trouve dans /src/data (il est possible de les déplacers dans le backend pour la suite)
+
+À la fin, génère un bloc pour mes réponses textuelles:
+  - Prompt utilisé : [le prompt ci-dessus]
+  - Résumé de la sortie : [nb lignes, fonctions, ce qu'elles font]
+  - Hypothèses faites : [liste]
+  - Justification (à compléter par moi) : [laisser vide]
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude — VS Code |
+| **Modèle** | Claude Sonnet 4.7 |
+| **Mode** | Posez la question avant la modification |
+
+---
+
+### 📦 Sortie obtenue
+
+- backend/package.json	Configuration npm du backend (Express + sql.js)
+- backend/server.js	Serveur Express — 4 routes + gestion d'erreurs
+- vite.config.js	Proxy Vite /gti525 → localhost:8080
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Modification de la localisation des données
+
+---
+
+### 🧠 Justification
 
 ---
 
@@ -1779,3 +1837,161 @@ Couleur suggérée : #B958D9
 
 ### 🧠 Justification
 
+---
+
+## Tâche 19 —  {#tache-19} 
+
+**Auteur** : Cédrik Letarte - 2026-06-11
+
+### 💬 Prompt
+
+```
+modifie la page point d'intérêt pour utiliser un fetch GET sur la route  http://localhost:8080/gti525/v1/pointsdinteret qui retourne le poi.csv converti en JSON
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude — VS Code |
+| **Modèle** | Claude Sonnet 4.7 |
+| **Mode** | Posez la question avant la modification |
+
+---
+
+### 📦 Sortie obtenue
+
+- Supprimé : les deux imports CSV (poi.csv?raw, territoires.csv?raw) et les fonctions parseCSV / csvToObjects
+- Ajouté : useEffect qui fait un fetch('/gti525/v1/pointsdinteret') au montage du composant
+- Dérivé : la liste des arrondissements est maintenant calculée depuis les données fetched (plus besoin de territoires.csv)
+- Ajouté : spinner (CircularProgress) pendant le chargement et une Alert en cas d'erreur
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+
+---
+
+## Tâche 20 —  {#tache-20} 
+
+**Auteur** : Cédrik Letarte - 2026-06-11
+
+### 💬 Prompt
+
+```
+Fait la même chose avec la page statistic et routes faite pour les compteurs
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude — VS Code |
+| **Modèle** | Claude Sonnet 4.7 |
+| **Mode** | Posez la question avant la modification |
+
+---
+
+### 📦 Sortie obtenue
+
+- Supprimé : import compteurs.csv?raw, fonction parseCSV, et la constante module-level ALL_ROWS
+- Ajouté : useEffect qui fetch /gti525/v1/compteurs au montage, avec états loading et error
+- getRowId : utilise maintenant row.ID (l'ID unique du compteur) au lieu de row._id synthétique
+- rows : filtre sur compteurs (l'état fetchée) plutôt que sur ALL_ROWS
+- UI : spinner pendant le chargement, Alert en cas d'erreur — comportement identique au reste
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+
+---
+
+## Tâche 21 —  {#tache-21} 
+
+**Auteur** : Cédrik Letarte - 2026-06-11
+
+### 💬 Prompt
+
+```
+modifie la page réseau pour utiliser les routes API fetch. Nous utilisons la bibliothèques leaflet.  Voici les tâches :
+
+Il faut Tracer les pistes du fichier reseau_cyclable.geojson sur la carte avec une couleur correspondant à leur catégorie (REV, voie partagée, voie protégée, sentier polyvalent). 
+
+Afficher en bas de la carte un panneau récapitulatif dynamique: nombre de pistes visibles,
+longueur totale en kilomètres.
+
+ Une fenêtre modale (overlay) doit s'ouvrir au clic sur une icône d'aide et présenter une légende
+des catégories de pistes.
+
+Implémenter le filtrage des pistes selon le type de voie (cases à cocher) et selon l'accessibilité 4
+saisons (boutons), avec mise à jour en direct du panneau récapitulatif.
+
+Catégorie : REV
+Critère : REV_AVANCEMENT_CODE ∈ {'EV', 'PE', 'TR'}
+Couleur suggérée : #2AC7DD
+
+Catégorie : Voie partagée
+Critère : AVANCEMENT_CODE = 'E' et TYPE_VOIE_CODE ∈ {1, 3, 8, 9}
+Couleur suggérée : #84CA4B
+
+Catégorie : Voie protégée
+Critère : AVANCEMENT_CODE = 'E' et TYPE_VOIE_CODE ∈ {4, 5, 6} et REV_AVANCEMENT_CODE ∉ {'EV', 'PE', 'TR'}
+Couleur suggérée : #025D29
+
+Catégorie : Sentier polyvalent
+Critère : AVANCEMENT_CODE = 'E' et TYPE_VOIE_CODE = {7}
+Couleur suggérée : #B958D9
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude — VS Code |
+| **Modèle** | Claude Sonnet 4.7 |
+| **Mode** | Posez la question avant la modification |
+
+---
+
+### 📦 Sortie obtenue
+
+- Supprimé les imports ?raw — remplacé par fetch('/gti525/v1/pistes') avec spinner pendant le chargement Arrondissements dérivés des propriétés ARRONDISSEMENT du GeoJSON fetchée
+- Composant GeoJSON de react-leaflet avec style={styleFeature} — colorie chaque segment selon sa catégorie
+- getCategory() applique les critères exacts (REV_AVANCEMENT_CODE, AVANCEMENT_CODE, TYPE_VOIE_CODE)
+- key={geoJsonKey} force le remontage de la couche quand les filtres changent
+- Checkboxes des catégories connectées à checked — calcule filteredFeatures via useMemo
+- Radio saison filtre sur SAISON_PISTE (valeurs 3 ou 4)
+- Filtre arrondissement sur ARRONDISSEMENT
+- anneau récapitulatif — nombre de pistes et km calculés depuis filteredFeatures (mis à jour en direct)
+- Modale légende — Dialog MUI ouvert par l'icône HelpOutlineIcon positionnée en haut à droite de la carte
+
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
