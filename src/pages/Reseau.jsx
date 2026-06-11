@@ -78,7 +78,7 @@ export default function Reseau() {
 
   const territoires = useMemo(() => {
     if (!pistes) return [];
-    return [...new Set(pistes.features.map(f => f.properties.ARRONDISSEMENT).filter(Boolean))].sort();
+    return [...new Set(pistes.features.map(f => f.properties.NOM_ARR_VILLE_DESC).filter(Boolean))].sort();
   }, [pistes]);
 
   const filteredFeatures = useMemo(() => {
@@ -87,8 +87,8 @@ export default function Reseau() {
       const props = f.properties;
       const cat   = getCategory(props);
       if (!cat || !checked[cat]) return false;
-      if (saison !== 'all' && parseInt(props.SAISON_PISTE, 10) !== parseInt(saison, 10)) return false;
-      if (arrondissement !== 'all' && props.ARRONDISSEMENT !== arrondissement) return false;
+      if (saison !== 'all' && props.SAISONS4 !== (saison === '4' ? 'Oui' : 'Non')) return false;
+      if (arrondissement !== 'all' && props.NOM_ARR_VILLE_DESC !== arrondissement) return false;
       return true;
     });
   }, [pistes, checked, saison, arrondissement]);

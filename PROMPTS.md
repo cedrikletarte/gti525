@@ -20,21 +20,22 @@
 | [05](#tache-05) | DataGrid — Table MUI → MUI X DataGrid | 2026-05-17 |
 | [06](#tache-06) | Layout — Alignement Typography "Compteurs vélo" à gauche | 2026-05-17 |
 | [07](#tache-07) | About.jsx — Page "À propos" + route /a-propos | 2026-05-17 |
-| [08](#tache-08) | Reseau.jsx : Icone de cercle | 2026-05-20 |
+| [08](#tache-08) | Reseau.jsx — Icone de cercle | 2026-05-20 |
 | [09](#tache-09) | Allignement du texte des bouton à gauche | 2026-05-20 |
 | [10](#tache-10) | Ajout d'une carte dans la page Reseau | 2026-05-20 |
 | [11](#tache-11) | Points d'intérêt — Création de la page (Phase 1) | 2026-05-21 |
 | [12](#tache-12) | Points d'intérêt — Ajustement aux maquettes UI (Phase 2 & 3) | 2026-05-21 |
-| [13](#tache-13) | Reseau.jsx : Changement du comportement sur petit écran | 2026-05-21 |
-| [14](#tache-14) | Reseau.jsx : Chargement d'un fichier geojson | 2026-05-21 |
-| [15](#tache-15) | Assistant.jsx : Création de la page Assistant | 2026-06-01 |
-| [16](#tache-16) | Assistant.jsx : Retrait de l'historique | 2026-06-01 |
-| [17](#tache-17) | Assistant.jsx : Amélioration de la zone de saisie | 2026-06-01 |
-| [18](#tache-18) | Accessibilité : Correction des contrastes WCAG 2.1 AA | 2026-06-04 |
+| [13](#tache-13) | Reseau.jsx — Changement du comportement sur petit écran | 2026-05-21 |
+| [14](#tache-14) | Reseau.jsx — Chargement d'un fichier geojson | 2026-05-21 |
+| [15](#tache-15) | Assistant.jsx — Création de la page Assistant | 2026-06-01 |
+| [16](#tache-16) | Assistant.jsx — Retrait de l'historique | 2026-06-01 |
+| [17](#tache-17) | Assistant.jsx — Amélioration de la zone de saisie | 2026-06-01 |
+| [18](#tache-18) | Accessibilité — Correction des contrastes WCAG 2.1 AA | 2026-06-04 |
 | [19](#tache-19) | Backend Node.js + Express — 4 routes API | 2026-06-11 |
 | [20](#tache-20) | PointInteret.jsx — Migration vers l'API REST | 2026-06-11 |
 | [21](#tache-21) | Statistic.jsx — Migration vers l'API REST | 2026-06-11 |
 | [22](#tache-22) | Reseau.jsx — Carte GeoJSON catégorisée et filtres | 2026-06-11 |
+| [23](#tache-23) | Reseau.jsx — Correction des noms de champs GeoJSON | 2026-06-11 |
 
   
 
@@ -1789,3 +1790,51 @@ Couleur suggérée : #B958D9
 ### 🧠 Justification
 
 - **Accepté** : J'ai accepté l'ensemble de la sortie. La logique de classification par catégorie correspond aux critères du livrable et les couleurs suggérées ont été respectées. Cependant, des modifications dans le filtrage dynamique va être nécessaire. Certaines fonctionnalités de filtrage ne semble pas fonctionner correctement
+
+---
+
+## Tâche 23 — Reseau.jsx — Correction des noms de champs GeoJSON {#tache-23}
+
+**Auteur** : Cédrik Letarte - 2026-06-11
+
+### 💬 Prompt
+
+```
+la sélection des 4 ou 3 saisons n'affiche rien sur la carte
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Diagnostic puis correction ciblée |
+
+---
+
+### 📦 Sortie obtenue
+
+Inspection du fichier `reseau_cyclable.geojson` pour identifier les noms de champs réels. Deux champs inexistants détectés et corrigés dans `Reseau.jsx` :
+
+| Code incorrect | Code corrigé |
+|---|---|
+| `f.properties.ARRONDISSEMENT` | `f.properties.NOM_ARR_VILLE_DESC` |
+| `props.ARRONDISSEMENT` | `props.NOM_ARR_VILLE_DESC` |
+| `parseInt(props.SAISON_PISTE, 10) !== parseInt(saison, 10)` | `props.SAISONS4 !== (saison === '4' ? 'Oui' : 'Non')` |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Accepté** : L'IA a inspecté les données brutes avant de proposer une correction, ce qui a permis d'identifier la cause. les champs `SAISON_PISTE` et `ARRONDISSEMENT` n'existent pas dans le GeoJSON de la Ville de Montréal. Les noms réels sont `SAISONS4` (valeur `"Oui"`/`"Non"`) et `NOM_ARR_VILLE_DESC`.
+
+- **Leçon** : Lors de l'implémentation d'un filtre sur des données externes, il faut toujours valider les noms de champs contre le fichier source avant de coder la logique. L'IA à halluciner sur les noms de champs et a produit des faux nom.
