@@ -30,7 +30,7 @@ function SectionTitle({ children }) {
 
 export default function About() {
   return (
-    <>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
       <header>
         <Navbar activePage="À propos" />
       </header>
@@ -96,23 +96,6 @@ export default function About() {
           </Paper>
         </Container>
       </main>
-
-      <Box
-        component="footer"
-        sx={{
-          py: 3,
-          textAlign: 'center',
-          borderTop: '1px solid',
-          borderColor: 'divider',
-          backgroundColor: '#f5f5f5',
-        }}
-      >
-        <Container maxWidth="lg">
-          <Typography variant="body2" color="text.secondary">
-            © {new Date().getFullYear()} MTL Vélo — Données ouvertes Ville de Montréal
-          </Typography>
-        </Container>
-      </Box>
-    </>
+    </Box>
   );
 }

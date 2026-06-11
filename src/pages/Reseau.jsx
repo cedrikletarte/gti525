@@ -74,7 +74,7 @@ export default function Reseau() {
         setArrondissement(event.target.value);
     };
 
-    const [reseauData, setReseauData] = useState(reseau_cyclable_json.features);
+    const [reseauData] = useState(reseau_cyclable_json.features);
 
 
     const filterMenu =
@@ -174,7 +174,7 @@ export default function Reseau() {
             <MapContainer
                 center={[45.5017, -73.5673]} // Montreal
                 zoom={10}
-                style={{ height: '100vh', width: '100%' }}
+                style={{ height: 'calc(100vh - 130px)', width: '100%' }}
             >
                 <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -206,14 +206,14 @@ export default function Reseau() {
 
 
   return (
-    <>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
       <header>
         <Navbar activePage="Réseau" />
       </header>
 
       <main>
         <Container maxWidth="lg" sx={{ py: { xs: 3, md: 0.1 } }}>
-        <Box component="section" sx={{ py: { xs: 4, md: 3 }, backgroundColor: '#ffffff' }}>
+        <Box component="section" sx={{ py: { xs: 4, md: 3 }, backgroundColor: 'grey.50' }}>
           <Container maxWidth="lg">
             <Grid container spacing={2}>
                 <Grid size={{ xs: 0, md : 4 }} sx={{textAlign: 'left', display: { xs: 'none', md: 'block' }}}>
@@ -242,23 +242,6 @@ export default function Reseau() {
         </Box>
         </Container>
       </main>
-
-      <Box
-        component="footer"
-        sx={{
-          py: 3,
-          textAlign: 'center',
-          borderTop: '1px solid',
-          borderColor: 'divider',
-          backgroundColor: '#f5f5f5'
-        }}
-      >
-        <Container maxWidth="lg">
-          <Typography variant="body2" color="text.secondary">
-            © {new Date().getFullYear()} MTL Vélo — Données ouvertes Ville de Montréal
-          </Typography>
-        </Container>
-      </Box>
-    </>
+    </Box>
   );
 }

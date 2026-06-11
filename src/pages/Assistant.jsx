@@ -4,20 +4,13 @@ import {
   Container,
   Typography,
   Paper,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
   Button,
   TextField,
-  InputAdornment,
-  IconButton,
   Divider,
   Chip,
   Avatar,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
-import AddIcon from '@mui/icons-material/Add';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import PersonIcon from '@mui/icons-material/Person';
 import Navbar from '../components/Navbar';
@@ -41,7 +34,7 @@ export default function Assistant() {
   ];
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: '#f4f6f8' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'grey.50' }}>
       {/* Header Navigation */}
       <Navbar activePage="Assistant" />
 
