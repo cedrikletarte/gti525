@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Box,
   Button,
+  CircularProgress,
+  Alert,
   Container,
   TextField,
   Typography,
@@ -9,21 +11,6 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import { frFR } from '@mui/x-data-grid/locales';
 import Navbar from '../components/Navbar';
-import csvRaw from '../data/compteurs.csv?raw';
-
-function parseCSV(raw) {
-  const [headerLine, ...lines] = raw.trim().split('\n');
-  const headers = headerLine.split(',').map((h) => h.trim());
-  return lines
-    .filter((l) => l.trim())
-    .map((line, idx) => {
-      const values = line.split(',');
-      const row = Object.fromEntries(headers.map((h, i) => [h, values[i]?.trim() ?? '']));
-      return { ...row, _id: idx };
-    });
-}
-
-const ALL_ROWS = parseCSV(csvRaw);
 
 const STATUS_STYLES = {
   Actif: { backgroundColor: '#d4edda', color: '#1a5c2a' },
@@ -41,7 +28,7 @@ function StatusBadge({ value }) {
         width: '100%',
         height: '100%',
         textAlign: 'center',
-        lineHeight: '52px', // hauteur par défaut d'une row MUI DataGrid
+        lineHeight: '52px',
         fontSize: '0.78rem',
         fontWeight: 500,
         whiteSpace: 'nowrap',
@@ -88,10 +75,10 @@ const COLUMNS = [
     width: 160,
     headerClassName: 'grid-header',
     renderCell: (params) => (
-    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
-      <StatusBadge value={params.value} />
-    </Box>
-  ),
+      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
+        <StatusBadge value={params.value} />
+      </Box>
+    ),
   },
   {
     field: 'Annee_implante',
@@ -114,13 +101,23 @@ const COLUMNS = [
 ];
 
 export default function Statistic() {
+  const [compteurs, setCompteurs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    fetch('/gti525/v1/compteurs')
+      .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
+      .then(data => { setCompteurs(data); setLoading(false); })
+      .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load counters.'); setLoading(false); });
+  }, []);
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return ALL_ROWS;
-    return ALL_ROWS.filter((r) => r.Nom.toLowerCase().includes(q));
-  }, [search]);
+    if (!q) return compteurs;
+    return compteurs.filter((r) => r.Nom.toLowerCase().includes(q));
+  }, [search, compteurs]);
 
   const handleClear = () => setSearch('');
 
@@ -133,7 +130,6 @@ export default function Statistic() {
       <main>
         <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
 
-          {/* Filtres */}
           <Box
             sx={{
               display: 'flex',
@@ -163,37 +159,44 @@ export default function Statistic() {
             </Box>
           </Box>
 
-          {/* Data Grid */}
+          {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
           <Box
             sx={{
               width: '100%',
+              display: 'flex',
+              justifyContent: 'center',
               '& .grid-header': {
                 color: 'primary.main',
                 fontWeight: 700,
               },
             }}
           >
-            <DataGrid
-              rows={rows}
-              columns={COLUMNS}
-              getRowId={(row) => row._id}
-              localeText={frFR.components.MuiDataGrid.defaultProps.localeText}
-              initialState={{
-                pagination: { paginationModel: { pageSize: 25 } },
-                sorting: { sortModel: [{ field: 'Nom', sort: 'asc' }] },
-              }}
-              pageSizeOptions={[10, 25, 50, 100]}
-              disableRowSelectionOnClick
-              sx={{
-                border: 'none',
-                '& .MuiDataGrid-columnHeaders': {
-                  backgroundColor: '#f5f5f5',
-                },
-                '& .MuiDataGrid-row:hover': {
-                  backgroundColor: 'rgba(45,106,79,0.04)',
-                },
-              }}
-            />
+            {loading
+              ? <CircularProgress sx={{ mt: 6 }} />
+              : <DataGrid
+                  rows={rows}
+                  columns={COLUMNS}
+                  getRowId={(row) => row.ID}
+                  localeText={frFR.components.MuiDataGrid.defaultProps.localeText}
+                  initialState={{
+                    pagination: { paginationModel: { pageSize: 25 } },
+                    sorting: { sortModel: [{ field: 'Nom', sort: 'asc' }] },
+                  }}
+                  pageSizeOptions={[10, 25, 50, 100]}
+                  disableRowSelectionOnClick
+                  sx={{
+                    width: '100%',
+                    border: 'none',
+                    '& .MuiDataGrid-columnHeaders': {
+                      backgroundColor: '#f5f5f5',
+                    },
+                    '& .MuiDataGrid-row:hover': {
+                      backgroundColor: 'rgba(45,106,79,0.04)',
+                    },
+                  }}
+                />
+            }
           </Box>
         </Container>
       </main>
