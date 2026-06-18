@@ -48,8 +48,8 @@ app.get('/gti525/v1/compteurs', (req, res) => {
   }
 });
 
-// GET /gti525/v1/compteurs/:id?debut=YYMMDD&fin=YYMMDD — daily aggregated passage counts for a counter
-app.get('/gti525/v1/compteurs/:id', (req, res) => {
+// GET /gti525/v1/compteurs/:id/passages?debut=YYMMDD&fin=YYMMDD — daily aggregated passage counts for a counter
+app.get('/gti525/v1/compteurs/:id/passages', (req, res) => {
   const { id } = req.params;
   const { debut, fin } = req.query;
 
