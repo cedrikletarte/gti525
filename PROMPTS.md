@@ -36,6 +36,7 @@
 | [21](#tache-21) | Statistic.jsx — Migration vers l'API REST | 2026-06-11 |
 | [22](#tache-22) | Reseau.jsx — Carte GeoJSON catégorisée et filtres | 2026-06-11 |
 | [23](#tache-23) | Reseau.jsx — Correction des noms de champs GeoJSON | 2026-06-11 |
+| [24](#tache-24) | Reseau.jsx — Conversion de la map intéractive and la légende en composantes réutilisables | 2026-06-22 |
 
   
 
@@ -1838,3 +1839,65 @@ Inspection du fichier `reseau_cyclable.geojson` pour identifier les noms de cham
 - **Accepté** : L'IA a inspecté les données brutes avant de proposer une correction, ce qui a permis d'identifier la cause. les champs `SAISON_PISTE` et `ARRONDISSEMENT` n'existent pas dans le GeoJSON de la Ville de Montréal. Les noms réels sont `SAISONS4` (valeur `"Oui"`/`"Non"`) et `NOM_ARR_VILLE_DESC`.
 
 - **Leçon** : Lors de l'implémentation d'un filtre sur des données externes, il faut toujours valider les noms de champs contre le fichier source avant de coder la logique. L'IA à halluciner sur les noms de champs et a produit des faux nom.
+---
+
+## Tâche 24 — Reseau.jsx —Reseau.jsx — Conversion de la map intéractive and la légende en composantes réutilisable {#tache-24}
+
+**Auteur** : Justin Maitland - 2026-06-22
+
+### 💬 Prompt
+
+```
+I would like to put the interactive map in a component so I can use it anywhere (Fichier Réseau.jsx en pièce jointe)
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Effort** | Faible |
+
+---
+
+### 📦 Sortie obtenue
+
+Here's the extracted `InteractiveMap` component:Here's the extracted `InteractiveMap` component:Now here's how `Reseau.jsx` looks after the refactor — much leaner:Three files were produced. Here's a summary of what changed and why:
+
+**`InteractiveMap.jsx`** — the new reusable component. It accepts four props and owns nothing about your data or filters:
+- `features` — the already-filtered GeoJSON feature array (the parent decides what to pass)
+- `loading` — shows the spinner overlay
+- `error` — suppresses GeoJSON rendering if set
+- `center` / `zoom` — optional, with Montréal defaults so the component works out of the box
+
+The `getCategory` function and `CATEGORY_COLORS` map are exported so other parts of the app can reuse the same classification logic without duplicating it.
+
+**`LegendDialog.jsx`** — also pulled out separately, since the legend is self-contained and `CATEGORIES` was needed by both the filter checkboxes in `Reseau` and the dialog itself. Exporting `CATEGORIES` from here removes the duplication.
+
+**`Reseau.jsx`** — now only manages state and filtering logic. The map rendering is a single `<InteractiveMap ... />` line.
+
+To use the map elsewhere, you'd just do:
+```jsx
+import InteractiveMap from '../components/InteractiveMap';
+
+<InteractiveMap features={someFeatures} loading={false} />
+```
+
+### Fichiers obtenue
+LegendDialog.jsx, Reseau.jsx, InteractiveMap.jsx
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Déplacement du export const CATEGORIES (initialement dans le fichier LegendDialog) dans InteractiveMap
+- Ajout d'un prop dans LegendDialog pour les catégories
+
+---
+
+### 🧠 Justification
+
+- **Accepté** : L'IA à bien séparé la carte du fichier Reseau.jsx comme je le voulais. Il a aussi séparer la légende sans que je le demande, mais c'est un changement que j'appréciais, car elle pourrait également être utilisé dans les grapgiques par exemple
