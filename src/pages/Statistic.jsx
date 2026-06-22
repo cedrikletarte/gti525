@@ -202,7 +202,7 @@ export default function Statistic() {
           <CloseIcon />
         </IconButton>
           <DialogContent dividers>
-            <InteractiveMap center={[selectedCompteur?.lat, selectedCompteur?.lon]} zoom={15} features={compteurs}/>
+            <InteractiveMap center={[selectedCompteur?.lat, selectedCompteur?.lon]} zoom={15}/>
           </DialogContent>
         </Dialog>
       </main>
