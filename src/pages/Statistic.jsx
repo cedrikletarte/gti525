@@ -9,10 +9,16 @@ import {
   Stack,
   TextField,
   Typography,
+  Dialog, 
+  DialogContent, 
+  DialogTitle,
+  IconButton
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { frFR } from '@mui/x-data-grid/locales';
 import Navbar from '../components/Navbar';
+import CloseIcon from '@mui/icons-material/Close';
+import InteractiveMap from '../components/InteractiveMap';
 
 const STATUS_STYLES = {
   Actif: { backgroundColor: '#d4edda', color: '#1a5c2a' },
@@ -41,13 +47,14 @@ function StatusBadge({ value }) {
   );
 }
 
-function ActionsCell({ params }) {
-  const { Latitude, Longitude } = params.row;
+
+function ActionsCell({ params, onCarteClick  }) {
+  console.log(params)
+  const { Latitude, Longitude, Nom } = params.row;
   if (!Latitude || !Longitude) return null;
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${Latitude},${Longitude}`;
   return (
     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
-      <Button variant="outlined" color="primary" size="small" href={mapsUrl} target="_blank" rel="noopener noreferrer">
+      <Button variant="outlined" color="primary" size="small" onClick={() => onCarteClick({ nom: Nom, lat: Latitude, lon: Longitude })}>
         Carte
       </Button>
       <Button variant="contained" color="primary" size="small">
@@ -90,16 +97,7 @@ const COLUMNS = [
     type: 'number',
     align: 'left',
     headerAlign: 'left',
-  },
-  {
-    field: 'actions',
-    headerName: 'Actions',
-    width: 180,
-    sortable: false,
-    filterable: false,
-    headerClassName: 'grid-header',
-    renderCell: (params) => <ActionsCell params={params} />,
-  },
+  }
 ];
 
 export default function Statistic() {
@@ -107,6 +105,7 @@ export default function Statistic() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
+  const [selectedCompteur, setSelectedCompteur] = useState(null);
 
   useEffect(() => {
     fetch('/gti525/v1/compteurs')
@@ -120,6 +119,22 @@ export default function Statistic() {
     if (!q) return compteurs;
     return compteurs.filter((r) => r.Nom.toLowerCase().includes(q));
   }, [search, compteurs]);
+
+
+  const columns = useMemo(() => [
+    ...COLUMNS,
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 180,
+      sortable: false,
+      filterable: false,
+      headerClassName: 'grid-header',
+      renderCell: (params) => (
+        <ActionsCell params={params} onCarteClick={setSelectedCompteur} />
+      ),
+    },
+  ], []);
 
   const handleClear = () => setSearch('');
 
@@ -139,7 +154,7 @@ export default function Statistic() {
 
           {/* Filtres */}
           <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }} elevation={1}>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{alignItems : "center"}}>
               <TextField
                 label="Rechercher par nom..."
                 variant="outlined"
@@ -161,7 +176,7 @@ export default function Statistic() {
               ? <CircularProgress sx={{ mt: 6 }} />
               : <DataGrid
                   rows={rows}
-                  columns={COLUMNS}
+                  columns={columns}
                   getRowId={(row) => row.ID}
                   localeText={frFR.components.MuiDataGrid.defaultProps.localeText}
                   initialState={{pagination: { paginationModel: { pageSize: 20, page: 0 } } }}
@@ -179,6 +194,17 @@ export default function Statistic() {
             }
           </Paper>
         </Container>
+        <Dialog open={selectedCompteur !== null} onClose={() => setSelectedCompteur(null)} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ pr: 6, color: '#000000' }}>
+             {selectedCompteur?.nom}
+          </DialogTitle>
+            <IconButton onClick={() => setSelectedCompteur(null)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <CloseIcon />
+        </IconButton>
+          <DialogContent dividers>
+            <InteractiveMap center={[selectedCompteur?.lat, selectedCompteur?.lon]} zoom={15} features={compteurs}/>
+          </DialogContent>
+        </Dialog>
       </main>
     </Box>
   );
