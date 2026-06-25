@@ -4,6 +4,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import LegendDialog from './LegendDialog';
+import MapMarker from './MapMarker.jsx'
 
 // ─── Category classification ───────────────────────────────────────────────
 
@@ -59,6 +60,8 @@ export default function InteractiveMap({
   error    = null,
   center   = [45.5017, -73.5673],
   zoom     = 10,
+  compteurs     = [],
+  selectedMarker    = null
 }) {
   const [legendOpen, setLegendOpen] = useState(false);
 
@@ -87,7 +90,6 @@ export default function InteractiveMap({
           <CircularProgress />
         </Box>
       )}
-
       {/* Map */}
       <MapContainer
         center={center}
@@ -98,34 +100,51 @@ export default function InteractiveMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="© OpenStreetMap contributors"
         />
+        {compteurs.map((c) =>
+            <MapMarker
+                key={c.ID}
+                obj={c}
+                selected={c.ID === selectedMarker?.ID}
+            />
+        )}
         {!loading && !error && (
           <GeoJSON key={geoJsonKey} data={geoJson} style={styleFeature} />
         )}
       </MapContainer>
-
       {/* Legend button */}
-      <IconButton
-        onClick={() => setLegendOpen(true)}
-        sx={{
-          position: 'absolute', top: 10, right: 10, zIndex: 1000,
-          bgcolor: '#ffffff', '&:hover': { bgcolor: '#f5f5f5' },
-        }}
-        size="small"
-      >
-        <InfoOutlinedIcon />
-      </IconButton>
+      {
+          features.length > 0 ?
+          <IconButton
+            onClick={() => setLegendOpen(true)}
+            sx={{
+              position: 'absolute', top: 10, right: 10, zIndex: 1000,
+              bgcolor: '#ffffff', '&:hover': { bgcolor: '#f5f5f5' },
+            }}
+            size="small"
+          >
+            <InfoOutlinedIcon />
+          </IconButton>
+        :
+            null
+      }
 
       {/* Stats chip */}
-      <Paper sx={{
-        position: 'absolute', bgcolor: '#ffffff', zIndex: 1000,
-        bottom: 25, right: 10,
-        display: 'flex', alignItems: 'center', p: 1, gap: 0.5,
-      }}>
-        <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{features.length}</Typography>
-        <Typography sx={{ fontSize: 15 }}>pistes affichées,</Typography>
-        <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{totalKm}</Typography>
-        <Typography sx={{ fontSize: 15 }}>km</Typography>
-      </Paper>
+      {
+        features.length > 0 ?
+            <Paper sx={{
+                position: 'absolute', bgcolor: '#ffffff', zIndex: 1000,
+                bottom: 25, right: 10,
+                display: 'flex', alignItems: 'center', p: 1, gap: 0.5,
+            }}>
+                <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{features.length}</Typography>
+                <Typography sx={{ fontSize: 15 }}>pistes affichées,</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{totalKm}</Typography>
+                <Typography sx={{ fontSize: 15 }}>km</Typography>
+            </Paper>
+        :
+            null
+      }
+      
 
       {/* Legend modal */}
       <LegendDialog categories={MAP_CATEGORIES} open={legendOpen} onClose={() => setLegendOpen(false)} />

@@ -49,12 +49,10 @@ function StatusBadge({ value }) {
 
 
 function ActionsCell({ params, onCarteClick  }) {
-  console.log(params)
-  const { Latitude, Longitude, Nom } = params.row;
-  if (!Latitude || !Longitude) return null;
+  if (!params.row.Latitude || !params.row.Longitude) return null;
   return (
     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
-      <Button variant="outlined" color="primary" size="small" onClick={() => onCarteClick({ nom: Nom, lat: Latitude, lon: Longitude })}>
+      <Button variant="outlined" color="primary" size="small" onClick={() => onCarteClick(params.row)}>
         Carte
       </Button>
       <Button variant="contained" color="primary" size="small">
@@ -196,13 +194,13 @@ export default function Statistic() {
         </Container>
         <Dialog open={selectedCompteur !== null} onClose={() => setSelectedCompteur(null)} maxWidth="xs" fullWidth>
           <DialogTitle sx={{ pr: 6, color: '#000000' }}>
-             {selectedCompteur?.nom}
+             {selectedCompteur?.Nom}
           </DialogTitle>
             <IconButton onClick={() => setSelectedCompteur(null)} sx={{ position: 'absolute', right: 8, top: 8 }}>
           <CloseIcon />
         </IconButton>
           <DialogContent dividers>
-            <InteractiveMap center={[selectedCompteur?.lat, selectedCompteur?.lon]} zoom={15}/>
+            <InteractiveMap center={[selectedCompteur?.Latitude, selectedCompteur?.Longitude]} zoom={20} compteurs={compteurs} selectedMarker={selectedCompteur}/>
           </DialogContent>
         </Dialog>
       </main>

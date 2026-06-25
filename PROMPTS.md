@@ -11,8 +11,8 @@
 
 ## Table des matières
 
-| # | Tâche | Date |
-|---|-------|-------|
+| #               | Tâche | Date       |
+|-----------------|-------|------------|
 | [01](#tache-01) | Scaffold UI — Navbar, HomePage, thème MUI | 2026-05-14 |
 | [02](#tache-02) | Navbar color — Change theme color | 2026-05-14 |
 | [03](#tache-03) | Statistic.jsx — Page compteurs vélo avec DataGrid | 2026-05-17 |
@@ -37,6 +37,8 @@
 | [22](#tache-22) | Reseau.jsx — Carte GeoJSON catégorisée et filtres | 2026-06-11 |
 | [23](#tache-23) | Reseau.jsx — Correction des noms de champs GeoJSON | 2026-06-11 |
 | [24](#tache-24) | Reseau.jsx — Conversion de la map intéractive and la légende en composantes réutilisables | 2026-06-22 |
+| [25](#tache-25) | Reseau.jsx — Statistic.jsx — Ouvrir une carte quand on appuie sur le bouton carte | 2026-06-22 |
+| [26](#tache-26) | Reseau.jsx — Statistic.jsx — Ouvrir le popup du compteurs selectionné quand la carte s'ouvre | 2026-06-25 |
 
   
 
@@ -2449,11 +2451,11 @@ export default function Statistic() {
 
 ### 🛠 Outil & modèle
 
-| Champ | Valeur |
-|-------|--------|
-| **Outil** | Claude — VS Code |
-| **Modèle** | Claude Sonnet 4.7 |
-| **Effort** | Faible |
+| Champ | Valeur            |
+|-------|-------------------|
+| **Outil** | Claude — VS Code  |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Effort** | Faible            |
 
 ---
 
@@ -2574,5 +2576,364 @@ Key changes:
 ### 🧠 Justification
 
 - **Accepté** : J'ai accepté l'ensemble de la sortie. Je savais que je devais mettre les colonnes dans le return du composant afin de pouvoir utiliser mon état de compteur selectionner et c'est exactement ce que l'IA à fait pour moi donc j'opté pour cette solution.
+
+---
+## Tâche 26 — Statistic.jsx — Ouvrir le popup du compteurs selectionné quand la carte s'ouvre {#tache-26}
+
+**Auteur** : Justin Maitland - 2026-06-25
+
+### 💬 Prompt
+
+I need to select a specific marker on load. I dont want to fly to it, I want the popup to open
+
+fichier joint :
+```jsx
+iimport { useMemo, useState, useEffect } from 'react';
+import {
+    Box,
+    Button,
+    CircularProgress,
+    Alert,
+    Container,
+    Paper,
+    Stack,
+    TextField,
+    Typography,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    IconButton
+} from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+import { frFR } from '@mui/x-data-grid/locales';
+import Navbar from '../components/Navbar';
+import CloseIcon from '@mui/icons-material/Close';
+import InteractiveMap from '../components/InteractiveMap';
+
+const STATUS_STYLES = {
+    Actif: { backgroundColor: '#d4edda', color: '#1a5c2a' },
+    'En maintenance': { backgroundColor: '#e8e8e8', color: '#444444' },
+};
+
+function StatusBadge({ value }) {
+    const style = STATUS_STYLES[value] ?? STATUS_STYLES['En maintenance'];
+    return (
+        <Box
+            component="span"
+            sx={{
+                ...style,
+                display: 'block',
+                width: '100%',
+                height: '100%',
+                textAlign: 'center',
+                lineHeight: '52px',
+                fontSize: '0.78rem',
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+            }}
+        >
+            {value}
+        </Box>
+    );
+}
+
+
+function ActionsCell({ params, onCarteClick  }) {
+    // console.log(params)
+    const { Latitude, Longitude, Nom } = params.row;
+    if (!Latitude || !Longitude) return null;
+    return (
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
+            <Button variant="outlined" color="primary" size="small" onClick={() => onCarteClick({ nom: Nom, lat: Latitude, lon: Longitude })}>
+                Carte
+            </Button>
+            <Button variant="contained" color="primary" size="small">
+                Passages
+            </Button>
+        </Box>
+    );
+}
+
+const COLUMNS = [
+    {
+        field: 'ID',
+        headerName: 'ID',
+        width: 120,
+        headerClassName: 'grid-header',
+    },
+    {
+        field: 'Nom',
+        headerName: 'Nom',
+        flex: 1,
+        minWidth: 180,
+        headerClassName: 'grid-header',
+    },
+    {
+        field: 'Statut',
+        headerName: 'Statut',
+        width: 160,
+        headerClassName: 'grid-header',
+        renderCell: (params) => (
+            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
+                <StatusBadge value={params.value} />
+            </Box>
+        ),
+    },
+    {
+        field: 'Annee_implante',
+        headerName: 'Année',
+        width: 100,
+        headerClassName: 'grid-header',
+        type: 'number',
+        align: 'left',
+        headerAlign: 'left',
+    }
+];
+
+export default function Statistic() {
+    const [compteurs, setCompteurs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [search, setSearch] = useState('');
+    const [selectedCompteur, setSelectedCompteur] = useState(null);
+
+    useEffect(() => {
+        fetch('/gti525/v1/compteurs')
+            .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
+            .then(data => { setCompteurs(data); setLoading(false); })
+            .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load counters.'); setLoading(false); });
+    }, []);
+
+    const rows = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return compteurs;
+        return compteurs.filter((r) => r.Nom.toLowerCase().includes(q));
+    }, [search, compteurs]);
+
+
+    const columns = useMemo(() => [
+        ...COLUMNS,
+        {
+            field: 'actions',
+            headerName: 'Actions',
+            width: 180,
+            sortable: false,
+            filterable: false,
+            headerClassName: 'grid-header',
+            renderCell: (params) => (
+                <ActionsCell params={params} onCarteClick={setSelectedCompteur} />
+            ),
+        },
+    ], []);
+
+    const handleClear = () => setSearch('');
+
+    return (
+        <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
+            <header>
+                <Navbar activePage="Statistiques" />
+            </header>
+
+            <main>
+                <Container maxWidth="lg" sx={{ flexGrow: 1, py: 4 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                        <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                            Compteurs vélo
+                        </Typography>
+                    </Box>
+
+                    {/* Filtres */}
+                    <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }} elevation={1}>
+                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{alignItems : "center"}}>
+                            <TextField
+                                label="Rechercher par nom..."
+                                variant="outlined"
+                                size="small"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                sx={{ minWidth: 220, flexGrow: { md: 1 } }}
+                            />
+                            <Button variant="outlined" color="primary" onClick={handleClear}>
+                                Effacer les filtres
+                            </Button>
+                        </Stack>
+                    </Paper>
+
+                    {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
+                    <Paper sx={{ width: '100%', height: 650, borderRadius: 2, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }} elevation={1}>
+                        {loading
+                            ? <CircularProgress sx={{ mt: 6 }} />
+                            : <DataGrid
+                                rows={rows}
+                                columns={columns}
+                                getRowId={(row) => row.ID}
+                                localeText={frFR.components.MuiDataGrid.defaultProps.localeText}
+                                initialState={{pagination: { paginationModel: { pageSize: 20, page: 0 } } }}
+                                pageSizeOptions={[20]}
+                                disableRowSelectionOnClick
+                                sx={{
+                                    border: 'none',
+                                    '& .MuiDataGrid-columnHeaders': {
+                                        backgroundColor: '#f5f5f5',
+                                        borderBottom: '1px solid rgba(224, 224, 224, 1)',
+                                    },
+                                    '& .MuiDataGrid-columnHeaderTitle': { fontWeight: 600 }
+                                }}
+                            />
+                        }
+                    </Paper>
+                </Container>
+                <Dialog open={selectedCompteur !== null} onClose={() => setSelectedCompteur(null)} maxWidth="xs" fullWidth>
+                    <DialogTitle sx={{ pr: 6, color: '#000000' }}>
+                        {selectedCompteur?.nom}
+                    </DialogTitle>
+                    <IconButton onClick={() => setSelectedCompteur(null)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+                        <CloseIcon />
+                    </IconButton>
+                    <DialogContent dividers>
+                        <InteractiveMap key={selectedCompteur?.id} center={[selectedCompteur?.lat, selectedCompteur?.lon]} zoom={15} compteurs={compteurs}/>
+                    </DialogContent>
+                </Dialog>
+            </main>
+        </Box>
+    );
+}
+
+
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur            |
+|-------|-------------------|
+| **Outil** | Claude — VS Code  |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Effort** | Faible            |
+
+---
+
+### 📦 Sortie obtenue
+
+Add a `ref` to each marker and open the popup of the selected one on mount. The cleanest way is a small child component per marker:
+
+```jsx
+import { useEffect, useRef } from 'react';
+import { Marker, Popup } from 'react-leaflet';
+
+function CompteurMarker({ compteur, selected }) {
+  const markerRef = useRef(null);
+
+  useEffect(() => {
+    if (selected && markerRef.current) {
+      markerRef.current.openPopup();
+    }
+  }, [selected]);
+
+  return (
+    <Marker
+      key={compteur.ID}
+      ref={markerRef}
+      position={[compteur.Latitude, compteur.Longitude]}
+    >
+      <Popup>{compteur.Nom}</Popup>
+    </Marker>
+  );
+}
+```
+
+Then in your map, replace the current `.map()` with:
+
+```jsx
+{compteurs.map((c) => (
+  <CompteurMarker
+    key={c.ID ?? `${c.Latitude}-${c.Longitude}`}
+    compteur={c}
+    selected={c.ID === selectedCompteur?.ID}  // adjust field name to match your data
+  />
+))}
+```
+
+And pass `selectedCompteur` as a prop to `InteractiveMap`:
+
+```jsx
+<InteractiveMap
+  center={[selectedCompteur?.lat, selectedCompteur?.lon]}
+  zoom={15}
+  compteurs={compteurs}
+  selectedCompteur={selectedCompteur}   // ← add this
+/>
+```
+
+The `selected` prop tells each marker whether it's the one that should open its popup on mount.
+
+
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Changement des nom pour être plus génénique (fichier se nomme MapMarker au lieu de CompteurMarker, obj au lieux de compteur...)
+
+---
+
+### 🧠 Justification
+
+**Accepté** : J'ai accepté l'ensemble de la sortie mise à part les noms de 
+variable parce que j'avais vu une solution similaire sur stack overflow et 
+j'obtiens le résultat obtenu. 
+
+URL pour la solution sur stackoverflow : https://stackoverflow.com/questions/67823984/how-to-open-a-specific-popup-on-map-load
+
+J'ai du faire une modification dans le code pour selectedCompteur sur lequel j'avais travailler dessus plus tôt. 
+Au lieu de seulement passer quelques propriétés du compteur, j'ai changer le code
+pour passer l'objet complet afin de garder la même référence.
+
+Avant :
+```jsx
+function ActionsCell({ params, onCarteClick  }) {
+    console.log(params)
+    const { Latitude, Longitude, Nom } = params.row;
+    if (!Latitude || !Longitude) return null;
+    return (
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
+            <Button variant="outlined" color="primary" size="small" onClick={() => onCarteClick({ nom: Nom, lat: Latitude, lon: Longitude })}>
+                Carte
+            </Button>
+            <Button variant="contained" color="primary" size="small">
+                Passages
+            </Button>
+        </Box>
+    );
+}
+```
+
+Après :
+```jsx
+function ActionsCell({ params, onCarteClick  }) {
+    if (!params.row.Latitude || !params.row.Longitude) return null;
+    return (
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
+            <Button variant="outlined" color="primary" size="small" onClick={() => onCarteClick(params.row)}>
+                Carte
+            </Button>
+            <Button variant="contained" color="primary" size="small">
+                Passages
+            </Button>
+        </Box>
+    );
+}
+```
+
+Ce changment était nécessaire pour cette comparaison dans MapMarker :
+```jsx
+    useEffect(() => {
+    if (selected && markerRef.current) {
+        markerRef.current.openPopup();
+    }
+}, [selected]);
+```
 
 ---
