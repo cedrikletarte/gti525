@@ -200,7 +200,17 @@ export default function Statistic() {
           <CloseIcon />
         </IconButton>
           <DialogContent dividers>
-            <InteractiveMap center={[selectedCompteur?.Latitude, selectedCompteur?.Longitude]} zoom={20} markers={compteurs} selectedMarker={selectedCompteur}/>
+            <InteractiveMap
+                center={[selectedCompteur?.Latitude, selectedCompteur?.Longitude]}
+                zoom={20}
+                markers = {compteurs.map((m) => ({
+                  ID: m.ID,
+                  Nom: m.Nom,
+                  Latitude: m.Latitude,
+                  Longitude: m.Longitude,
+                }))}
+                selectedMarker={selectedCompteur?.ID}
+            />
           </DialogContent>
         </Dialog>
       </main>

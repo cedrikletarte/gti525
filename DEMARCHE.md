@@ -12,15 +12,16 @@
 
 ## Table des matières
 
-| # | Décision | Date |
-|---|-------|-------|
-| [01](#decision-01) | Choix du cadriciel front-end | 2026-05-14 |
-| [02](#decision-02) | Choix de la librairie de composants UI | 2026-05-14 |
-| [03](#decision-03) | Début de la page Reseau.jsx | 2026-05-26 |
-| [04](#decision-04) | Menu de filtre de la page Reseau.jsx | 2026-05-26 |
-| [05](#decision-05) | Ajustement des datepicker de la page Reseau | 2026-05-26 |
-| [06](#decision-06) | Cacher le menu de filtre en mobile pour la page Reseau | 2026-05-26 |
+| #                  | Décision                                                           | Date       |
+|--------------------|--------------------------------------------------------------------|------------|
+| [01](#decision-01) | Choix du cadriciel front-end                                       | 2026-05-14 |
+| [02](#decision-02) | Choix de la librairie de composants UI                             | 2026-05-14 |
+| [03](#decision-03) | Début de la page Reseau.jsx                                        | 2026-05-26 |
+| [04](#decision-04) | Menu de filtre de la page Reseau.jsx                               | 2026-05-26 |
+| [05](#decision-05) | Ajustement des datepicker de la page Reseau                        | 2026-05-26 |
+| [06](#decision-06) | Cacher le menu de filtre en mobile pour la page Reseau             | 2026-05-26 |
 | [07](#decision-07) | Obtenir la liste d'arrondissement pour le menu dans la page réseau | 2026-05-26 |
+| [08](#decision-08) | Gestion des noms de propriétés différentes entre pois et compteurs | 2026-06-25 |
 
 ---
 
@@ -192,3 +193,66 @@ Je me suis beacoup inspiré de la méthode ParseCSV dans la page statistique et 
 https://mui.com/material-ui/react-select/
 
 Une alternative aurait été d'utiliser une librairie externe pour s'en charger, mais puisque c'était un fichier très simple, j'ai décidé de le faire moi même pour éviter d'importer une autre librairie. Se fier sur son propre code offre plus de contrôle et empêche des problèmes de dépendance et de mise à jour qui pourrait survenir.
+
+## Décision 08 - Gestion des noms de propriétés différentes entre pois et compteurs {#decision-08}
+
+**Auteur** : Justin Maitland - 2026-06-25
+
+**Justification** :
+
+J'ai rencontrer un problème dans la selection du marqueur par défault lorsqu'on ouvre la carte interactive.
+Le problème était que les compteurs et les points d'intérêts ont des noms de 
+propriété différentes alors que j'utilisais une syntaxe adapté à ceux des compteurs
+dans InteractiveMap.jsx. J'ai commencé par tenté de changer les noms de propriétés
+pour qu'ils soivent tous pareille, mais je me suis rendu compte que ce m'était pas une bonne solution,
+car ce n'est pas toujours possible. J'ai donc eu l'idée d'ajouter un prop pour le nom
+de la propriété id et nom afin de les accéder dynamiquement.
+
+Avant :
+```jsx
+       {markers.map((c) =>
+            <MapMarker
+                key={c.ID}
+                obj={c}
+                selected={c.ID === selectedMarker?.ID}
+
+
+            />
+```
+
+Après :
+```jsx
+        {markers.map((c) =>
+    <MapMarker
+        key={c[markerIdField]}
+        obj={c}
+        selected={c[markerIdField] === selectedMarker?.[markerIdField]}
+        nameField={markerNameField}
+        idField={markerIdField}
+    />
+)}
+```
+Avec cette solution, il sera possible d'utiliser le nom désiré pour ces propriétés. 
+
+Cependant après une plus longue réflexion, j'ai eu l'idée de ne pas utiliser cette idée
+et de plutôt envoyer un nouveau tableau modifier par un map qui utiliserait plutot
+afin de pouvoir mettre les nom de propriétés que je voulais.
+
+Résultat final pour poi par exemple :
+```jsx
+    <InteractiveMap
+        center={[selectedPoi?.Latitude, selectedPoi?.Longitude]}
+        zoom={20}
+        markers = {filteredData.map((m) => ({
+            ID: m.id,
+            Nom: m.Nom,
+            Latitude: m.Latitude,
+            Longitude: m.Longitude,
+        }))}
+        selectedMarker={selectedPoi?.id}
+    />
+```
+
+J'ai aussi décider de faire la comparaison sur le id plutôt que sur l'objet complet
+finalement, car selon moi c'est mieu et évite de gérer les problème de référence.
+

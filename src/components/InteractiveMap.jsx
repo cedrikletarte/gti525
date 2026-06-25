@@ -61,7 +61,7 @@ export default function InteractiveMap({
   center   = [45.5017, -73.5673],
   zoom     = 10,
   markers     = [],
-  selectedMarker    = null
+  selectedMarker    = null,
 }) {
   const [legendOpen, setLegendOpen] = useState(false);
 
@@ -100,11 +100,13 @@ export default function InteractiveMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="© OpenStreetMap contributors"
         />
+
+
         {markers.map((c) =>
             <MapMarker
                 key={c.ID}
                 obj={c}
-                selected={c.ID === selectedMarker?.ID}
+                selected={c.ID === selectedMarker}
             />
         )}
         {!loading && !error && (

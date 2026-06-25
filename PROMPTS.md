@@ -2931,5 +2931,8 @@ Ce changment était nécessaire pour cette comparaison dans MapMarker :
 ```jsx
     selected={c.ID === selectedMarker?.ID}
 ```
+**EDIT** : J'ai changé pour seulement passer le id du marker selctionné, car c'est plus consistant que comparé par l'objet entier
+lors de la décision #8 dans DEMARCHE.md
+
 
 ---
