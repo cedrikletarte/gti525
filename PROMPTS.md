@@ -2929,11 +2929,7 @@ function ActionsCell({ params, onCarteClick  }) {
 
 Ce changment était nécessaire pour cette comparaison dans MapMarker :
 ```jsx
-    useEffect(() => {
-    if (selected && markerRef.current) {
-        markerRef.current.openPopup();
-    }
-}, [selected]);
+    selected={c.ID === selectedMarker?.ID}
 ```
 
 ---
