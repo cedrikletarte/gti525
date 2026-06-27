@@ -124,6 +124,17 @@ app.get('/gti525/v1/pistes', (req, res) => {
   }
 });
 
+// GET /gti525/v1/territoires — borough boundaries (GeoJSON)
+app.get('/gti525/v1/territoires', (req, res) => {
+  try {
+    const content = fs.readFileSync(path.join(DATA_DIR, 'territoires.geojson'), 'utf8');
+    res.setHeader('Content-Type', 'application/geo+json');
+    res.send(content);
+  } catch (_err) {
+    res.status(500).json({ erreur: 'Failed to read the borough boundaries file.' });
+  }
+});
+
 // GET /gti525/v1/pointsdinteret — points of interest (poi.csv → JSON)
 app.get('/gti525/v1/pointsdinteret', (req, res) => {
   try {

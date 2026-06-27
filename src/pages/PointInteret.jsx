@@ -2,13 +2,19 @@ import { useState, useEffect, useMemo } from 'react';
 import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Button, Container, Paper, Chip, TextField, Stack, CircularProgress, Alert } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
+import MapIcon from '@mui/icons-material/Map';
 import Navbar from '../components/Navbar';
+import ArrondissementMapDialog from '../components/ArrondissementMapDialog';
+import useTerritoires from '../lib/useTerritoires';
+import { normArr, arrOptionsFrom, ALL } from '../lib/arrondissement';
 
 export default function PointInteret() {
   const [pois, setPois] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedArrondissement, setSelectedArrondissement] = useState('Tous');
+  const [selectedArrondissement, setSelectedArrondissement] = useState(ALL);
+  const [arrMapOpen, setArrMapOpen] = useState(false);
+  const territoires = useTerritoires();
   const [searchName, setSearchName] = useState('');
   const [selectedType, setSelectedType] = useState('Tous');
 
@@ -19,9 +25,7 @@ export default function PointInteret() {
       .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load points of interest.'); setLoading(false); });
   }, []);
 
-  const territoires = useMemo(() => {
-    return [...new Set(pois.map(r => r.Arrondissement).filter(Boolean))].sort();
-  }, [pois]);
+  const arrOptions = useMemo(() => arrOptionsFrom(territoires), [territoires]);
 
   const data = useMemo(() => {
     return pois.filter(r => r.ID).map(row => ({
@@ -36,8 +40,9 @@ export default function PointInteret() {
   }, [pois]);
 
   const filteredData = useMemo(() => {
+    const selArr = selectedArrondissement === ALL ? null : normArr(selectedArrondissement);
     return data.filter(item => {
-      const matchArrond = selectedArrondissement === 'Tous' || item.arrondissement === selectedArrondissement;
+      const matchArrond = !selArr || normArr(item.arrondissement) === selArr;
       const matchType = selectedType === 'Tous' || item.type === selectedType;
       const matchName = searchName === '' || item.nom.toLowerCase().includes(searchName.toLowerCase());
       return matchArrond && matchType && matchName;
@@ -116,12 +121,23 @@ export default function PointInteret() {
             <FormControl size="small" sx={{ minWidth: 250 }}>
               <InputLabel id="arrondissement-select-label">Filtrer par arrondissement</InputLabel>
               <Select labelId="arrondissement-select-label" value={selectedArrondissement} label="Filtrer par arrondissement" onChange={(e) => setSelectedArrondissement(e.target.value)}>
-                <MenuItem value="Tous"><em>Tous les arrondissements</em></MenuItem>
-                {territoires.map((terr, index) => (
-                  <MenuItem key={index} value={terr}>{terr}</MenuItem>
+                <MenuItem value={ALL}><em>Tous les arrondissements</em></MenuItem>
+                {arrOptions.map((terr) => (
+                  <MenuItem key={terr} value={terr}>{terr}</MenuItem>
                 ))}
               </Select>
             </FormControl>
+
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<MapIcon />}
+              onClick={() => setArrMapOpen(true)}
+              disabled={!territoires}
+              sx={{ flexShrink: 0 }}
+            >
+              Carte
+            </Button>
           </Stack>
         </Paper>
 
@@ -144,6 +160,14 @@ export default function PointInteret() {
           }
         </Paper>
       </Container>
+
+      <ArrondissementMapDialog
+        open={arrMapOpen}
+        onClose={() => setArrMapOpen(false)}
+        territoires={territoires}
+        value={selectedArrondissement}
+        onChange={setSelectedArrondissement}
+      />
     </Box>
   );
 }

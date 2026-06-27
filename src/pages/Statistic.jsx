@@ -5,14 +5,22 @@ import {
   CircularProgress,
   Alert,
   Container,
+  FormControl,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import MapIcon from '@mui/icons-material/Map';
 import { DataGrid } from '@mui/x-data-grid';
 import { frFR } from '@mui/x-data-grid/locales';
 import Navbar from '../components/Navbar';
+import ArrondissementMapDialog from '../components/ArrondissementMapDialog';
+import useTerritoires from '../lib/useTerritoires';
+import { arrondissementOf, normArr, arrOptionsFrom, ALL } from '../lib/arrondissement';
 
 const STATUS_STYLES = {
   Actif: { backgroundColor: '#d4edda', color: '#1a5c2a' },
@@ -107,6 +115,9 @@ export default function Statistic() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
+  const [selectedArr, setSelectedArr] = useState(ALL);
+  const [arrMapOpen, setArrMapOpen] = useState(false);
+  const territoires = useTerritoires();
 
   useEffect(() => {
     fetch('/gti525/v1/compteurs')
@@ -115,13 +126,31 @@ export default function Statistic() {
       .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load counters.'); setLoading(false); });
   }, []);
 
+  // compteurs.csv has no borough column, so locate each counter by its coordinates.
+  const arrByCounter = useMemo(() => {
+    const map = {};
+    if (!territoires) return map;
+    for (const c of compteurs) {
+      const lat = parseFloat(c.Latitude);
+      const lng = parseFloat(c.Longitude);
+      map[c.ID] = (lat && lng) ? arrondissementOf(lng, lat, territoires) : null;
+    }
+    return map;
+  }, [compteurs, territoires]);
+
+  const arrOptions = useMemo(() => arrOptionsFrom(territoires), [territoires]);
+
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return compteurs;
-    return compteurs.filter((r) => r.Nom.toLowerCase().includes(q));
-  }, [search, compteurs]);
+    const selArr = selectedArr === ALL ? null : normArr(selectedArr);
+    return compteurs.filter((r) => {
+      if (q && !r.Nom.toLowerCase().includes(q)) return false;
+      if (selArr && normArr(arrByCounter[r.ID]) !== selArr) return false;
+      return true;
+    });
+  }, [search, compteurs, selectedArr, arrByCounter]);
 
-  const handleClear = () => setSearch('');
+  const handleClear = () => { setSearch(''); setSelectedArr(ALL); };
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
@@ -148,6 +177,33 @@ export default function Statistic() {
                 onChange={(e) => setSearch(e.target.value)}
                 sx={{ minWidth: 220, flexGrow: { md: 1 } }}
               />
+
+              <FormControl size="small" sx={{ minWidth: 250 }}>
+                <InputLabel id="arr-select-label">Filtrer par arrondissement</InputLabel>
+                <Select
+                  labelId="arr-select-label"
+                  value={selectedArr}
+                  label="Filtrer par arrondissement"
+                  onChange={(e) => setSelectedArr(e.target.value)}
+                >
+                  <MenuItem value={ALL}><em>Tous les arrondissements</em></MenuItem>
+                  {arrOptions.map((terr) => (
+                    <MenuItem key={terr} value={terr}>{terr}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<MapIcon />}
+                onClick={() => setArrMapOpen(true)}
+                disabled={!territoires}
+                sx={{ flexShrink: 0 }}
+              >
+                Carte
+              </Button>
+
               <Button variant="outlined" color="primary" onClick={handleClear}>
                 Effacer les filtres
               </Button>
@@ -180,6 +236,14 @@ export default function Statistic() {
           </Paper>
         </Container>
       </main>
+
+      <ArrondissementMapDialog
+        open={arrMapOpen}
+        onClose={() => setArrMapOpen(false)}
+        territoires={territoires}
+        value={selectedArr}
+        onChange={setSelectedArr}
+      />
     </Box>
   );
 }
