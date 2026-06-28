@@ -79,7 +79,7 @@ export default function InteractiveMap({
   );
 
   return (
-    <Box sx={{ position: 'relative', flex: 1, minHeight: 300 }}>
+    <Box sx={{ position: 'relative', flex: 1, minHeight: 600 }}>
       {/* Loading overlay */}
       {loading && (
         <Box sx={{

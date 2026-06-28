@@ -11,34 +11,35 @@
 
 ## Table des matières
 
-| #               | Tâche | Date       |
-|-----------------|-------|------------|
-| [01](#tache-01) | Scaffold UI — Navbar, HomePage, thème MUI | 2026-05-14 |
-| [02](#tache-02) | Navbar color — Change theme color | 2026-05-14 |
-| [03](#tache-03) | Statistic.jsx — Page compteurs vélo avec DataGrid | 2026-05-17 |
-| [04](#tache-04) | Routing — Navigation Navbar vers Statistic | 2026-05-17 |
-| [05](#tache-05) | DataGrid — Table MUI → MUI X DataGrid | 2026-05-17 |
-| [06](#tache-06) | Layout — Alignement Typography "Compteurs vélo" à gauche | 2026-05-17 |
-| [07](#tache-07) | About.jsx — Page "À propos" + route /a-propos | 2026-05-17 |
-| [08](#tache-08) | Reseau.jsx — Icone de cercle | 2026-05-20 |
-| [09](#tache-09) | Allignement du texte des bouton à gauche | 2026-05-20 |
-| [10](#tache-10) | Ajout d'une carte dans la page Reseau | 2026-05-20 |
-| [11](#tache-11) | Points d'intérêt — Création de la page (Phase 1) | 2026-05-21 |
-| [12](#tache-12) | Points d'intérêt — Ajustement aux maquettes UI (Phase 2 & 3) | 2026-05-21 |
-| [13](#tache-13) | Reseau.jsx — Changement du comportement sur petit écran | 2026-05-21 |
-| [14](#tache-14) | Reseau.jsx — Chargement d'un fichier geojson | 2026-05-21 |
-| [15](#tache-15) | Assistant.jsx — Création de la page Assistant | 2026-06-01 |
-| [16](#tache-16) | Assistant.jsx — Retrait de l'historique | 2026-06-01 |
-| [17](#tache-17) | Assistant.jsx — Amélioration de la zone de saisie | 2026-06-01 |
-| [18](#tache-18) | Accessibilité — Correction des contrastes WCAG 2.1 AA | 2026-06-04 |
-| [19](#tache-19) | Backend Node.js + Express — 4 routes API | 2026-06-11 |
-| [20](#tache-20) | PointInteret.jsx — Migration vers l'API REST | 2026-06-11 |
-| [21](#tache-21) | Statistic.jsx — Migration vers l'API REST | 2026-06-11 |
-| [22](#tache-22) | Reseau.jsx — Carte GeoJSON catégorisée et filtres | 2026-06-11 |
-| [23](#tache-23) | Reseau.jsx — Correction des noms de champs GeoJSON | 2026-06-11 |
+| #               | Tâche                                                                                     | Date       |
+|-----------------|-------------------------------------------------------------------------------------------|------------|
+| [01](#tache-01) | Scaffold UI — Navbar, HomePage, thème MUI                                                 | 2026-05-14 |
+| [02](#tache-02) | Navbar color — Change theme color                                                         | 2026-05-14 |
+| [03](#tache-03) | Statistic.jsx — Page compteurs vélo avec DataGrid                                         | 2026-05-17 |
+| [04](#tache-04) | Routing — Navigation Navbar vers Statistic                                                | 2026-05-17 |
+| [05](#tache-05) | DataGrid — Table MUI → MUI X DataGrid                                                     | 2026-05-17 |
+| [06](#tache-06) | Layout — Alignement Typography "Compteurs vélo" à gauche                                  | 2026-05-17 |
+| [07](#tache-07) | About.jsx — Page "À propos" + route /a-propos                                             | 2026-05-17 |
+| [08](#tache-08) | Reseau.jsx — Icone de cercle                                                              | 2026-05-20 |
+| [09](#tache-09) | Allignement du texte des bouton à gauche                                                  | 2026-05-20 |
+| [10](#tache-10) | Ajout d'une carte dans la page Reseau                                                     | 2026-05-20 |
+| [11](#tache-11) | Points d'intérêt — Création de la page (Phase 1)                                          | 2026-05-21 |
+| [12](#tache-12) | Points d'intérêt — Ajustement aux maquettes UI (Phase 2 & 3)                              | 2026-05-21 |
+| [13](#tache-13) | Reseau.jsx — Changement du comportement sur petit écran                                   | 2026-05-21 |
+| [14](#tache-14) | Reseau.jsx — Chargement d'un fichier geojson                                              | 2026-05-21 |
+| [15](#tache-15) | Assistant.jsx — Création de la page Assistant                                             | 2026-06-01 |
+| [16](#tache-16) | Assistant.jsx — Retrait de l'historique                                                   | 2026-06-01 |
+| [17](#tache-17) | Assistant.jsx — Amélioration de la zone de saisie                                         | 2026-06-01 |
+| [18](#tache-18) | Accessibilité — Correction des contrastes WCAG 2.1 AA                                     | 2026-06-04 |
+| [19](#tache-19) | Backend Node.js + Express — 4 routes API                                                  | 2026-06-11 |
+| [20](#tache-20) | PointInteret.jsx — Migration vers l'API REST                                              | 2026-06-11 |
+| [21](#tache-21) | Statistic.jsx — Migration vers l'API REST                                                 | 2026-06-11 |
+| [22](#tache-22) | Reseau.jsx — Carte GeoJSON catégorisée et filtres                                         | 2026-06-11 |
+| [23](#tache-23) | Reseau.jsx — Correction des noms de champs GeoJSON                                        | 2026-06-11 |
 | [24](#tache-24) | Reseau.jsx — Conversion de la map intéractive and la légende en composantes réutilisables | 2026-06-22 |
-| [25](#tache-25) | Reseau.jsx — Statistic.jsx — Ouvrir une carte quand on appuie sur le bouton carte | 2026-06-22 |
-| [26](#tache-26) | Reseau.jsx — Statistic.jsx — Ouvrir le popup du compteurs selectionné quand la carte s'ouvre | 2026-06-25 |
+| [25](#tache-25) | Statistic.jsx — Ouvrir une carte quand on appuie sur le bouton carte                      | 2026-06-22 |
+| [26](#tache-26) | Statistic.jsx — Ouvrir le popup du compteurs selectionné quand la carte s'ouvre           | 2026-06-25 |
+| [26](#tache-26) | Statistic.jsx — Fonction pour changer le format de date                                   | 2026-06-28 |
 
   
 
@@ -2451,11 +2452,11 @@ export default function Statistic() {
 
 ### 🛠 Outil & modèle
 
-| Champ | Valeur            |
-|-------|-------------------|
-| **Outil** | Claude — VS Code  |
+| Champ | Valeur           |
+|-------|------------------|
+| **Outil** | Claude |
 | **Modèle** | Claude Sonnet 4.6 |
-| **Effort** | Faible            |
+| **Effort** | Faible           |
 
 ---
 
@@ -2588,7 +2589,7 @@ I need to select a specific marker on load. I dont want to fly to it, I want the
 
 fichier joint :
 ```jsx
-iimport { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
     Box,
     Button,
@@ -2807,11 +2808,11 @@ export default function Statistic() {
 
 ### 🛠 Outil & modèle
 
-| Champ | Valeur            |
-|-------|-------------------|
-| **Outil** | Claude — VS Code  |
+| Champ | Valeur  |
+|-------|---------|
+| **Outil** | Claude  |
 | **Modèle** | Claude Sonnet 4.6 |
-| **Effort** | Faible            |
+| **Effort** | Faible  |
 
 ---
 
@@ -2934,5 +2935,58 @@ Ce changment était nécessaire pour cette comparaison dans MapMarker :
 **EDIT** : J'ai changé pour seulement passer le id du marker selctionné, car c'est plus consistant que comparé par l'objet entier
 lors de la décision #8 dans DEMARCHE.md
 
+
+---
+## Tâche 27 — Statistic.jsx — Fonction pour changer le format de date {#tache-27}
+
+**Auteur** : Justin Maitland - 2026-06-25
+
+### 💬 Prompt
+
+need to convert a date from Sat, 05 Jun 2026 04:00:00 GMT to 260605
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur           |
+|-------|------------------|
+| **Outil** | Claude  |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Effort** | Faible           |
+
+---
+
+### 📦 Sortie obtenue
+
+That format is `YYMMDD`. Here's a one-liner in JavaScript:
+
+```js
+const input = "Sat, 05 Jun 2026 04:00:00 GMT";
+const date = new Date(input);
+
+const yy = String(date.getUTCFullYear()).slice(-2);
+const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+const dd = String(date.getUTCDate()).padStart(2, '0');
+
+const result = `${yy}${mm}${dd}`; // "260605"
+```
+
+Make sure to use the `UTC` variants (`getUTCFullYear`, `getUTCMonth`, `getUTCDate`) since your input is in GMT — otherwise it could shift the date depending on the local timezone.
+
+
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- J'ai changé cette sortie en méthode, prenant le input comme paramettre et retourne le result
+
+---
+
+### 🧠 Justification
+
+**Accepté** : J'ai accepté la logigue, car c'est ce que j'avais besoin et cela me faisait du sens.
+Je l'ai mis dans une méthode afin de pouvoir réutiliser la fonction.
 
 ---

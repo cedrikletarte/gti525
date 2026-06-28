@@ -12,16 +12,17 @@
 
 ## Table des matières
 
-| #                  | Décision                                                           | Date       |
-|--------------------|--------------------------------------------------------------------|------------|
-| [01](#decision-01) | Choix du cadriciel front-end                                       | 2026-05-14 |
-| [02](#decision-02) | Choix de la librairie de composants UI                             | 2026-05-14 |
-| [03](#decision-03) | Début de la page Reseau.jsx                                        | 2026-05-26 |
-| [04](#decision-04) | Menu de filtre de la page Reseau.jsx                               | 2026-05-26 |
-| [05](#decision-05) | Ajustement des datepicker de la page Reseau                        | 2026-05-26 |
-| [06](#decision-06) | Cacher le menu de filtre en mobile pour la page Reseau             | 2026-05-26 |
-| [07](#decision-07) | Obtenir la liste d'arrondissement pour le menu dans la page réseau | 2026-05-26 |
-| [08](#decision-08) | Gestion des noms de propriétés différentes entre pois et compteurs | 2026-06-25 |
+| #                  | Décision                                                                      | Date       |
+|--------------------|-------------------------------------------------------------------------------|------------|
+| [01](#decision-01) | Choix du cadriciel front-end                                                  | 2026-05-14 |
+| [02](#decision-02) | Choix de la librairie de composants UI                                        | 2026-05-14 |
+| [03](#decision-03) | Début de la page Reseau.jsx                                                   | 2026-05-26 |
+| [04](#decision-04) | Menu de filtre de la page Reseau.jsx                                          | 2026-05-26 |
+| [05](#decision-05) | Ajustement des datepicker de la page Reseau                                   | 2026-05-26 |
+| [06](#decision-06) | Cacher le menu de filtre en mobile pour la page Reseau                        | 2026-05-26 |
+| [07](#decision-07) | Obtenir la liste d'arrondissement pour le menu dans la page réseau            | 2026-05-26 |
+| [08](#decision-08) | Gestion des noms de propriétés différentes entre pois et compteurs            | 2026-06-25 |
+| [09](#decision-09) | Ouverture d'un graphique quand on appuie sur passage, avec un filtre par date | 2026-06-28 |
 
 ---
 
@@ -256,3 +257,140 @@ Résultat final pour poi par exemple :
 J'ai aussi décider de faire la comparaison sur le id plutôt que sur l'objet complet
 finalement, car selon moi c'est mieu et évite de gérer les problème de référence.
 
+## Décision 09 - | [09](#decision-09) | Ouverture d'un graphique quand on appuie sur passage, avec un filtre par date | 2026-06-28 | {#decision-09}
+
+**Auteur** : Justin Maitland - 2026-06-28
+
+**Justification** :
+
+Pour débuter cette tâche, je devais trouver une librairie de graphique. Il y en avait quelques-unes proposé dans 
+l'énoncé, mais en faisant des recherches, j'ai trouvé que MUI, qu'on utilise dans notre projet,
+possède des graphiques. J'ai donc opté pour cette solution en suivant les étapes
+sur la documentation pour l'implémenter.
+
+Documentation de react-charts de MUI : https://mui.com/x/react-charts/quickstart/
+
+Sur cette même âge, il y avait un exemple de graphique qui resssemblait à ce que je voulais
+comme résultat. J'ai donc pris ce code pour l'adapter et j'ai mis le tout dans le 
+fichier Chart.js, un composant réutilisable pour notre projet.
+
+Code initial : 
+```jsx
+import Box from '@mui/material/Box';
+import { BarPlot } from '@mui/x-charts/BarChart';
+import { LineHighlightPlot, LinePlot } from '@mui/x-charts/LineChart';
+import { ChartsContainer } from '@mui/x-charts/ChartsContainer';
+
+import { ChartsXAxis } from '@mui/x-charts/ChartsXAxis';
+import { ChartsYAxis } from '@mui/x-charts/ChartsYAxis';
+import { ChartsTooltip } from '@mui/x-charts/ChartsTooltip';
+import { ChartsAxisHighlight } from '@mui/x-charts/ChartsAxisHighlight';
+import alphabetStock from '../dataset/GOOGL.json';
+
+const series = [
+  {
+    type: 'bar',
+    yAxisId: 'volume',
+    label: 'Volume',
+    color: 'lightgray',
+    data: alphabetStock.map((day) => day.volume),
+    highlightScope: { highlight: 'item' },
+  },
+  {
+    type: 'line',
+    yAxisId: 'price',
+    color: 'red',
+    label: 'Low',
+    data: alphabetStock.map((day) => day.low),
+    highlightScope: { highlight: 'item' },
+  },
+  {
+    type: 'line',
+    yAxisId: 'price',
+    color: 'green',
+    label: 'High',
+    data: alphabetStock.map((day) => day.high),
+  },
+];
+
+export default function Combining() {
+  return (
+    <Box sx={{ width: '100%', height: 400 }}>
+      <ChartsContainer
+        series={series}
+        xAxis={[
+          {
+            id: 'date',
+            data: alphabetStock.map((day) => new Date(day.date)),
+            scaleType: 'band',
+            valueFormatter: (value) => value.toLocaleDateString(),
+            height: 48,
+          },
+        ]}
+        yAxis={[
+          { id: 'price', scaleType: 'linear', position: 'left', width: 50 },
+          {
+            id: 'volume',
+            scaleType: 'linear',
+            position: 'right',
+            valueFormatter: (value) => `${(value / 1000000).toLocaleString()}M`,
+            width: 55,
+          },
+        ]}
+      >
+        <ChartsAxisHighlight x="line" />
+        <BarPlot />
+        <LinePlot />
+        <LineHighlightPlot />
+        <ChartsXAxis
+          label="Date"
+          axisId="date"
+          tickInterval={(value, index) => {
+            return index % 30 === 0;
+          }}
+          tickLabelStyle={{
+            fontSize: 10,
+          }}
+        />
+        <ChartsYAxis
+          label="Alphabet Stock Price (USD)"
+          axisId="price"
+          tickLabelStyle={{ fontSize: 10 }}
+        />
+        <ChartsYAxis
+          label="Volume"
+          axisId="volume"
+          tickLabelStyle={{ fontSize: 10 }}
+        />
+        <ChartsTooltip />
+      </ChartsContainer>
+    </Box>
+  );
+}
+```
+
+Pour notre cas, on avait besoin d'un axe pour les jours et un autre pour le nombre de passage.
+J'ai donc changer les nom, garder une série et enlever l'axe y en trop. J'ai aussi ajouter un prop
+afin de pouvoir passer des données au composant. Par la suite, j'ai pratiquement
+suivi ce que j'avais fais pour le bouton carte afin d'ouvrir un dialogue avec le graphique
+et fournir le bon compteur. Cependant j'ai du faire quelques modifications.
+
+Au lieu de regarder si le compteur selectionner est vide, j'ai décidé d'utiliser
+un state pour afin de savoir si le panneau est ouvert. C'était nécessaire, car
+un compteur est selectionner quand on appui sur passage, donc il me fallait une
+logique différente pour ne pas ouvrir a la fois la carte et le grapgique.
+
+J'ai aussi ajouter une fonction pour chacun des boutons, car je devais faire
+plus que changer un seul état. 
+
+Pour le formulaire de date, j'ai résutilié le visuel qu'on avait dans la page Reseau.
+
+Pour obtenir les passages, je fais un fetch quand on appui sur passage avec le id
+du compteur dans la ligne du tableau. J'ai ensuite une autre function pour le
+bouton du formulaire de date qui va faire un fetch, mais avec les 2 dates.
+Pour la gestion d'erreur, j'ai décider de créer un autre état pour le graphique
+parce ce que sinon l'erreur aurait été afficher sous le graphique.
+
+Une alternative pour les passage aurait été de faire une seul fetch et d'ensuite
+filtrer selon les dates, mais puisqu'on avait une route avec des paramettres pour
+ça, j'ai procédé comme cela. De plus ça accélère la chargement  initial de la page.
