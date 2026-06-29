@@ -2,66 +2,22 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   Box, Button, Typography, Grid, Checkbox,
   FormGroup, FormControl, FormControlLabel, RadioGroup, Radio,
-  Select, MenuItem, Paper, CircularProgress, Alert,
-  Dialog, DialogTitle, DialogContent, IconButton,
+  Select, MenuItem, Alert,
 } from '@mui/material';
 import CircleIcon from '@mui/icons-material/Circle';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreSharpIcon from '@mui/icons-material/ExpandMoreSharp';
 import ExpandLessSharpIcon from '@mui/icons-material/ExpandLessSharp';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Navbar from '../components/Navbar';
-import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// ─── Category classification ───────────────────────────────────────────────
-
-const CATEGORY_COLORS = {
-  rev:               '#2AC7DD',
-  voiePartagee:      '#84CA4B',
-  voieProtegee:      '#025D29',
-  sentierPolyvalent: '#B958D9',
-};
-
-const CATEGORIES = [
-  { key: 'rev',               label: 'REV',               color: '#2AC7DD', description: 'Réseau Express Vélo — REV_AVANCEMENT_CODE ∈ {EV, PE, TR}' },
-  { key: 'voiePartagee',      label: 'Voie partagée',      color: '#84CA4B', description: 'AVANCEMENT_CODE = E et TYPE_VOIE_CODE ∈ {1, 3, 8, 9}' },
-  { key: 'voieProtegee',      label: 'Voie protégée',      color: '#025D29', description: 'AVANCEMENT_CODE = E et TYPE_VOIE_CODE ∈ {4, 5, 6}' },
-  { key: 'sentierPolyvalent', label: 'Sentier polyvalent', color: '#B958D9', description: 'AVANCEMENT_CODE = E et TYPE_VOIE_CODE = 7' },
-];
-
-function getCategory(props) {
-  const rev      = props.REV_AVANCEMENT_CODE;
-  const avance   = props.AVANCEMENT_CODE;
-  const typeVoie = parseInt(props.TYPE_VOIE_CODE, 10);
-
-  if (['EV', 'PE', 'TR'].includes(rev)) return 'rev';
-  if (avance === 'E') {
-    if ([1, 3, 8, 9].includes(typeVoie)) return 'voiePartagee';
-    if ([4, 5, 6].includes(typeVoie))    return 'voieProtegee';
-    if (typeVoie === 7)                  return 'sentierPolyvalent';
-  }
-  return null;
-}
-
-function styleFeature(feature) {
-  return {
-    color:   CATEGORY_COLORS[getCategory(feature.properties)] ?? '#999999',
-    weight:  3,
-    opacity: 0.85,
-  };
-}
-
-// ─── Component ────────────────────────────────────────────────────────────
+import InteractiveMap, { getCategory } from '../components/InteractiveMap';
+import { MAP_CATEGORIES } from '../components/InteractiveMap';
 
 export default function Reseau() {
   const [pistes, setPistes]         = useState(null);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(null);
-  const [legendOpen, setLegendOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [arrondissement, setArrondissement] = useState('all');
   const [saison, setSaison]         = useState('all');
@@ -93,21 +49,7 @@ export default function Reseau() {
     });
   }, [pistes, checked, saison, arrondissement]);
 
-  const filteredGeoJson = useMemo(() => ({
-    type: 'FeatureCollection',
-    features: filteredFeatures,
-  }), [filteredFeatures]);
-
-  const totalKm = useMemo(
-    () => filteredFeatures.reduce((sum, f) => sum + (f.properties.LONGUEUR || 0), 0).toFixed(1),
-    [filteredFeatures],
-  );
-
-  const geoJsonKey = Object.values(checked).join('') + saison + arrondissement;
-
   const toggleCategory = (key) => setChecked(prev => ({ ...prev, [key]: !prev[key] }));
-
-  // ── Filter panel ──────────────────────────────────────────────────────────
 
   const filterMenu = (
     <FormGroup sx={{ width: '100%', mb: '1rem' }}>
@@ -115,7 +57,7 @@ export default function Reseau() {
         CATÉGORIES
       </Typography>
 
-      {CATEGORIES.map(cat => (
+      {MAP_CATEGORIES.map(cat => (
         <FormControlLabel
           key={cat.key}
           control={<Checkbox checked={checked[cat.key]} onChange={() => toggleCategory(cat.key)} />}
@@ -166,76 +108,13 @@ export default function Reseau() {
     </FormGroup>
   );
 
-  // ── Interactive map ───────────────────────────────────────────────────────
-
-  const interactiveMap = (
-    <Box sx={{ position: 'relative', flex: 1 }}>
-      {loading && (
-        <Box sx={{ position: 'absolute', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(255,255,255,0.7)' }}>
-          <CircularProgress />
-        </Box>
-      )}
-
-      <MapContainer center={[45.5017, -73.5673]} zoom={10} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="© OpenStreetMap contributors"
-        />
-        {!loading && !error && (
-          <GeoJSON key={geoJsonKey} data={filteredGeoJson} style={styleFeature} />
-        )}
-      </MapContainer>
-
-      <IconButton
-        onClick={() => setLegendOpen(true)}
-        sx={{ position: 'absolute', top: 10, right: 10, zIndex: 1000, bgcolor: '#ffffff', '&:hover': { bgcolor: '#f5f5f5' } }}
-        size="small"
-      >
-        <InfoOutlinedIcon />
-      </IconButton>
-
-      <Paper sx={{ position: 'absolute', bgcolor: '#ffffff', zIndex: 1000, bottom: 25, right: 10, display: 'flex', alignItems: 'center', p: 1, gap: 0.5 }}>
-        <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{filteredFeatures.length}</Typography>
-        <Typography sx={{ fontSize: 15 }}>pistes affichées,</Typography>
-        <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{totalKm}</Typography>
-        <Typography sx={{ fontSize: 15 }}>km</Typography>
-      </Paper>
-    </Box>
-  );
-
-  // ── Legend modal ──────────────────────────────────────────────────────────
-
-  const legendDialog = (
-    <Dialog open={legendOpen} onClose={() => setLegendOpen(false)} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ pr: 6, color: '#000000' }}>
-        Légende des catégories
-        <IconButton onClick={() => setLegendOpen(false)} sx={{ position: 'absolute', right: 8, top: 8 }}>
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent dividers>
-        {CATEGORIES.map(cat => (
-          <Box key={cat.key} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 2 }}>
-            <CircleIcon sx={{ color: cat.color, mt: 0.3, flexShrink: 0 }} />
-            <Box>
-              <Typography fontWeight={700}>{cat.label}</Typography>
-              <Typography variant="body2" color="text.secondary">{cat.description}</Typography>
-            </Box>
-          </Box>
-        ))}
-      </DialogContent>
-    </Dialog>
-  );
-
-  // ── Render ────────────────────────────────────────────────────────────────
-
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <Navbar activePage="Réseau" />
 
       {error && <Alert severity="error" sx={{ flexShrink: 0 }}>{error}</Alert>}
-      
-    <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+
+      <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
         {/* Desktop sidebar */}
         <Box sx={{ width: 280, flexShrink: 0, overflowY: 'auto', p: 2, display: { xs: 'none', md: 'block' }, borderRight: '1px solid', borderColor: 'divider' }}>
@@ -257,11 +136,13 @@ export default function Reseau() {
             {isExpanded && <Box sx={{ pt: 1 }}>{filterMenu}</Box>}
           </Box>
 
-          {interactiveMap}
+          <InteractiveMap
+            features={filteredFeatures}
+            loading={loading}
+            error={error}
+          />
         </Box>
       </Box>
-
-      {legendDialog}
     </Box>
   );
 }

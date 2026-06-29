@@ -1,11 +1,30 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Button, Container, Paper, Chip, TextField, Stack, CircularProgress, Alert } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
+  Container,
+  Paper,
+  Chip,
+  TextField,
+  Stack,
+  CircularProgress,
+  Alert,
+  Dialog, DialogTitle, IconButton, DialogContent
+} from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import Navbar from '../components/Navbar';
+import InteractiveMap from "../components/InteractiveMap.jsx";
+import CloseIcon from '@mui/icons-material/Close';
 
 export default function PointInteret() {
   const [pois, setPois] = useState([]);
+  const [selectedPoi, setSelectedPoi] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedArrondissement, setSelectedArrondissement] = useState('Tous');
@@ -26,57 +45,58 @@ export default function PointInteret() {
   const data = useMemo(() => {
     return pois.filter(r => r.ID).map(row => ({
       id: `f_${row.ID}`,
-      arrondissement: row.Arrondissement || 'Non spécifié',
-      type: 'Fontaine',
-      nom: row.Nom_parc_lieu || '',
-      adresse: row.Intersection || '',
-      latitude: row.Latitude,
-      longitude: row.Longitude,
+      Arrondissement: row.Arrondissement || 'Non spécifié',
+      Type: 'Fontaine',
+      Nom: row.Nom_parc_lieu || '',
+      Adresse: row.Intersection || '',
+      Latitude: row.Latitude,
+      Longitude: row.Longitude,
     }));
   }, [pois]);
 
   const filteredData = useMemo(() => {
     return data.filter(item => {
-      const matchArrond = selectedArrondissement === 'Tous' || item.arrondissement === selectedArrondissement;
-      const matchType = selectedType === 'Tous' || item.type === selectedType;
-      const matchName = searchName === '' || item.nom.toLowerCase().includes(searchName.toLowerCase());
+      const matchArrond = selectedArrondissement === 'Tous' || item.Arrondissement === selectedArrondissement;
+      const matchType = selectedType === 'Tous' || item.Type === selectedType;
+      const matchName = searchName === '' || item.Nom.toLowerCase().includes(searchName.toLowerCase());
       return matchArrond && matchType && matchName;
     });
   }, [data, selectedArrondissement, selectedType, searchName]);
 
-  const columns = [
-    {
-      field: 'type',
-      headerName: 'Type',
-      width: 140,
-      renderCell: (params) => (
-        <Chip
-          label={params.value}
-          size="small"
-          sx={params.value === 'Fontaine' ? { bgcolor: '#e3f2fd', color: '#01579b', fontWeight: 'bold' } : {}}
-        />
-      )
-    },
-    { field: 'nom', headerName: 'Nom', flex: 1, minWidth: 150 },
-    { field: 'arrondissement', headerName: 'Arrondissement', flex: 1, minWidth: 150 },
-    { field: 'adresse', headerName: 'Intersection', flex: 2, minWidth: 200 },
+
+  function ActionsCell({ params, onCarteClick }) {
+    if (!params.row?.Latitude || !params.row?.Longitude) return null;
+    return (
+        <Button
+            variant="outlined"
+            size="small"
+            color="primary"
+            onClick={() => onCarteClick(params.row)}
+        >
+          Carte
+        </Button>
+    );
+  }
+
+
+  const columns = useMemo(() => [
+    { field: 'Type', headerName: 'Type', width: 140, renderCell: (params) => (
+          <Chip label={params.value} size="small"
+                sx={params.value === 'Fontaine' ? { bgcolor: '#e3f2fd', color: '#01579b', fontWeight: 'bold' } : {}} />
+      )},
+    { field: 'Nom', headerName: 'Nom', flex: 1, minWidth: 150 },
+    { field: 'Arrondissement', headerName: 'Arrondissement', flex: 1, minWidth: 150 },
+    { field: 'Adresse', headerName: 'Intersection', flex: 2, minWidth: 200 },
     {
       field: 'actions',
       headerName: 'Actions',
       width: 120,
       sortable: false,
-      renderCell: (params) => {
-        const { latitude, longitude } = params.row;
-        if (!latitude || !longitude) return null;
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-        return (
-          <Button variant="outlined" size="small" href={mapsUrl} target="_blank" rel="noopener noreferrer" color="primary">
-            Carte
-          </Button>
-        );
-      }
+      renderCell: (params) => (
+          <ActionsCell params={params} onCarteClick={setSelectedPoi} />
+      ),
     }
-  ];
+  ], [setSelectedPoi]);
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
@@ -95,7 +115,7 @@ export default function PointInteret() {
         {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
         <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }} elevation={1}>
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{alignItems : "center"}}>
             <TextField
               size="small"
               label="Rechercher par nom"
@@ -144,6 +164,27 @@ export default function PointInteret() {
           }
         </Paper>
       </Container>
+      <Dialog open={selectedPoi !== null } onClose={() => setSelectedPoi(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ pr: 6, color: '#000000' }}>
+          {selectedPoi?.nom}
+        </DialogTitle>
+        <IconButton onClick={() => setSelectedPoi(null)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <CloseIcon />
+        </IconButton>
+        <DialogContent dividers>
+          <InteractiveMap
+              center={[selectedPoi?.Latitude, selectedPoi?.Longitude]}
+              zoom={20}
+              markers = {filteredData.map((m) => ({
+                ID: m.id,
+                Nom: m.Nom,
+                Latitude: m.Latitude,
+                Longitude: m.Longitude,
+              }))}
+              selectedMarker={selectedPoi?.id}
+          />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

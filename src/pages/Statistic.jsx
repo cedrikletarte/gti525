@@ -9,10 +9,20 @@ import {
   Stack,
   TextField,
   Typography,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton, FormGroup
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { frFR } from '@mui/x-data-grid/locales';
 import Navbar from '../components/Navbar';
+import CloseIcon from '@mui/icons-material/Close';
+import InteractiveMap from '../components/InteractiveMap';
+import Chart from "../components/Chart.jsx";
+import {LocalizationProvider} from "@mui/x-date-pickers/LocalizationProvider";
+import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
+import {DatePicker} from "@mui/x-date-pickers/DatePicker";
 
 const STATUS_STYLES = {
   Actif: { backgroundColor: '#d4edda', color: '#1a5c2a' },
@@ -41,16 +51,15 @@ function StatusBadge({ value }) {
   );
 }
 
-function ActionsCell({ params }) {
-  const { Latitude, Longitude } = params.row;
-  if (!Latitude || !Longitude) return null;
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${Latitude},${Longitude}`;
+
+function ActionsCell({ params, onCarteClick, onPassageClick  }) {
+  if (!params.row.Latitude || !params.row.Longitude) return null;
   return (
     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
-      <Button variant="outlined" color="primary" size="small" href={mapsUrl} target="_blank" rel="noopener noreferrer">
+      <Button variant="outlined" color="primary" size="small" onClick={() => onCarteClick(params.row)}>
         Carte
       </Button>
-      <Button variant="contained" color="primary" size="small">
+      <Button variant="contained" color="primary" size="small" onClick={() => onPassageClick(params.row)}>
         Passages
       </Button>
     </Box>
@@ -90,23 +99,22 @@ const COLUMNS = [
     type: 'number',
     align: 'left',
     headerAlign: 'left',
-  },
-  {
-    field: 'actions',
-    headerName: 'Actions',
-    width: 180,
-    sortable: false,
-    filterable: false,
-    headerClassName: 'grid-header',
-    renderCell: (params) => <ActionsCell params={params} />,
-  },
+  }
 ];
 
 export default function Statistic() {
   const [compteurs, setCompteurs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dialogLoading, setDialogLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [chartError, setChartError] = useState(null);
   const [search, setSearch] = useState('');
+  const [selectedCompteur, setSelectedCompteur] = useState(null);
+  const [passages, setPassages] = useState([]);
+  const [carteOpen, setCarteOpen] = useState(false);
+  const [chartOpen, setChartOpen] = useState(false);
+  const [dateDebut, setDateDebut] = useState(null);
+  const [dateFin, setDateFin] = useState(null);
 
   useEffect(() => {
     fetch('/gti525/v1/compteurs')
@@ -121,7 +129,77 @@ export default function Statistic() {
     return compteurs.filter((r) => r.Nom.toLowerCase().includes(q));
   }, [search, compteurs]);
 
+
+  const columns = useMemo(() => [
+    ...COLUMNS,
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 180,
+      sortable: false,
+      filterable: false,
+      headerClassName: 'grid-header',
+      renderCell: (params) => (
+        <ActionsCell params={params} onCarteClick={handleCarteClick} onPassageClick={handlePassageClick} />
+      ),
+    },
+  ], []);
+
   const handleClear = () => setSearch('');
+
+
+  function handleCarteClick(params){
+      setSelectedCompteur(params);
+      setCarteOpen(true);
+  }
+
+
+
+  async function handlePassageClick(params) {
+    setDialogLoading(true);
+    setSelectedCompteur(params);
+
+    await fetch(`/gti525/v1/compteurs/${params.ID}/passages`)
+        .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
+        .then(data => { setPassages(data); setDialogLoading(false); })
+        .catch(err => setError(typeof err === 'string' ? err : 'Failed to load passages.'));
+
+
+      setChartOpen(true);
+
+  }
+
+  async function updatePassageDate(){
+    setDialogLoading(true);
+
+    const formdattedDateDebut = changeDateFormat(dateDebut);
+    const formdattedDateFin = changeDateFormat(dateFin);
+    setChartError(null);
+    if(dateDebut && dateFin){
+      await fetch(`/gti525/v1/compteurs/${selectedCompteur.ID}/passages?debut=${formdattedDateDebut}&fin=${formdattedDateFin}`)
+          .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
+          .then(data => { setPassages(data); setDialogLoading(false)})
+          .catch(err => {setChartError(typeof err === 'string' ? err : 'Failed to load passages.'); setPassages([]); setDialogLoading(false); });
+    }
+  }
+
+  function closeChart() {
+    setChartOpen(false);
+    setDateDebut(null);
+    setDateFin(null);
+    setChartError(null);
+  }
+
+  function changeDateFormat(input){
+    const date = new Date(input);
+
+    const yy = String(date.getUTCFullYear()).slice(-2);
+    const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(date.getUTCDate()).padStart(2, '0');
+
+    return `${yy}${mm}${dd}`;
+  }
+
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
@@ -139,7 +217,7 @@ export default function Statistic() {
 
           {/* Filtres */}
           <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }} elevation={1}>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{alignItems : "center"}}>
               <TextField
                 label="Rechercher par nom..."
                 variant="outlined"
@@ -161,7 +239,7 @@ export default function Statistic() {
               ? <CircularProgress sx={{ mt: 6 }} />
               : <DataGrid
                   rows={rows}
-                  columns={COLUMNS}
+                  columns={columns}
                   getRowId={(row) => row.ID}
                   localeText={frFR.components.MuiDataGrid.defaultProps.localeText}
                   initialState={{pagination: { paginationModel: { pageSize: 20, page: 0 } } }}
@@ -179,6 +257,60 @@ export default function Statistic() {
             }
           </Paper>
         </Container>
+        {/*Map*/}
+        <Dialog open={carteOpen} onClose={() => setCarteOpen(false)} maxWidth="xl" fullWidth>
+          <DialogTitle sx={{ pr: 6, color: '#000000' }}>
+             {selectedCompteur?.Nom}
+          </DialogTitle>
+            <IconButton onClick={() => setCarteOpen(false)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <CloseIcon />
+        </IconButton>
+          <DialogContent dividers>
+                <InteractiveMap
+                    center={[selectedCompteur?.Latitude, selectedCompteur?.Longitude]}
+                    zoom={20}
+                    markers = {compteurs.map((m) => ({
+                      ID: m.ID,
+                      Nom: m.Nom,
+                      Latitude: m.Latitude,
+                      Longitude: m.Longitude,
+                    }))}
+                    selectedMarker={selectedCompteur?.ID}
+                />
+          </DialogContent>
+        </Dialog>
+        {/*Chart*/}
+        <Dialog open={chartOpen} onClose={() => closeChart()} maxWidth="xl" fullWidth>
+          <DialogTitle sx={{ pr: 6, color: '#000000' }}>
+            Nombre de passage par jour pour le compteur  {selectedCompteur?.Nom}
+          </DialogTitle>
+          <IconButton onClick={() => closeChart()} sx={{ position: 'absolute', right: 8, top: 8 }}>
+            <CloseIcon />
+          </IconButton>
+          <DialogContent dividers>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', flexDirection: {xs: "column", md: "row"}, alignItems: 'left', mb: 3 }}>
+            <FormGroup>
+              <Box sx={{ backgroundColor: '#8cc5984f', mt: 4, p: 2, borderRadius: 4, width: '100%' }}>
+                {chartError && <Alert severity="error" sx={{ mb: 3 }}>{chartError}</Alert>}
+                <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', textAlign: 'left' }}>Filtres</Typography>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <DatePicker value={dateDebut} onChange={(newValue) => setDateDebut(newValue)} label="De" format="YYYY-MM-DD" sx={{ backgroundColor: '#ffffff', mt: 1, mb: 1, width: '100%' }} slotProps={{ textField: { size: 'small' } }} />
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <DatePicker value={dateFin} onChange={(newValue) => setDateFin(newValue)} label="À"  format="YYYY-MM-DD" sx={{ backgroundColor: '#ffffff', mt: 1, mb: 1, width: '100%' }} slotProps={{ textField: { size: 'small' } }} />
+                  </Box>
+                </LocalizationProvider>
+                <Button disabled={!dateDebut || !dateFin} onClick={updatePassageDate} variant="contained" size="small" sx={{ width: '100%', justifyContent: 'flex-start', mb: 1, mt: 1 }}>Appliquer les filtres</Button>
+              </Box>
+            </FormGroup>
+            {dialogLoading
+                ? <CircularProgress sx={{ mt: 6 }} />
+                :  <Chart data={passages} />
+            }
+          </Box>
+          </DialogContent>
+        </Dialog>
       </main>
     </Box>
   );
