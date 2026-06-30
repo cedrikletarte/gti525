@@ -42,6 +42,7 @@
 | [27](#tache-27) | Statistic.jsx — Fonction pour changer le format de date | 2026-06-28 |
 | [28](#tache-28) | Arrondissement — Sélection synchronisée carte/menu sur 3 vues | 2026-06-26 |
 | [29](#tache-29) | Arrondissement — Surbrillance du polygone et filtrage des données | 2026-06-26 |
+| [30](#tache-30) | T5.A.4 — Génération et validation de tests pour les routes API | 2026-06-30 |
 
   
 
@@ -3094,3 +3095,99 @@ compteurs locaux, points d'intérêt locaux.
 
 - **Accepté** :  
 
+---
+
+## Tâche 30 — T5.A.4 : Génération et validation de tests pour les routes API {#tache-30}
+
+**Auteur** : Cédrik Letarte - 2026-06-30
+
+### 💬 Prompt
+
+```
+PROMPT — T5.A.4 : Génération et validation de tests pour les routes API
+
+1. CONTEXTE
+Projet : GTI525 — Application web de visualisation de données cyclistes (Montréal)
+Backend : Express.js 5.2.1, Node.js, CommonJS, port 8080
+Base de données : SQLite in-memory via sql.js, chargée depuis backend/data/comptage_velo.db
+Aucun framework de test n'est actuellement installé
+Fichier principal du serveur : backend/server.js
+Préfixe de toutes les routes : /gti525/v1/
+Proxy Vite : le frontend redirige /gti525 vers http://localhost:8080
+Format des dates : YYMMDD (ex. 260627 pour le 27 juin 2026)
+
+2. TÂCHE
+Générer au minimum trois tests couvrant les routes suivantes, puis vérifier et
+corriger chaque test avant de le soumettre :
+
+Route                              Méthode  Description
+/gti525/v1/compteurs               GET      Liste de tous les compteurs (source : compteurs.csv)
+/gti525/v1/compteurs/:id/passages  GET      Passages journaliers d'un compteur, avec params optionnels debut et fin (YYMMDD)
+/gti525/v1/pistes                  GET      Réseau cyclable au format GeoJSON (Content-Type: application/geo+json)
+/gti525/v1/pointsdinteret          GET      Points d'intérêt (source : poi.csv)
+
+Chaque test doit couvrir au moins :
+- Un cas de succès (statut 200, structure de réponse valide)
+- Un cas d'erreur ou de limite (paramètre invalide, ID inexistant, etc.)
+
+3. TECHNIQUES REQUISES
+Jest comme framework de test principal (npm install --save-dev jest)
+Supertest pour tester les routes Express sans démarrer le vrai serveur (npm install --save-dev supertest)
+Exporter l'app Express séparément du app.listen(...) pour permettre les tests (modifier backend/server.js en extrayant app dans un module testable)
+Ajouter dans backend/package.json (ou package.json racine) le script : "test": "jest"
+Les tests doivent être dans backend/tests/ avec la convention de nommage *.test.js
+Mocking de sql.js si le chargement de la base de données bloque les tests unitaires (utiliser jest.mock)
+Valider la structure JSON de chaque réponse (présence des champs clés, pas seulement le statut HTTP)
+
+4. CAS LIMITES
+Gérer et tester explicitement :
+- GET /gti525/v1/compteurs/:id/passages avec un id qui n'existe pas → doit retourner { erreur: "..." } avec statut 404 ou 400
+- GET /gti525/v1/compteurs/:id/passages avec debut > fin → comportement attendu à documenter et tester
+- GET /gti525/v1/compteurs/:id/passages avec un format de date invalide (ex. abc123) → doit retourner une erreur JSON
+- GET /gti525/v1/pistes → vérifier que le Content-Type est bien application/geo+json
+- GET /gti525/v1/pointsdinteret → vérifier que la réponse est un tableau non vide
+
+5. CONTRAINTES
+- Ne pas modifier la logique métier des routes existantes dans backend/server.js — seule la séparation app / listen est permise
+- Aucun appel réseau réel vers la base de données de production dans les tests — utiliser des fixtures ou des mocks
+- Les tests doivent être déterministes : pas de dépendance à l'ordre d'exécution
+- Nommage des describe : "Route GET /gti525/v1/<nom>", des it : "devrait retourner ... quand ..."
+- Chaque fichier de test ne teste qu'une seule ressource (un fichier par route)
+- Pas de console.log dans les tests
+- Tous les tests doivent passer avec npm test sans erreur ni warning
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+- `backend/package.json` — ajout du script `"test": "jest"` et de la configuration Jest (`testEnvironment: node`, `testMatch`, `verbose`)
+- `backend/server.js` — ajout de `module.exports = { app, setDb }` et guard `require.main === module` autour du bloc `initSqlJs()`, sans modifier la logique métier
+- `backend/tests/compteurs.test.js` — 3 tests : 200 avec champs attendus, valeurs exactes parsées depuis le CSV, 500 sur fichier inaccessible
+- `backend/tests/passages.test.js` — 9 tests : 200 avec dates, 200 sans dates, 404 id inexistant, 400 id non numérique, 400 debut seul, 400 fin seule, 400 debut > fin, 400 format invalide, 400 mois hors plage
+- `backend/tests/pistes.test.js` — 3 tests : 200 avec Content-Type `application/geo+json`, FeatureCollection valide, 500 sur fichier inaccessible
+- `backend/tests/pointsdinteret.test.js` — 3 tests : 200 tableau non vide, champs attendus, 500 sur fichier inaccessible
+
+Résultat : 18 tests passants, 4 suites, aucun warning.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Accepté** : J'ai accepté l'ensemble de la sortie sans modification. Les 18 tests passent dès la première exécution. L'IA a exploré `backend/server.js` avant de générer quoi que ce soit, ce qui lui a permis d'utiliser les messages d'erreur exacts (`'Invalid counter identifier.'`, `'No data found for this counter in the requested period.'`, etc.) plutôt que des valeurs inventées.
