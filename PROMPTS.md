@@ -11,6 +11,8 @@
 
 ## Table des matières
 
+### Frontale
+
 | # | Tâche | Date |
 |---|-------|-------|
 | [01](#tache-01) | Scaffold UI — Navbar, HomePage, thème MUI | 2026-05-14 |
@@ -30,8 +32,6 @@
 | [15](#tache-15) | Assistant.jsx — Création de la page Assistant | 2026-06-01 |
 | [16](#tache-16) | Assistant.jsx — Retrait de l'historique | 2026-06-01 |
 | [17](#tache-17) | Assistant.jsx — Amélioration de la zone de saisie | 2026-06-01 |
-| [18](#tache-18) | Accessibilité — Correction des contrastes WCAG 2.1 AA | 2026-06-04 |
-| [19](#tache-19) | Backend Node.js + Express — 4 routes API | 2026-06-11 |
 | [20](#tache-20) | PointInteret.jsx — Migration vers l'API REST | 2026-06-11 |
 | [21](#tache-21) | Statistic.jsx — Migration vers l'API REST | 2026-06-11 |
 | [22](#tache-22) | Reseau.jsx — Carte GeoJSON catégorisée et filtres | 2026-06-11 |
@@ -40,10 +40,30 @@
 | [25](#tache-25) | Statistic.jsx — Ouvrir une carte quand on appuie sur le bouton carte | 2026-06-22 |
 | [26](#tache-26) | Statistic.jsx — Ouvrir le popup du compteur sélectionné quand la carte s'ouvre | 2026-06-25 |
 | [27](#tache-27) | Statistic.jsx — Fonction pour changer le format de date | 2026-06-28 |
-| [28](#tache-28) | Arrondissement — Sélection synchronisée carte/menu sur 3 vues | 2026-06-26 |
 | [29](#tache-29) | Arrondissement — Surbrillance du polygone et filtrage des données | 2026-06-26 |
 
+### Dorsale
+
+| # | Tâche | Date |
+|---|-------|-------|
+| [19](#tache-19) | Backend Node.js + Express — 4 routes API | 2026-06-11 |
+| [28](#tache-28) | Arrondissement — Sélection synchronisée carte/menu sur 3 vues | 2026-06-26 |
+
+> Tâche 28 touche également les pages frontales (`src/pages/`) pour le câblage du menu déroulant et de la carte des territoires.
+
+### Revue critique
+
+| # | Tâche | Date |
+|---|-------|-------|
+| [18](#tache-18) | Accessibilité — Correction des contrastes WCAG 2.1 AA | 2026-06-04 |
+| [30](#tache-30) | T5.A.4 — Génération et validation de tests pour les routes API | 2026-06-30 |
+| [31](#tache-31) | T5.A.2 — Revue critique — Route passages | 2026-06-30 |
+
   
+
+---
+
+## Frontale
 
 ---
 
@@ -1520,6 +1540,10 @@ L'ajout d'un bouton permet d'indiquer clairement à l'utilisateur qu'il doit cli
 
 ---
 
+## Revue critique
+
+---
+
 ## Tâche 18 — Accessibilité : Correction des contrastes WCAG 2.1 AA {#tache-18}
 
 **Auteur** : Cédrik Letarte - 2026-06-04
@@ -1570,6 +1594,10 @@ Audit complet de toutes les pages et du thème. Quatre paires de couleurs en éc
 - **Centralisation dans le thème** : L'ajout du token `text.muted` dans `theme.js` est la décision la plus pertinente. Les couleurs `#9e9e9e` (Navbar) et `#919191` (Reseau) servaient le même rôle du texte secondaire discret, mais utilisaient deux valeurs hardcodées différentes. Les regrouper sous un seul token garantit la cohérence et facilite les ajustements futurs.
 
 - **Chip Fontaine hardcodé** : L'IA a choisi de ne pas centraliser la couleur `#01579b` dans le thème, ce qui est justifié : cette couleur est spécifique au type « Fontaine » et ne représente pas un rôle partagé à l'échelle de l'application. La laisser dans `PointInteret.jsx` évite de polluer le thème avec des couleurs purement contextuelles.
+
+---
+
+## Dorsale
 
 ---
 
@@ -3094,3 +3122,150 @@ compteurs locaux, points d'intérêt locaux.
 
 - **Accepté** :  
 
+---
+
+## Tâche 30 — T5.A.4 : Génération et validation de tests pour les routes API {#tache-30}
+
+**Auteur** : Cédrik Letarte - 2026-06-30
+
+### 💬 Prompt
+
+```
+PROMPT — T5.A.4 : Génération et validation de tests pour les routes API
+
+1. CONTEXTE
+Projet : GTI525 — Application web de visualisation de données cyclistes (Montréal)
+Backend : Express.js 5.2.1, Node.js, CommonJS, port 8080
+Base de données : SQLite in-memory via sql.js, chargée depuis backend/data/comptage_velo.db
+Aucun framework de test n'est actuellement installé
+Fichier principal du serveur : backend/server.js
+Préfixe de toutes les routes : /gti525/v1/
+Proxy Vite : le frontend redirige /gti525 vers http://localhost:8080
+Format des dates : YYMMDD (ex. 260627 pour le 27 juin 2026)
+
+2. TÂCHE
+Générer au minimum trois tests couvrant les routes suivantes, puis vérifier et
+corriger chaque test avant de le soumettre :
+
+Route                              Méthode  Description
+/gti525/v1/compteurs               GET      Liste de tous les compteurs (source : compteurs.csv)
+/gti525/v1/compteurs/:id/passages  GET      Passages journaliers d'un compteur, avec params optionnels debut et fin (YYMMDD)
+/gti525/v1/pistes                  GET      Réseau cyclable au format GeoJSON (Content-Type: application/geo+json)
+/gti525/v1/pointsdinteret          GET      Points d'intérêt (source : poi.csv)
+
+Chaque test doit couvrir au moins :
+- Un cas de succès (statut 200, structure de réponse valide)
+- Un cas d'erreur ou de limite (paramètre invalide, ID inexistant, etc.)
+
+3. TECHNIQUES REQUISES
+Jest comme framework de test principal (npm install --save-dev jest)
+Supertest pour tester les routes Express sans démarrer le vrai serveur (npm install --save-dev supertest)
+Exporter l'app Express séparément du app.listen(...) pour permettre les tests (modifier backend/server.js en extrayant app dans un module testable)
+Ajouter dans backend/package.json (ou package.json racine) le script : "test": "jest"
+Les tests doivent être dans backend/tests/ avec la convention de nommage *.test.js
+Mocking de sql.js si le chargement de la base de données bloque les tests unitaires (utiliser jest.mock)
+Valider la structure JSON de chaque réponse (présence des champs clés, pas seulement le statut HTTP)
+
+4. CAS LIMITES
+Gérer et tester explicitement :
+- GET /gti525/v1/compteurs/:id/passages avec un id qui n'existe pas → doit retourner { erreur: "..." } avec statut 404 ou 400
+- GET /gti525/v1/compteurs/:id/passages avec debut > fin → comportement attendu à documenter et tester
+- GET /gti525/v1/compteurs/:id/passages avec un format de date invalide (ex. abc123) → doit retourner une erreur JSON
+- GET /gti525/v1/pistes → vérifier que le Content-Type est bien application/geo+json
+- GET /gti525/v1/pointsdinteret → vérifier que la réponse est un tableau non vide
+
+5. CONTRAINTES
+- Ne pas modifier la logique métier des routes existantes dans backend/server.js — seule la séparation app / listen est permise
+- Aucun appel réseau réel vers la base de données de production dans les tests — utiliser des fixtures ou des mocks
+- Les tests doivent être déterministes : pas de dépendance à l'ordre d'exécution
+- Nommage des describe : "Route GET /gti525/v1/<nom>", des it : "devrait retourner ... quand ..."
+- Chaque fichier de test ne teste qu'une seule ressource (un fichier par route)
+- Pas de console.log dans les tests
+- Tous les tests doivent passer avec npm test sans erreur ni warning
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Génération de code en une passe |
+
+---
+
+### 📦 Sortie obtenue
+
+- `backend/package.json` — ajout du script `"test": "jest"` et de la configuration Jest (`testEnvironment: node`, `testMatch`, `verbose`)
+- `backend/server.js` — ajout de `module.exports = { app, setDb }` et guard `require.main === module` autour du bloc `initSqlJs()`, sans modifier la logique métier
+- `backend/tests/compteurs.test.js` — 3 tests : 200 avec champs attendus, valeurs exactes parsées depuis le CSV, 500 sur fichier inaccessible
+- `backend/tests/passages.test.js` — 9 tests : 200 avec dates, 200 sans dates, 404 id inexistant, 400 id non numérique, 400 debut seul, 400 fin seule, 400 debut > fin, 400 format invalide, 400 mois hors plage
+- `backend/tests/pistes.test.js` — 3 tests : 200 avec Content-Type `application/geo+json`, FeatureCollection valide, 500 sur fichier inaccessible
+- `backend/tests/pointsdinteret.test.js` — 3 tests : 200 tableau non vide, champs attendus, 500 sur fichier inaccessible
+
+Résultat : 18 tests passants, 4 suites, aucun warning.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Accepté** : J'ai accepté l'ensemble de la sortie sans modification. Les 18 tests passent dès la première exécution. L'IA a exploré `backend/server.js` avant de générer quoi que ce soit, ce qui lui a permis d'utiliser les messages d'erreur exacts (`'Invalid counter identifier.'`, `'No data found for this counter in the requested period.'`, etc.) plutôt que des valeurs inventées.
+
+---
+
+## Tâche 31 — T5.A.2 : Revue critique des route passages {#tache-31}
+
+**Auteur** : Cédrik Letarte - 2026-06-30
+
+### 💬 Prompt
+
+```
+Réalise un audit de sécurité de la route GET /gti525/v1/compteurs/:id/passages produite en Tâche 19
+sur trois axes : injection SQL, validation des entrées utilisateur, fuite d'information dans les
+messages d'erreur. Pour chaque axe, identifie si des vulnérabilités sont présentes et justifie ta
+conclusion en citant le code concerné.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Audit de sécurité appliqué à la route générée en Tâche 19 |
+
+---
+
+### 📦 Sortie obtenue
+
+| Axe | Code observé (server.js lignes 52–114) | Verdict |
+|-----|----------------------------------------|---------|
+| **Injection SQL** | `WHERE id_compteur = ?` + `stmt.bind([parseInt(id, 10)])` — tous les paramètres sont liés, aucune concaténation de chaîne dans le SQL | ✅ Aucune vulnérabilité |
+| **Validation des entrées** | `!/^\d+$/.test(id)` → 400 ; `parseYYMMDD()` valide `/^\d{6}$/` + mois 1–12 + jour 1–31 ; `debut` et `fin` exigés ensemble ; `debutIso > finIso` → 400 | ✅ Aucune vulnérabilité |
+| **Fuite d'erreur** | `catch (_err) { res.status(500).json({ erreur: 'Database query failed.' }) }` — l'exception est intentionnellement ignorée, seul un message fixe est retourné | ✅ Aucune vulnérabilité |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune modification de `backend/server.js`
+
+---
+
+### 🧠 Justification
+
+- **Injection SQL :** Les deux variantes SQL (avec et sans filtre de dates) utilisent exclusivement des paramètres liés (`?`) via `stmt.bind()`. La valeur de `id` est de plus convertie par `parseInt(id, 10)` avant transmission, ce qui garantit que le moteur SQLite reçoit toujours un entier et non une chaîne pouvant contenir du SQL. Aucun chemin de code ne construit la requête par concaténation.
+
+- **Validation des entrées :** La route rejette `id` non numérique dès la ligne 56 (`!/^\d+$/.test(id)`) avant d'atteindre la base de données. Les paramètres de dates passent par `parseYYMMDD()` qui vérifie successivement le format (`/^\d{6}$/`), les bornes calendaires (mois 1–12, jour 1–31) et la cohérence temporelle (`debutIso > finIso` → 400). Fournir un seul des deux paramètres retourne également 400. Aucune entrée malformée ne peut atteindre la couche SQL.
+
+- **Fuite d'erreur :** Le paramètre de l'exception est nommé `_err` (convention underscore = ignoré volontairement). Le client reçoit uniquement la chaîne fixe `'Database query failed.'`, qui ne révèle ni le chemin du fichier `.db`, ni les noms de tables, ni la structure du schéma. Le détail de l'exception reste exclusivement côté serveur.
