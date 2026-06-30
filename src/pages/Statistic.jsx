@@ -324,7 +324,7 @@ export default function Statistic() {
                 <InteractiveMap
                     center={[selectedCompteur?.Latitude, selectedCompteur?.Longitude]}
                     zoom={20}
-                    markers = {compteurs.map((m) => ({
+                    markers = {rows.map((m) => ({
                       ID: m.ID,
                       Nom: m.Nom,
                       Latitude: m.Latitude,
