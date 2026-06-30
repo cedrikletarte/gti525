@@ -144,75 +144,6 @@ export default function Reseau() {
     </FormGroup>
   );
 
-  // ── Interactive map ───────────────────────────────────────────────────────
-
-  const interactiveMap = (
-    <Box sx={{ position: 'relative', flex: 1 }}>
-      {loading && (
-        <Box sx={{ position: 'absolute', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(255,255,255,0.7)' }}>
-          <CircularProgress />
-        </Box>
-      )}
-
-      <MapContainer center={[45.5017, -73.5673]} zoom={10} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="© OpenStreetMap contributors"
-        />
-        {!loading && !error && (
-          <GeoJSON key={geoJsonKey} data={filteredGeoJson} style={styleFeature} />
-        )}
-        {selectedArrFeature && (
-          <GeoJSON
-            key={`arr-${arrondissement}`}
-            data={selectedArrFeature}
-            interactive={false}
-            style={{ color: '#1f5b2c', weight: 3, fill: false, dashArray: '6 4' }}
-          />
-        )}
-      </MapContainer>
-
-      <IconButton
-        onClick={() => setLegendOpen(true)}
-        sx={{ position: 'absolute', top: 10, right: 10, zIndex: 1000, bgcolor: '#ffffff', '&:hover': { bgcolor: '#f5f5f5' } }}
-        size="small"
-      >
-        <InfoOutlinedIcon />
-      </IconButton>
-
-      <Paper sx={{ position: 'absolute', bgcolor: '#ffffff', zIndex: 1000, bottom: 25, right: 10, display: 'flex', alignItems: 'center', p: 1, gap: 0.5 }}>
-        <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{filteredFeatures.length}</Typography>
-        <Typography sx={{ fontSize: 15 }}>pistes affichées,</Typography>
-        <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{totalKm}</Typography>
-        <Typography sx={{ fontSize: 15 }}>km</Typography>
-      </Paper>
-    </Box>
-  );
-
-  // ── Legend modal ──────────────────────────────────────────────────────────
-
-  const legendDialog = (
-    <Dialog open={legendOpen} onClose={() => setLegendOpen(false)} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ pr: 6, color: '#000000' }}>
-        Légende des catégories
-        <IconButton onClick={() => setLegendOpen(false)} sx={{ position: 'absolute', right: 8, top: 8 }}>
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent dividers>
-        {CATEGORIES.map(cat => (
-          <Box key={cat.key} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 2 }}>
-            <CircleIcon sx={{ color: cat.color, mt: 0.3, flexShrink: 0 }} />
-            <Box>
-              <Typography fontWeight={700}>{cat.label}</Typography>
-              <Typography variant="body2" color="text.secondary">{cat.description}</Typography>
-            </Box>
-          </Box>
-        ))}
-      </DialogContent>
-    </Dialog>
-  );
-
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -251,7 +182,6 @@ export default function Reseau() {
         </Box>
       </Box>
 
-      {legendDialog}
 
       <ArrondissementMapDialog
         open={arrMapOpen}

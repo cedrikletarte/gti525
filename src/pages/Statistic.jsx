@@ -174,7 +174,6 @@ export default function Statistic() {
     },
   ], []);
 
-  const handleClear = () => setSearch('');
   const handleClear = () => { setSearch(''); setSelectedArr(ALL); };
 
 

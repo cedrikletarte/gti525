@@ -61,12 +61,9 @@ export default function PointInteret() {
   const filteredData = useMemo(() => {
     const selArr = selectedArrondissement === ALL ? null : normArr(selectedArrondissement);
     return data.filter(item => {
-      const matchArrond = selectedArrondissement === 'Tous' || item.Arrondissement === selectedArrondissement;
+      const matchArrond = !selArr || normArr(item.Arrondissement) === selArr;
       const matchType = selectedType === 'Tous' || item.Type === selectedType;
       const matchName = searchName === '' || item.Nom.toLowerCase().includes(searchName.toLowerCase());
-      const matchArrond = !selArr || normArr(item.arrondissement) === selArr;
-      const matchType = selectedType === 'Tous' || item.type === selectedType;
-      const matchName = searchName === '' || item.nom.toLowerCase().includes(searchName.toLowerCase());
       return matchArrond && matchType && matchName;
     });
   }, [data, selectedArrondissement, selectedType, searchName]);
