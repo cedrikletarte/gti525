@@ -2,12 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   Box, Button, Typography, Grid, Checkbox,
   FormGroup, FormControl, FormControlLabel, RadioGroup, Radio,
-  Select, MenuItem, Paper, CircularProgress, Alert,
-  Dialog, DialogTitle, DialogContent, IconButton,
+  Select, MenuItem, Alert,
 } from '@mui/material';
 import CircleIcon from '@mui/icons-material/Circle';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreSharpIcon from '@mui/icons-material/ExpandMoreSharp';
 import ExpandLessSharpIcon from '@mui/icons-material/ExpandLessSharp';
 import MapIcon from '@mui/icons-material/Map';
@@ -15,57 +12,18 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Navbar from '../components/Navbar';
+import InteractiveMap, { getCategory } from '../components/InteractiveMap';
+import { MAP_CATEGORIES } from '../components/InteractiveMap';
 import ArrondissementMapDialog from '../components/ArrondissementMapDialog';
 import useTerritoires from '../lib/useTerritoires';
 import { normArr, arrOptionsFrom, ALL } from '../lib/arrondissement';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// ─── Category classification ───────────────────────────────────────────────
-
-const CATEGORY_COLORS = {
-  rev:               '#2AC7DD',
-  voiePartagee:      '#84CA4B',
-  voieProtegee:      '#025D29',
-  sentierPolyvalent: '#B958D9',
-};
-
-const CATEGORIES = [
-  { key: 'rev',               label: 'REV',               color: '#2AC7DD', description: 'Réseau Express Vélo — REV_AVANCEMENT_CODE ∈ {EV, PE, TR}' },
-  { key: 'voiePartagee',      label: 'Voie partagée',      color: '#84CA4B', description: 'AVANCEMENT_CODE = E et TYPE_VOIE_CODE ∈ {1, 3, 8, 9}' },
-  { key: 'voieProtegee',      label: 'Voie protégée',      color: '#025D29', description: 'AVANCEMENT_CODE = E et TYPE_VOIE_CODE ∈ {4, 5, 6}' },
-  { key: 'sentierPolyvalent', label: 'Sentier polyvalent', color: '#B958D9', description: 'AVANCEMENT_CODE = E et TYPE_VOIE_CODE = 7' },
-];
-
-function getCategory(props) {
-  const rev      = props.REV_AVANCEMENT_CODE;
-  const avance   = props.AVANCEMENT_CODE;
-  const typeVoie = parseInt(props.TYPE_VOIE_CODE, 10);
-
-  if (['EV', 'PE', 'TR'].includes(rev)) return 'rev';
-  if (avance === 'E') {
-    if ([1, 3, 8, 9].includes(typeVoie)) return 'voiePartagee';
-    if ([4, 5, 6].includes(typeVoie))    return 'voieProtegee';
-    if (typeVoie === 7)                  return 'sentierPolyvalent';
-  }
-  return null;
-}
-
-function styleFeature(feature) {
-  return {
-    color:   CATEGORY_COLORS[getCategory(feature.properties)] ?? '#999999',
-    weight:  3,
-    opacity: 0.85,
-  };
-}
-
-// ─── Component ────────────────────────────────────────────────────────────
-
 export default function Reseau() {
   const [pistes, setPistes]         = useState(null);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(null);
-  const [legendOpen, setLegendOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [arrondissement, setArrondissement] = useState(ALL);
   const [arrMapOpen, setArrMapOpen] = useState(false);
@@ -118,15 +76,13 @@ export default function Reseau() {
 
   const toggleCategory = (key) => setChecked(prev => ({ ...prev, [key]: !prev[key] }));
 
-  // ── Filter panel ──────────────────────────────────────────────────────────
-
   const filterMenu = (
     <FormGroup sx={{ width: '100%', mb: '1rem' }}>
       <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', width: '100%', textAlign: 'left' }}>
         CATÉGORIES
       </Typography>
 
-      {CATEGORIES.map(cat => (
+      {MAP_CATEGORIES.map(cat => (
         <FormControlLabel
           key={cat.key}
           control={<Checkbox checked={checked[cat.key]} onChange={() => toggleCategory(cat.key)} />}
@@ -264,8 +220,8 @@ export default function Reseau() {
       <Navbar activePage="Réseau" />
 
       {error && <Alert severity="error" sx={{ flexShrink: 0 }}>{error}</Alert>}
-      
-    <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+
+      <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
         {/* Desktop sidebar */}
         <Box sx={{ width: 280, flexShrink: 0, overflowY: 'auto', p: 2, display: { xs: 'none', md: 'block' }, borderRight: '1px solid', borderColor: 'divider' }}>
@@ -287,7 +243,11 @@ export default function Reseau() {
             {isExpanded && <Box sx={{ pt: 1 }}>{filterMenu}</Box>}
           </Box>
 
-          {interactiveMap}
+          <InteractiveMap
+            features={filteredFeatures}
+            loading={loading}
+            error={error}
+          />
         </Box>
       </Box>
 

@@ -11,31 +11,34 @@
 
 ## Table des matières
 
-| # | Tâche | Date |
-|---|-------|-------|
-| [01](#tache-01) | Scaffold UI — Navbar, HomePage, thème MUI | 2026-05-14 |
-| [02](#tache-02) | Navbar color — Change theme color | 2026-05-14 |
-| [03](#tache-03) | Statistic.jsx — Page compteurs vélo avec DataGrid | 2026-05-17 |
-| [04](#tache-04) | Routing — Navigation Navbar vers Statistic | 2026-05-17 |
-| [05](#tache-05) | DataGrid — Table MUI → MUI X DataGrid | 2026-05-17 |
-| [06](#tache-06) | Layout — Alignement Typography "Compteurs vélo" à gauche | 2026-05-17 |
-| [07](#tache-07) | About.jsx — Page "À propos" + route /a-propos | 2026-05-17 |
-| [08](#tache-08) | Reseau.jsx — Icone de cercle | 2026-05-20 |
-| [09](#tache-09) | Allignement du texte des bouton à gauche | 2026-05-20 |
-| [10](#tache-10) | Ajout d'une carte dans la page Reseau | 2026-05-20 |
-| [11](#tache-11) | Points d'intérêt — Création de la page (Phase 1) | 2026-05-21 |
-| [12](#tache-12) | Points d'intérêt — Ajustement aux maquettes UI (Phase 2 & 3) | 2026-05-21 |
-| [13](#tache-13) | Reseau.jsx — Changement du comportement sur petit écran | 2026-05-21 |
-| [14](#tache-14) | Reseau.jsx — Chargement d'un fichier geojson | 2026-05-21 |
-| [15](#tache-15) | Assistant.jsx — Création de la page Assistant | 2026-06-01 |
-| [16](#tache-16) | Assistant.jsx — Retrait de l'historique | 2026-06-01 |
-| [17](#tache-17) | Assistant.jsx — Amélioration de la zone de saisie | 2026-06-01 |
-| [18](#tache-18) | Accessibilité — Correction des contrastes WCAG 2.1 AA | 2026-06-04 |
-| [19](#tache-19) | Backend Node.js + Express — 4 routes API | 2026-06-11 |
-| [20](#tache-20) | PointInteret.jsx — Migration vers l'API REST | 2026-06-11 |
-| [21](#tache-21) | Statistic.jsx — Migration vers l'API REST | 2026-06-11 |
-| [22](#tache-22) | Reseau.jsx — Carte GeoJSON catégorisée et filtres | 2026-06-11 |
-| [23](#tache-23) | Reseau.jsx — Correction des noms de champs GeoJSON | 2026-06-11 |
+|-----------------|-------------------------------------------------------------------------------------------|------------|
+| [01](#tache-01) | Scaffold UI — Navbar, HomePage, thème MUI                                                 | 2026-05-14 |
+| [02](#tache-02) | Navbar color — Change theme color                                                         | 2026-05-14 |
+| [03](#tache-03) | Statistic.jsx — Page compteurs vélo avec DataGrid                                         | 2026-05-17 |
+| [04](#tache-04) | Routing — Navigation Navbar vers Statistic                                                | 2026-05-17 |
+| [05](#tache-05) | DataGrid — Table MUI → MUI X DataGrid                                                     | 2026-05-17 |
+| [06](#tache-06) | Layout — Alignement Typography "Compteurs vélo" à gauche                                  | 2026-05-17 |
+| [07](#tache-07) | About.jsx — Page "À propos" + route /a-propos                                             | 2026-05-17 |
+| [08](#tache-08) | Reseau.jsx — Icone de cercle                                                              | 2026-05-20 |
+| [09](#tache-09) | Allignement du texte des bouton à gauche                                                  | 2026-05-20 |
+| [10](#tache-10) | Ajout d'une carte dans la page Reseau                                                     | 2026-05-20 |
+| [11](#tache-11) | Points d'intérêt — Création de la page (Phase 1)                                          | 2026-05-21 |
+| [12](#tache-12) | Points d'intérêt — Ajustement aux maquettes UI (Phase 2 & 3)                              | 2026-05-21 |
+| [13](#tache-13) | Reseau.jsx — Changement du comportement sur petit écran                                   | 2026-05-21 |
+| [14](#tache-14) | Reseau.jsx — Chargement d'un fichier geojson                                              | 2026-05-21 |
+| [15](#tache-15) | Assistant.jsx — Création de la page Assistant                                             | 2026-06-01 |
+| [16](#tache-16) | Assistant.jsx — Retrait de l'historique                                                   | 2026-06-01 |
+| [17](#tache-17) | Assistant.jsx — Amélioration de la zone de saisie                                         | 2026-06-01 |
+| [18](#tache-18) | Accessibilité — Correction des contrastes WCAG 2.1 AA                                     | 2026-06-04 |
+| [19](#tache-19) | Backend Node.js + Express — 4 routes API                                                  | 2026-06-11 |
+| [20](#tache-20) | PointInteret.jsx — Migration vers l'API REST                                              | 2026-06-11 |
+| [21](#tache-21) | Statistic.jsx — Migration vers l'API REST                                                 | 2026-06-11 |
+| [22](#tache-22) | Reseau.jsx — Carte GeoJSON catégorisée et filtres                                         | 2026-06-11 |
+| [23](#tache-23) | Reseau.jsx — Correction des noms de champs GeoJSON                                        | 2026-06-11 |
+| [24](#tache-24) | Reseau.jsx — Conversion de la map intéractive and la légende en composantes réutilisables | 2026-06-22 |
+| [25](#tache-25) | Statistic.jsx — Ouvrir une carte quand on appuie sur le bouton carte                      | 2026-06-22 |
+| [26](#tache-26) | Statistic.jsx — Ouvrir le popup du compteurs selectionné quand la carte s'ouvre           | 2026-06-25 |
+| [26](#tache-26) | Statistic.jsx — Fonction pour changer le format de date                                   | 2026-06-28 |
 | [24](#tache-24) | Arrondissement — Sélection synchronisée carte/menu sur 3 vues | 2026-06-26 |
 | [25](#tache-25) | Arrondissement — Surbrillance du polygone et filtrage des données | 2026-06-26 |
 
@@ -1839,22 +1842,18 @@ Inspection du fichier `reseau_cyclable.geojson` pour identifier les noms de cham
 
 - **Accepté** : L'IA a inspecté les données brutes avant de proposer une correction, ce qui a permis d'identifier la cause. les champs `SAISON_PISTE` et `ARRONDISSEMENT` n'existent pas dans le GeoJSON de la Ville de Montréal. Les noms réels sont `SAISONS4` (valeur `"Oui"`/`"Non"`) et `NOM_ARR_VILLE_DESC`.
 
+- **Leçon** : Lors de l'implémentation d'un filtre sur des données externes, il faut toujours valider les noms de champs contre le fichier source avant de coder la logique. L'IA à halluciner sur les noms de champs et a produit des faux nom.
+---
 ---
 
-## Tâche 24 — Arrondissement : sélection synchronisée carte/menu sur 3 vues {#tache-24}
+## Tâche 24 — Reseau.jsx —Reseau.jsx — Conversion de la map intéractive and la légende en composantes réutilisable {#tache-24}
 
-**Auteur** : Youcef Mekki Daouadji - 2026-06-26
+**Auteur** : Justin Maitland - 2026-06-22
 
 ### 💬 Prompt
 
 ```
-Tu es un ingenieurs specialise en development de logiciel backend et frontend. En
-suivant le tech stack du projet implemente cette fonctionalité en priorisant la
-simplicité et le bon fonctionnement : Sur les vues « Réseau cyclable »,
-« Statistiques » et « Points d'intérêt », l'utilisateur peut sélectionner un
-arrondissement de deux manières synchronisées: par clic sur le polygone
-correspondant sur une carte des territoires (alimentée par territoires.geojson)
-ou via le menu déroulant déjà en place depuis la phase 1
+I would like to put the interactive map in a component so I can use it anywhere (Fichier Réseau.jsx en pièce jointe)
 ```
 
 ---
@@ -1863,80 +1862,1133 @@ ou via le menu déroulant déjà en place depuis la phase 1
 
 | Champ | Valeur |
 |-------|--------|
-| **Outil** | Claude Code (CLI) |
-| **Modèle** | Claude Opus 4.8 |
-| **Mode** | Vérification des données avant implémentation, puis édition guidée |
+| **Outil** | Claude |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Effort** | Faible |
 
 ---
 
 ### 📦 Sortie obtenue
 
-**Dorsale**
-- Nouvelle route `GET /gti525/v1/territoires` dans `backend/server.js` qui sert `territoires.geojson` (même patron que `/pistes`), avec `Content-Type: application/geo+json` et gestion d'erreur `{ erreur: "..." }` sans stack trace.
+Here's the extracted `InteractiveMap` component:Here's the extracted `InteractiveMap` component:Now here's how `Reseau.jsx` looks after the refactor — much leaner:Three files were produced. Here's a summary of what changed and why:
 
-**Frontale**
-- `src/lib/arrondissement.js` : `normArr()` (normalisation des noms d'arrondissement entre les jeux de données), `pointInFeature()` / `arrondissementOf()` (test point-dans-polygone par ray-casting, gestion des trous), `arrOptionsFrom()` et la constante `ALL`.
-- `src/lib/useTerritoires.js` : hook React qui charge `territoires.geojson` une fois.
-- `src/components/ArrondissementMapDialog.jsx` : modale Leaflet réutilisable affichant les 34 territoires ; polygone sélectionné surligné ; clic → sélection / re-clic → désélection ; `invalidateSize()` au montage pour le rendu correct des tuiles en modale.
-- Câblage dans `Reseau.jsx`, `Statistic.jsx` et `PointInteret.jsx` : le menu déroulant et le bouton « Carte » pilotent le **même état** → les deux moyens restent synchronisés. Filtrage par nom d'arrondissement pour Réseau/POI, et par **point-dans-polygone** pour les compteurs (`compteurs.csv` n'ayant pas de colonne arrondissement, seulement lat/lng).
+**`InteractiveMap.jsx`** — the new reusable component. It accepts four props and owns nothing about your data or filters:
+- `features` — the already-filtered GeoJSON feature array (the parent decides what to pass)
+- `loading` — shows the spinner overlay
+- `error` — suppresses GeoJSON rendering if set
+- `center` / `zoom` — optional, with Montréal defaults so the component works out of the box
 
+The `getCategory` function and `CATEGORY_COLORS` map are exported so other parts of the app can reuse the same classification logic without duplicating it.
+
+**`LegendDialog.jsx`** — also pulled out separately, since the legend is self-contained and `CATEGORIES` was needed by both the filter checkboxes in `Reseau` and the dialog itself. Exporting `CATEGORIES` from here removes the duplication.
+
+**`Reseau.jsx`** — now only manages state and filtering logic. The map rendering is a single `<InteractiveMap ... />` line.
+
+To use the map elsewhere, you'd just do:
+```jsx
+import InteractiveMap from '../components/InteractiveMap';
+
+<InteractiveMap features={someFeatures} loading={false} />
+```
+
+### Fichiers obtenue
+#### InteractiveMap.jsx
+```jsx
+import { useMemo, useState } from 'react';
+import { Box, CircularProgress, IconButton, Paper, Typography } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import LegendDialog from './LegendDialog';
+
+// ─── Category classification ───────────────────────────────────────────────
+
+const CATEGORY_COLORS = {
+  rev:               '#2AC7DD',
+  voiePartagee:      '#84CA4B',
+  voieProtegee:      '#025D29',
+  sentierPolyvalent: '#B958D9',
+};
+
+export function getCategory(props) {
+  const rev      = props.REV_AVANCEMENT_CODE;
+  const avance   = props.AVANCEMENT_CODE;
+  const typeVoie = parseInt(props.TYPE_VOIE_CODE, 10);
+
+  if (['EV', 'PE', 'TR'].includes(rev)) return 'rev';
+  if (avance === 'E') {
+    if ([1, 3, 8, 9].includes(typeVoie)) return 'voiePartagee';
+    if ([4, 5, 6].includes(typeVoie))    return 'voieProtegee';
+    if (typeVoie === 7)                  return 'sentierPolyvalent';
+  }
+  return null;
+}
+
+function styleFeature(feature) {
+  return {
+    color:   CATEGORY_COLORS[getCategory(feature.properties)] ?? '#999999',
+    weight:  3,
+    opacity: 0.85,
+  };
+}
+
+// ─── Props ─────────────────────────────────────────────────────────────────
+//
+//  features  {Array}   GeoJSON feature array (already filtered by parent)
+//  loading   {boolean} Show loading overlay while data is fetching
+//  error     {string?} If set, map tiles still render but no GeoJSON is drawn
+//  center    {[lat, lng]}  Default: [45.5017, -73.5673] (Montréal)
+//  zoom      {number}  Default: 10
+//
+// ─── Component ────────────────────────────────────────────────────────────
+
+export default function InteractiveMap({
+  features = [],
+  loading  = false,
+  error    = null,
+  center   = [45.5017, -73.5673],
+  zoom     = 10,
+}) {
+  const [legendOpen, setLegendOpen] = useState(false);
+
+  const geoJson = useMemo(() => ({
+    type: 'FeatureCollection',
+    features,
+  }), [features]);
+
+  // Stable key so Leaflet re-renders GeoJSON when the feature set changes
+  const geoJsonKey = features.length + features.map(f => f.properties?.ID_TRC ?? '').join('');
+
+  const totalKm = useMemo(
+    () => features.reduce((sum, f) => sum + (f.properties.LONGUEUR || 0), 0).toFixed(1),
+    [features],
+  );
+
+  return (
+    <Box sx={{ position: 'relative', flex: 1, minHeight: 300 }}>
+      {/* Loading overlay */}
+      {loading && (
+        <Box sx={{
+          position: 'absolute', inset: 0, zIndex: 1001,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          bgcolor: 'rgba(255,255,255,0.7)',
+        }}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {/* Map */}
+      <MapContainer
+        center={center}
+        zoom={zoom}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution="© OpenStreetMap contributors"
+        />
+        {!loading && !error && (
+          <GeoJSON key={geoJsonKey} data={geoJson} style={styleFeature} />
+        )}
+      </MapContainer>
+
+      {/* Legend button */}
+      <IconButton
+        onClick={() => setLegendOpen(true)}
+        sx={{
+          position: 'absolute', top: 10, right: 10, zIndex: 1000,
+          bgcolor: '#ffffff', '&:hover': { bgcolor: '#f5f5f5' },
+        }}
+        size="small"
+      >
+        <InfoOutlinedIcon />
+      </IconButton>
+
+      {/* Stats chip */}
+      <Paper sx={{
+        position: 'absolute', bgcolor: '#ffffff', zIndex: 1000,
+        bottom: 25, right: 10,
+        display: 'flex', alignItems: 'center', p: 1, gap: 0.5,
+      }}>
+        <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{features.length}</Typography>
+        <Typography sx={{ fontSize: 15 }}>pistes affichées,</Typography>
+        <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{totalKm}</Typography>
+        <Typography sx={{ fontSize: 15 }}>km</Typography>
+      </Paper>
+
+      {/* Legend modal */}
+      <LegendDialog open={legendOpen} onClose={() => setLegendOpen(false)} />
+    </Box>
+  );
+}
+```
+#### LegendDialog.jsx
+```jsx
+import {
+  Box, Dialog, DialogContent, DialogTitle, IconButton, Typography,
+} from '@mui/material';
+import CircleIcon from '@mui/icons-material/Circle';
+import CloseIcon from '@mui/icons-material/Close';
+
+export const CATEGORIES = [
+  { key: 'rev',               label: 'REV',               color: '#2AC7DD', description: 'Réseau Express Vélo — REV_AVANCEMENT_CODE ∈ {EV, PE, TR}' },
+  { key: 'voiePartagee',      label: 'Voie partagée',      color: '#84CA4B', description: 'AVANCEMENT_CODE = E et TYPE_VOIE_CODE ∈ {1, 3, 8, 9}' },
+  { key: 'voieProtegee',      label: 'Voie protégée',      color: '#025D29', description: 'AVANCEMENT_CODE = E et TYPE_VOIE_CODE ∈ {4, 5, 6}' },
+  { key: 'sentierPolyvalent', label: 'Sentier polyvalent', color: '#B958D9', description: 'AVANCEMENT_CODE = E et TYPE_VOIE_CODE = 7' },
+];
+
+export default function LegendDialog({ open, onClose }) {
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ pr: 6, color: '#000000' }}>
+        Légende des catégories
+        <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent dividers>
+        {CATEGORIES.map(cat => (
+          <Box key={cat.key} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 2 }}>
+            <CircleIcon sx={{ color: cat.color, mt: 0.3, flexShrink: 0 }} />
+            <Box>
+              <Typography fontWeight={700}>{cat.label}</Typography>
+              <Typography variant="body2" color="text.secondary">{cat.description}</Typography>
+            </Box>
+          </Box>
+        ))}
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+#### Reseau.jsx
+```jsx
+import { useState, useEffect, useMemo } from 'react';
+import {
+  Box, Button, Typography, Grid, Checkbox,
+  FormGroup, FormControl, FormControlLabel, RadioGroup, Radio,
+  Select, MenuItem, Alert,
+} from '@mui/material';
+import CircleIcon from '@mui/icons-material/Circle';
+import ExpandMoreSharpIcon from '@mui/icons-material/ExpandMoreSharp';
+import ExpandLessSharpIcon from '@mui/icons-material/ExpandLessSharp';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import Navbar from '../components/Navbar';
+import InteractiveMap, { getCategory } from '../components/InteractiveMap';
+import { CATEGORIES } from '../components/LegendDialog';
+
+export default function Reseau() {
+  const [pistes, setPistes]         = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [arrondissement, setArrondissement] = useState('all');
+  const [saison, setSaison]         = useState('all');
+  const [checked, setChecked]       = useState({
+    rev: true, voiePartagee: true, voieProtegee: true, sentierPolyvalent: true,
+  });
+
+  useEffect(() => {
+    fetch('/gti525/v1/pistes')
+      .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
+      .then(data => { setPistes(data); setLoading(false); })
+      .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load bike network.'); setLoading(false); });
+  }, []);
+
+  const territoires = useMemo(() => {
+    if (!pistes) return [];
+    return [...new Set(pistes.features.map(f => f.properties.NOM_ARR_VILLE_DESC).filter(Boolean))].sort();
+  }, [pistes]);
+
+  const filteredFeatures = useMemo(() => {
+    if (!pistes) return [];
+    return pistes.features.filter(f => {
+      const props = f.properties;
+      const cat   = getCategory(props);
+      if (!cat || !checked[cat]) return false;
+      if (saison !== 'all' && props.SAISONS4 !== (saison === '4' ? 'Oui' : 'Non')) return false;
+      if (arrondissement !== 'all' && props.NOM_ARR_VILLE_DESC !== arrondissement) return false;
+      return true;
+    });
+  }, [pistes, checked, saison, arrondissement]);
+
+  const toggleCategory = (key) => setChecked(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const filterMenu = (
+    <FormGroup sx={{ width: '100%', mb: '1rem' }}>
+      <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', width: '100%', textAlign: 'left' }}>
+        CATÉGORIES
+      </Typography>
+
+      {CATEGORIES.map(cat => (
+        <FormControlLabel
+          key={cat.key}
+          control={<Checkbox checked={checked[cat.key]} onChange={() => toggleCategory(cat.key)} />}
+          label={
+            <Grid container spacing={1} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <CircleIcon sx={{ color: cat.color, fontSize: 18 }} />
+              <Typography>{cat.label}</Typography>
+            </Grid>
+          }
+          sx={{ width: '100%' }}
+        />
+      ))}
+
+      <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', mt: 4, width: '100%', textAlign: 'left' }}>
+        SAISON
+      </Typography>
+
+      <RadioGroup value={saison} onChange={e => setSaison(e.target.value)} sx={{ width: '100%' }}>
+        <FormControlLabel value="all" control={<Radio />} label="Toutes les pistes" />
+        <FormControlLabel value="4"   control={<Radio />} label="4 saisons" />
+        <FormControlLabel value="3"   control={<Radio />} label="3 saisons" />
+      </RadioGroup>
+
+      <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', mt: 4, mb: 1, width: '100%', textAlign: 'left' }}>
+        ARRONDISSEMENT
+      </Typography>
+
+      <FormControl sx={{ width: '100%' }}>
+        <Select value={arrondissement} sx={{ textAlign: 'left' }} onChange={e => setArrondissement(e.target.value)} variant="outlined">
+          <MenuItem value="all">Tous</MenuItem>
+          {territoires.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+        </Select>
+      </FormControl>
+
+      <Box sx={{ backgroundColor: '#8cc5984f', mt: 4, p: 2, borderRadius: 4, width: '100%' }}>
+        <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', textAlign: 'left' }}>PISTES POPULAIRES</Typography>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DatePicker label="De" format="DD-MM-YYYY" sx={{ backgroundColor: '#ffffff', mt: 1, mb: 1, width: '100%' }} slotProps={{ textField: { size: 'small' } }} />
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DatePicker label="À"  format="DD-MM-YYYY" sx={{ backgroundColor: '#ffffff', mt: 1, mb: 1, width: '100%' }} slotProps={{ textField: { size: 'small' } }} />
+          </Box>
+        </LocalizationProvider>
+        <Button variant="contained" size="small" sx={{ width: '100%', justifyContent: 'flex-start', mb: 1, mt: 1 }}>Mettre en surbrillance</Button>
+        <Button variant="outlined"  size="small" sx={{ width: '100%', justifyContent: 'flex-start', mb: 1, backgroundColor: '#ffffff', borderWidth: 2 }}>Réinitialiser</Button>
+      </Box>
+    </FormGroup>
+  );
+
+  return (
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Navbar activePage="Réseau" />
+
+      {error && <Alert severity="error" sx={{ flexShrink: 0 }}>{error}</Alert>}
+
+      <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+
+        {/* Desktop sidebar */}
+        <Box sx={{ width: 280, flexShrink: 0, overflowY: 'auto', p: 2, display: { xs: 'none', md: 'block' }, borderRight: '1px solid', borderColor: 'divider' }}>
+          <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#000000', mb: 2 }}>Filtres</Typography>
+          {filterMenu}
+        </Box>
+
+        {/* Map column */}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+          {/* Mobile filter toggle */}
+          <Box sx={{ display: { md: 'none' }, flexShrink: 0, p: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography sx={{ fontSize: 15, fontWeight: 700 }}>Filtres</Typography>
+              <Button sx={{ p: 0 }} onClick={() => setIsExpanded(!isExpanded)}>
+                {isExpanded ? <ExpandLessSharpIcon /> : <ExpandMoreSharpIcon />}
+              </Button>
+            </Box>
+            {isExpanded && <Box sx={{ pt: 1 }}>{filterMenu}</Box>}
+          </Box>
+
+          <InteractiveMap
+            features={filteredFeatures}
+            loading={loading}
+            error={error}
+          />
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+```
 ---
 
 ### ✏️ Modifications apportées par l'humain
 
-- Aucune modification. 
+- Déplacement du export const CATEGORIES (initialement dans le fichier LegendDialog) dans InteractiveMap
+- Ajout d'un prop dans LegendDialog pour les catégories
 
 ---
 
 ### 🧠 Justification
 
-- **Accepté** :  
+- **Pour les changements acceptés** : L'IA à bien séparé la carte du fichier Reseau.jsx comme je le voulais. Il a aussi séparer la légende sans que je le demande, mais c'est un changement que j'appréciais, car elle pourrait également être utilisé dans les grapgiques par exemple
 
+- **Pour les changements apportés** : Je voulais rendre la légend plus réutilisable, donc j'ai décidé d'ajouter un prop pour me permettre d'avoir des catégories différentes selon l'utilisation, car une légende change forcément selon son utilisation. J'ai donc bouger la constantes de catégories dans le fichier de la carte, car ces catégories sont propre à cette carte.
 ---
 
-## Tâche 25 — Arrondissement : surbrillance du polygone et filtrage des données {#tache-25}
+## Tâche 25 — Statistic.jsx — Ouvrir une carte quand on appuie sur le bouton carte {#tache-25} 
 
-**Auteur** : Youcef Mekki Daouadji - 2026-06-26
+**Auteur** : Justin Maitland - 2026-06-22
 
 ### 💬 Prompt
 
-```
-Tu es un ingenieurs specialise en development de logiciel backend et frontend. En
-suivant le tech stack du projet implemente cette fonctionalité en priorisant la
-simplicité et le bon fonctionnement : La sélection met le polygone en surbrillance
-et filtre effectivement les données affichées: pistes situées dans l'arrondissement,
-compteurs locaux, points d'intérêt locaux.
+I am currently working on this. I am trying to open the map when I click on the actions cell
+
+fichier joint :
+```jsx
+import { useMemo, useState, useEffect } from 'react';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Alert,
+  Container,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+  Dialog, 
+  DialogContent, 
+  DialogTitle,
+  IconButton
+} from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+import { frFR } from '@mui/x-data-grid/locales';
+import Navbar from '../components/Navbar';
+import CloseIcon from '@mui/icons-material/Close';
+import InteractiveMap from '../components/InteractiveMap';
+
+const STATUS_STYLES = {
+  Actif: { backgroundColor: '#d4edda', color: '#1a5c2a' },
+  'En maintenance': { backgroundColor: '#e8e8e8', color: '#444444' },
+};
+
+function StatusBadge({ value }) {
+  const style = STATUS_STYLES[value] ?? STATUS_STYLES['En maintenance'];
+  return (
+    <Box
+      component="span"
+      sx={{
+        ...style,
+        display: 'block',
+        width: '100%',
+        height: '100%',
+        textAlign: 'center',
+        lineHeight: '52px',
+        fontSize: '0.78rem',
+        fontWeight: 500,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {value}
+    </Box>
+  );
+}
+
+let lastClickedCompteur = {nom : "", lat : 0, lon : 0};
+
+function ActionsCell({ params }) {
+  // console.log(params)
+  const { Latitude, Longitude, Nom } = params.row;
+  lastClickedCompteur.nom = Nom;
+  lastClickedCompteur.lat = Latitude;
+  lastClickedCompteur.lon = Longitude;
+  if (!Latitude || !Longitude) return null;
+  return (
+    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
+      <Button variant="outlined" color="primary" size="small">
+        Carte
+      </Button>
+      <Button variant="contained" color="primary" size="small">
+        Passages
+      </Button>
+    </Box>
+  );
+}
+
+const COLUMNS = [
+  {
+    field: 'ID',
+    headerName: 'ID',
+    width: 120,
+    headerClassName: 'grid-header',
+  },
+  {
+    field: 'Nom',
+    headerName: 'Nom',
+    flex: 1,
+    minWidth: 180,
+    headerClassName: 'grid-header',
+  },
+  {
+    field: 'Statut',
+    headerName: 'Statut',
+    width: 160,
+    headerClassName: 'grid-header',
+    renderCell: (params) => (
+      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
+        <StatusBadge value={params.value} />
+      </Box>
+    ),
+  },
+  {
+    field: 'Annee_implante',
+    headerName: 'Année',
+    width: 100,
+    headerClassName: 'grid-header',
+    type: 'number',
+    align: 'left',
+    headerAlign: 'left',
+  },
+  {
+    field: 'actions',
+    headerName: 'Actions',
+    width: 180,
+    sortable: false,
+    filterable: false,
+    headerClassName: 'grid-header',
+    renderCell: (params) => <ActionsCell params={params} />,
+  },
+];
+
+export default function Statistic() {
+  const [compteurs, setCompteurs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [legendOpen, setLegendOpen] = useState(true);
+  const [selectedCompteur, setSelectedCompteur] = useState(null);
+
+  useEffect(() => {
+    fetch('/gti525/v1/compteurs')
+      .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
+      .then(data => { setCompteurs(data); setLoading(false); })
+      .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load counters.'); setLoading(false); });
+  }, []);
+
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return compteurs;
+    return compteurs.filter((r) => r.Nom.toLowerCase().includes(q));
+  }, [search, compteurs]);
+
+  const handleClear = () => setSearch('');
+
+  return (
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
+      <header>
+        <Navbar activePage="Statistiques" />
+      </header>
+
+      <main>
+      <Container maxWidth="lg" sx={{ flexGrow: 1, py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+            Compteurs vélo
+          </Typography>
+        </Box>
+
+          {/* Filtres */}
+          <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }} elevation={1}>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{alignItems : "center"}}>
+              <TextField
+                label="Rechercher par nom..."
+                variant="outlined"
+                size="small"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                sx={{ minWidth: 220, flexGrow: { md: 1 } }}
+              />
+              <Button variant="outlined" color="primary" onClick={handleClear}>
+                Effacer les filtres
+              </Button>
+            </Stack>
+          </Paper>
+
+          {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
+          <Paper sx={{ width: '100%', height: 650, borderRadius: 2, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }} elevation={1}>
+            {loading
+              ? <CircularProgress sx={{ mt: 6 }} />
+              : <DataGrid
+                  rows={rows}
+                  columns={COLUMNS}
+                  getRowId={(row) => row.ID}
+                  localeText={frFR.components.MuiDataGrid.defaultProps.localeText}
+                  initialState={{pagination: { paginationModel: { pageSize: 20, page: 0 } } }}
+                  pageSizeOptions={[20]}
+                  disableRowSelectionOnClick
+                  sx={{
+                    border: 'none',
+                    '& .MuiDataGrid-columnHeaders': {
+                      backgroundColor: '#f5f5f5',
+                      borderBottom: '1px solid rgba(224, 224, 224, 1)',
+                    },
+                    '& .MuiDataGrid-columnHeaderTitle': { fontWeight: 600 }
+                  }}
+                />
+            }
+          </Paper>
+        </Container>
+        <Dialog open={legendOpen} onClose={() => setLegendOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ pr: 6, color: '#000000' }}>
+            {lastClickedCompteur.name}
+          </DialogTitle>
+            <IconButton onClick={() => setLegendOpen(false)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <CloseIcon />
+        </IconButton>
+          <DialogContent dividers>
+            <InteractiveMap></InteractiveMap>
+          </DialogContent>
+        </Dialog>
+      </main>
+    </Box>
+  );
+}
+
 ```
 
 ---
 
 ### 🛠 Outil & modèle
 
-| Champ | Valeur |
-|-------|--------|
-| **Outil** | Claude Code (CLI) |
-| **Modèle** | Claude Opus 4.8 |
-| **Mode** | Constat de l'existant, puis ajout ciblé |
+| Champ | Valeur           |
+|-------|------------------|
+| **Outil** | Claude |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Effort** | Faible           |
 
 ---
 
 ### 📦 Sortie obtenue
 
-- **Constat préalable** : le filtrage effectif des trois jeux (pistes de l'arrondissement, compteurs locaux par point-dans-polygone, POI locaux) et la surbrillance du polygone dans la modale carte avaient déjà été livrés à la tâche 24. Seule manquait la surbrillance du polygone sur la **carte principale du Réseau**, là où l'on consulte les pistes filtrées.
-- **Ajout (`src/pages/Reseau.jsx`)** :
-  - `selectedArrFeature` (useMemo) : retrouve le polygone du territoire sélectionné via `normArr` (robuste aux écarts de noms entre jeux de données).
-  - Une couche `<GeoJSON>` superposée aux pistes sur la carte principale, en **contour vert pointillé** (`weight: 3`, `fill: false`, `dashArray: '6 4'`), avec `interactive={false}` pour ne pas bloquer le clic sur les pistes situées en dessous.
-- **Validation** : `eslint` (0 erreur) et `vite build` (succès).
+
+A few things to fix here:
+
+**1. The `lastClickedCompteur` mutable global is unreliable** — React won't re-render when it changes. Use state instead.
+
+**2. `ActionsCell` sets the global on every render**, not on click — move it into the button's `onClick`.
+
+**3. The dialog starts open** (`useState(true)`) — should be `false`.
+
+**4. `InteractiveMap` needs a `center` and `zoom` to focus on the compteur.**
+
+Here's the corrected version of the relevant parts:
+
+```jsx
+// Replace the mutable global and ActionsCell with this:
+
+function ActionsCell({ params, onCarteClick }) {
+  const { Latitude, Longitude, Nom } = params.row;
+  if (!Latitude || !Longitude) return null;
+  return (
+    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
+      <Button
+        variant="outlined"
+        color="primary"
+        size="small"
+        onClick={() => onCarteClick({ nom: Nom, lat: Latitude, lon: Longitude })}
+      >
+        Carte
+      </Button>
+      <Button variant="contained" color="primary" size="small">
+        Passages
+      </Button>
+    </Box>
+  );
+}
+```
+
+```jsx
+// In COLUMNS, remove the actions entry — we'll inject it dynamically below
+```
+
+```jsx
+export default function Statistic() {
+  const [compteurs, setCompteurs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [selectedCompteur, setSelectedCompteur] = useState(null); // null = closed
+
+  // ...fetch unchanged...
+
+  const columns = useMemo(() => [
+    ...COLUMNS, // all columns except actions
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 180,
+      sortable: false,
+      filterable: false,
+      headerClassName: 'grid-header',
+      renderCell: (params) => (
+        <ActionsCell params={params} onCarteClick={setSelectedCompteur} />
+      ),
+    },
+  ], []);
+
+  return (
+    // ...existing JSX...
+
+    <Dialog
+      open={selectedCompteur !== null}
+      onClose={() => setSelectedCompteur(null)}
+      maxWidth="md"
+      fullWidth
+    >
+      <DialogTitle sx={{ pr: 6, color: '#000000' }}>
+        {selectedCompteur?.nom}
+        <IconButton onClick={() => setSelectedCompteur(null)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent dividers sx={{ height: 400, p: 0 }}>
+        {selectedCompteur && (
+          <InteractiveMap
+            features={[]}
+            loading={false}
+            center={[selectedCompteur.lat, selectedCompteur.lon]}
+            zoom={15}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+Key changes:
+- `selectedCompteur` drives both the dialog open state and the map center — single source of truth
+- `onCarteClick` is passed as a prop to `ActionsCell` so it can call `setSelectedCompteur` on click
+- The `{selectedCompteur && ...}` guard prevents `InteractiveMap` from mounting with `null` center before a row is clicked
+- `DialogContent` gets `p: 0` so the map fills it edge-to-edge, and a fixed `height` since the map needs a concrete pixel height to render
+
+
 
 ---
 
 ### ✏️ Modifications apportées par l'humain
 
-- 
+- Aucune
 
 ---
 
 ### 🧠 Justification
 
-- **Accepté** :  
+- **Accepté** : J'ai accepté l'ensemble de la sortie. Je savais que je devais mettre les colonnes dans le return du composant afin de pouvoir utiliser mon état de compteur selectionner et c'est exactement ce que l'IA à fait pour moi donc j'opté pour cette solution.
 
+---
+## Tâche 26 — Statistic.jsx — Ouvrir le popup du compteurs selectionné quand la carte s'ouvre {#tache-26}
+
+**Auteur** : Justin Maitland - 2026-06-25
+
+### 💬 Prompt
+
+I need to select a specific marker on load. I dont want to fly to it, I want the popup to open
+
+fichier joint :
+```jsx
+import { useMemo, useState, useEffect } from 'react';
+import {
+    Box,
+    Button,
+    CircularProgress,
+    Alert,
+    Container,
+    Paper,
+    Stack,
+    TextField,
+    Typography,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    IconButton
+} from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+import { frFR } from '@mui/x-data-grid/locales';
+import Navbar from '../components/Navbar';
+import CloseIcon from '@mui/icons-material/Close';
+import InteractiveMap from '../components/InteractiveMap';
+
+const STATUS_STYLES = {
+    Actif: { backgroundColor: '#d4edda', color: '#1a5c2a' },
+    'En maintenance': { backgroundColor: '#e8e8e8', color: '#444444' },
+};
+
+function StatusBadge({ value }) {
+    const style = STATUS_STYLES[value] ?? STATUS_STYLES['En maintenance'];
+    return (
+        <Box
+            component="span"
+            sx={{
+                ...style,
+                display: 'block',
+                width: '100%',
+                height: '100%',
+                textAlign: 'center',
+                lineHeight: '52px',
+                fontSize: '0.78rem',
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+            }}
+        >
+            {value}
+        </Box>
+    );
+}
+
+
+function ActionsCell({ params, onCarteClick  }) {
+    // console.log(params)
+    const { Latitude, Longitude, Nom } = params.row;
+    if (!Latitude || !Longitude) return null;
+    return (
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
+            <Button variant="outlined" color="primary" size="small" onClick={() => onCarteClick({ nom: Nom, lat: Latitude, lon: Longitude })}>
+                Carte
+            </Button>
+            <Button variant="contained" color="primary" size="small">
+                Passages
+            </Button>
+        </Box>
+    );
+}
+
+const COLUMNS = [
+    {
+        field: 'ID',
+        headerName: 'ID',
+        width: 120,
+        headerClassName: 'grid-header',
+    },
+    {
+        field: 'Nom',
+        headerName: 'Nom',
+        flex: 1,
+        minWidth: 180,
+        headerClassName: 'grid-header',
+    },
+    {
+        field: 'Statut',
+        headerName: 'Statut',
+        width: 160,
+        headerClassName: 'grid-header',
+        renderCell: (params) => (
+            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
+                <StatusBadge value={params.value} />
+            </Box>
+        ),
+    },
+    {
+        field: 'Annee_implante',
+        headerName: 'Année',
+        width: 100,
+        headerClassName: 'grid-header',
+        type: 'number',
+        align: 'left',
+        headerAlign: 'left',
+    }
+];
+
+export default function Statistic() {
+    const [compteurs, setCompteurs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [search, setSearch] = useState('');
+    const [selectedCompteur, setSelectedCompteur] = useState(null);
+
+    useEffect(() => {
+        fetch('/gti525/v1/compteurs')
+            .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
+            .then(data => { setCompteurs(data); setLoading(false); })
+            .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load counters.'); setLoading(false); });
+    }, []);
+
+    const rows = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return compteurs;
+        return compteurs.filter((r) => r.Nom.toLowerCase().includes(q));
+    }, [search, compteurs]);
+
+
+    const columns = useMemo(() => [
+        ...COLUMNS,
+        {
+            field: 'actions',
+            headerName: 'Actions',
+            width: 180,
+            sortable: false,
+            filterable: false,
+            headerClassName: 'grid-header',
+            renderCell: (params) => (
+                <ActionsCell params={params} onCarteClick={setSelectedCompteur} />
+            ),
+        },
+    ], []);
+
+    const handleClear = () => setSearch('');
+
+    return (
+        <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
+            <header>
+                <Navbar activePage="Statistiques" />
+            </header>
+
+            <main>
+                <Container maxWidth="lg" sx={{ flexGrow: 1, py: 4 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                        <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                            Compteurs vélo
+                        </Typography>
+                    </Box>
+
+                    {/* Filtres */}
+                    <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }} elevation={1}>
+                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{alignItems : "center"}}>
+                            <TextField
+                                label="Rechercher par nom..."
+                                variant="outlined"
+                                size="small"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                sx={{ minWidth: 220, flexGrow: { md: 1 } }}
+                            />
+                            <Button variant="outlined" color="primary" onClick={handleClear}>
+                                Effacer les filtres
+                            </Button>
+                        </Stack>
+                    </Paper>
+
+                    {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
+                    <Paper sx={{ width: '100%', height: 650, borderRadius: 2, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }} elevation={1}>
+                        {loading
+                            ? <CircularProgress sx={{ mt: 6 }} />
+                            : <DataGrid
+                                rows={rows}
+                                columns={columns}
+                                getRowId={(row) => row.ID}
+                                localeText={frFR.components.MuiDataGrid.defaultProps.localeText}
+                                initialState={{pagination: { paginationModel: { pageSize: 20, page: 0 } } }}
+                                pageSizeOptions={[20]}
+                                disableRowSelectionOnClick
+                                sx={{
+                                    border: 'none',
+                                    '& .MuiDataGrid-columnHeaders': {
+                                        backgroundColor: '#f5f5f5',
+                                        borderBottom: '1px solid rgba(224, 224, 224, 1)',
+                                    },
+                                    '& .MuiDataGrid-columnHeaderTitle': { fontWeight: 600 }
+                                }}
+                            />
+                        }
+                    </Paper>
+                </Container>
+                <Dialog open={selectedCompteur !== null} onClose={() => setSelectedCompteur(null)} maxWidth="xs" fullWidth>
+                    <DialogTitle sx={{ pr: 6, color: '#000000' }}>
+                        {selectedCompteur?.nom}
+                    </DialogTitle>
+                    <IconButton onClick={() => setSelectedCompteur(null)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+                        <CloseIcon />
+                    </IconButton>
+                    <DialogContent dividers>
+                        <InteractiveMap key={selectedCompteur?.id} center={[selectedCompteur?.lat, selectedCompteur?.lon]} zoom={15} compteurs={compteurs}/>
+                    </DialogContent>
+                </Dialog>
+            </main>
+        </Box>
+    );
+}
+
+
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur  |
+|-------|---------|
+| **Outil** | Claude  |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Effort** | Faible  |
+
+---
+
+### 📦 Sortie obtenue
+
+Add a `ref` to each marker and open the popup of the selected one on mount. The cleanest way is a small child component per marker:
+
+```jsx
+import { useEffect, useRef } from 'react';
+import { Marker, Popup } from 'react-leaflet';
+
+function CompteurMarker({ compteur, selected }) {
+  const markerRef = useRef(null);
+
+  useEffect(() => {
+    if (selected && markerRef.current) {
+      markerRef.current.openPopup();
+    }
+  }, [selected]);
+
+  return (
+    <Marker
+      key={compteur.ID}
+      ref={markerRef}
+      position={[compteur.Latitude, compteur.Longitude]}
+    >
+      <Popup>{compteur.Nom}</Popup>
+    </Marker>
+  );
+}
+```
+
+Then in your map, replace the current `.map()` with:
+
+```jsx
+{compteurs.map((c) => (
+  <CompteurMarker
+    key={c.ID ?? `${c.Latitude}-${c.Longitude}`}
+    compteur={c}
+    selected={c.ID === selectedCompteur?.ID}  // adjust field name to match your data
+  />
+))}
+```
+
+And pass `selectedCompteur` as a prop to `InteractiveMap`:
+
+```jsx
+<InteractiveMap
+  center={[selectedCompteur?.lat, selectedCompteur?.lon]}
+  zoom={15}
+  compteurs={compteurs}
+  selectedCompteur={selectedCompteur}   // ← add this
+/>
+```
+
+The `selected` prop tells each marker whether it's the one that should open its popup on mount.
+
+
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Changement des nom pour être plus génénique (fichier se nomme MapMarker au lieu de CompteurMarker, obj au lieux de compteur...)
+
+---
+
+### 🧠 Justification
+
+**Accepté** : J'ai accepté l'ensemble de la sortie mise à part les noms de 
+variable parce que j'avais vu une solution similaire sur stack overflow et 
+j'obtiens le résultat obtenu. 
+
+URL pour la solution sur stackoverflow : https://stackoverflow.com/questions/67823984/how-to-open-a-specific-popup-on-map-load
+
+J'ai du faire une modification dans le code pour selectedCompteur sur lequel j'avais travailler dessus plus tôt. 
+Au lieu de seulement passer quelques propriétés du compteur, j'ai changer le code
+pour passer l'objet complet afin de garder la même référence.
+
+Avant :
+```jsx
+function ActionsCell({ params, onCarteClick  }) {
+    console.log(params)
+    const { Latitude, Longitude, Nom } = params.row;
+    if (!Latitude || !Longitude) return null;
+    return (
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
+            <Button variant="outlined" color="primary" size="small" onClick={() => onCarteClick({ nom: Nom, lat: Latitude, lon: Longitude })}>
+                Carte
+            </Button>
+            <Button variant="contained" color="primary" size="small">
+                Passages
+            </Button>
+        </Box>
+    );
+}
+```
+
+Après :
+```jsx
+function ActionsCell({ params, onCarteClick  }) {
+    if (!params.row.Latitude || !params.row.Longitude) return null;
+    return (
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
+            <Button variant="outlined" color="primary" size="small" onClick={() => onCarteClick(params.row)}>
+                Carte
+            </Button>
+            <Button variant="contained" color="primary" size="small">
+                Passages
+            </Button>
+        </Box>
+    );
+}
+```
+
+Ce changment était nécessaire pour cette comparaison dans MapMarker :
+```jsx
+    selected={c.ID === selectedMarker?.ID}
+```
+**EDIT** : J'ai changé pour seulement passer le id du marker selctionné, car c'est plus consistant que comparé par l'objet entier
+lors de la décision #8 dans DEMARCHE.md
+
+
+---
+## Tâche 27 — Statistic.jsx — Fonction pour changer le format de date {#tache-27}
+
+**Auteur** : Justin Maitland - 2026-06-25
+
+### 💬 Prompt
+
+need to convert a date from Sat, 05 Jun 2026 04:00:00 GMT to 260605
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur           |
+|-------|------------------|
+| **Outil** | Claude  |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Effort** | Faible           |
+
+---
+
+### 📦 Sortie obtenue
+
+That format is `YYMMDD`. Here's a one-liner in JavaScript:
+
+```js
+const input = "Sat, 05 Jun 2026 04:00:00 GMT";
+const date = new Date(input);
+
+const yy = String(date.getUTCFullYear()).slice(-2);
+const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+const dd = String(date.getUTCDate()).padStart(2, '0');
+
+const result = `${yy}${mm}${dd}`; // "260605"
+```
+
+Make sure to use the `UTC` variants (`getUTCFullYear`, `getUTCMonth`, `getUTCDate`) since your input is in GMT — otherwise it could shift the date depending on the local timezone.
+
+
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- J'ai changé cette sortie en méthode, prenant le input comme paramettre et retourne le result
+
+---
+
+### 🧠 Justification
+
+**Accepté** : J'ai accepté la logigue, car c'est ce que j'avais besoin et cela me faisait du sens.
+Je l'ai mis dans une méthode afin de pouvoir réutiliser la fonction.
+
+---
