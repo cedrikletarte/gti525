@@ -62,6 +62,7 @@ export default function InteractiveMap({
   zoom     = 10,
   markers     = [],
   selectedMarker    = null,
+  overlayFeature = null,
 }) {
   const [legendOpen, setLegendOpen] = useState(false);
 
@@ -111,6 +112,14 @@ export default function InteractiveMap({
         )}
         {!loading && !error && (
           <GeoJSON key={geoJsonKey} data={geoJson} style={styleFeature} />
+        )}
+        {overlayFeature && (
+          <GeoJSON
+            key={`overlay-${overlayFeature.properties?.NOM ?? ''}`}
+            data={overlayFeature}
+            interactive={false}
+            style={{ color: '#1f5b2c', weight: 3, fill: false, dashArray: '6 4' }}
+          />
         )}
       </MapContainer>
       {/* Legend button */}

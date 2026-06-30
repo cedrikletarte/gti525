@@ -11,35 +11,37 @@
 
 ## Table des matières
 
-| #               | Tâche                                                                                     | Date       |
-|-----------------|-------------------------------------------------------------------------------------------|------------|
-| [01](#tache-01) | Scaffold UI — Navbar, HomePage, thème MUI                                                 | 2026-05-14 |
-| [02](#tache-02) | Navbar color — Change theme color                                                         | 2026-05-14 |
-| [03](#tache-03) | Statistic.jsx — Page compteurs vélo avec DataGrid                                         | 2026-05-17 |
-| [04](#tache-04) | Routing — Navigation Navbar vers Statistic                                                | 2026-05-17 |
-| [05](#tache-05) | DataGrid — Table MUI → MUI X DataGrid                                                     | 2026-05-17 |
-| [06](#tache-06) | Layout — Alignement Typography "Compteurs vélo" à gauche                                  | 2026-05-17 |
-| [07](#tache-07) | About.jsx — Page "À propos" + route /a-propos                                             | 2026-05-17 |
-| [08](#tache-08) | Reseau.jsx — Icone de cercle                                                              | 2026-05-20 |
-| [09](#tache-09) | Allignement du texte des bouton à gauche                                                  | 2026-05-20 |
-| [10](#tache-10) | Ajout d'une carte dans la page Reseau                                                     | 2026-05-20 |
-| [11](#tache-11) | Points d'intérêt — Création de la page (Phase 1)                                          | 2026-05-21 |
-| [12](#tache-12) | Points d'intérêt — Ajustement aux maquettes UI (Phase 2 & 3)                              | 2026-05-21 |
-| [13](#tache-13) | Reseau.jsx — Changement du comportement sur petit écran                                   | 2026-05-21 |
-| [14](#tache-14) | Reseau.jsx — Chargement d'un fichier geojson                                              | 2026-05-21 |
-| [15](#tache-15) | Assistant.jsx — Création de la page Assistant                                             | 2026-06-01 |
-| [16](#tache-16) | Assistant.jsx — Retrait de l'historique                                                   | 2026-06-01 |
-| [17](#tache-17) | Assistant.jsx — Amélioration de la zone de saisie                                         | 2026-06-01 |
-| [18](#tache-18) | Accessibilité — Correction des contrastes WCAG 2.1 AA                                     | 2026-06-04 |
-| [19](#tache-19) | Backend Node.js + Express — 4 routes API                                                  | 2026-06-11 |
-| [20](#tache-20) | PointInteret.jsx — Migration vers l'API REST                                              | 2026-06-11 |
-| [21](#tache-21) | Statistic.jsx — Migration vers l'API REST                                                 | 2026-06-11 |
-| [22](#tache-22) | Reseau.jsx — Carte GeoJSON catégorisée et filtres                                         | 2026-06-11 |
-| [23](#tache-23) | Reseau.jsx — Correction des noms de champs GeoJSON                                        | 2026-06-11 |
-| [24](#tache-24) | Reseau.jsx — Conversion de la map intéractive and la légende en composantes réutilisables | 2026-06-22 |
-| [25](#tache-25) | Statistic.jsx — Ouvrir une carte quand on appuie sur le bouton carte                      | 2026-06-22 |
-| [26](#tache-26) | Statistic.jsx — Ouvrir le popup du compteurs selectionné quand la carte s'ouvre           | 2026-06-25 |
-| [26](#tache-26) | Statistic.jsx — Fonction pour changer le format de date                                   | 2026-06-28 |
+| # | Tâche | Date |
+|---|-------|-------|
+| [01](#tache-01) | Scaffold UI — Navbar, HomePage, thème MUI | 2026-05-14 |
+| [02](#tache-02) | Navbar color — Change theme color | 2026-05-14 |
+| [03](#tache-03) | Statistic.jsx — Page compteurs vélo avec DataGrid | 2026-05-17 |
+| [04](#tache-04) | Routing — Navigation Navbar vers Statistic | 2026-05-17 |
+| [05](#tache-05) | DataGrid — Table MUI → MUI X DataGrid | 2026-05-17 |
+| [06](#tache-06) | Layout — Alignement Typography "Compteurs vélo" à gauche | 2026-05-17 |
+| [07](#tache-07) | About.jsx — Page "À propos" + route /a-propos | 2026-05-17 |
+| [08](#tache-08) | Reseau.jsx — Icone de cercle | 2026-05-20 |
+| [09](#tache-09) | Allignement du texte des bouton à gauche | 2026-05-20 |
+| [10](#tache-10) | Ajout d'une carte dans la page Reseau | 2026-05-20 |
+| [11](#tache-11) | Points d'intérêt — Création de la page (Phase 1) | 2026-05-21 |
+| [12](#tache-12) | Points d'intérêt — Ajustement aux maquettes UI (Phase 2 & 3) | 2026-05-21 |
+| [13](#tache-13) | Reseau.jsx — Changement du comportement sur petit écran | 2026-05-21 |
+| [14](#tache-14) | Reseau.jsx — Chargement d'un fichier geojson | 2026-05-21 |
+| [15](#tache-15) | Assistant.jsx — Création de la page Assistant | 2026-06-01 |
+| [16](#tache-16) | Assistant.jsx — Retrait de l'historique | 2026-06-01 |
+| [17](#tache-17) | Assistant.jsx — Amélioration de la zone de saisie | 2026-06-01 |
+| [18](#tache-18) | Accessibilité — Correction des contrastes WCAG 2.1 AA | 2026-06-04 |
+| [19](#tache-19) | Backend Node.js + Express — 4 routes API | 2026-06-11 |
+| [20](#tache-20) | PointInteret.jsx — Migration vers l'API REST | 2026-06-11 |
+| [21](#tache-21) | Statistic.jsx — Migration vers l'API REST | 2026-06-11 |
+| [22](#tache-22) | Reseau.jsx — Carte GeoJSON catégorisée et filtres | 2026-06-11 |
+| [23](#tache-23) | Reseau.jsx — Correction des noms de champs GeoJSON | 2026-06-11 |
+| [24](#tache-24) | Reseau.jsx — Conversion de la map intéractive et la légende en composantes réutilisables | 2026-06-22 |
+| [25](#tache-25) | Statistic.jsx — Ouvrir une carte quand on appuie sur le bouton carte | 2026-06-22 |
+| [26](#tache-26) | Statistic.jsx — Ouvrir le popup du compteur sélectionné quand la carte s'ouvre | 2026-06-25 |
+| [27](#tache-27) | Statistic.jsx — Fonction pour changer le format de date | 2026-06-28 |
+| [28](#tache-28) | Arrondissement — Sélection synchronisée carte/menu sur 3 vues | 2026-06-26 |
+| [29](#tache-29) | Arrondissement — Surbrillance du polygone et filtrage des données | 2026-06-26 |
 
   
 
@@ -1842,6 +1844,7 @@ Inspection du fichier `reseau_cyclable.geojson` pour identifier les noms de cham
 - **Accepté** : L'IA a inspecté les données brutes avant de proposer une correction, ce qui a permis d'identifier la cause. les champs `SAISON_PISTE` et `ARRONDISSEMENT` n'existent pas dans le GeoJSON de la Ville de Montréal. Les noms réels sont `SAISONS4` (valeur `"Oui"`/`"Non"`) et `NOM_ARR_VILLE_DESC`.
 
 - **Leçon** : Lors de l'implémentation d'un filtre sur des données externes, il faut toujours valider les noms de champs contre le fichier source avant de coder la logique. L'IA à halluciner sur les noms de champs et a produit des faux nom.
+
 ---
 
 ## Tâche 24 — Reseau.jsx —Reseau.jsx — Conversion de la map intéractive and la légende en composantes réutilisable {#tache-24}
@@ -2989,4 +2992,105 @@ Make sure to use the `UTC` variants (`getUTCFullYear`, `getUTCMonth`, `getUTCDat
 **Accepté** : J'ai accepté la logigue, car c'est ce que j'avais besoin et cela me faisait du sens.
 Je l'ai mis dans une méthode afin de pouvoir réutiliser la fonction.
 
+
 ---
+
+## Tâche 28 — Arrondissement : sélection synchronisée carte/menu sur 3 vues {#tache-28}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-06-26
+
+### 💬 Prompt
+
+```
+Tu es un ingenieurs specialise en development de logiciel backend et frontend. En
+suivant le tech stack du projet implemente cette fonctionalité en priorisant la
+simplicité et le bon fonctionnement : Sur les vues « Réseau cyclable »,
+« Statistiques » et « Points d'intérêt », l'utilisateur peut sélectionner un
+arrondissement de deux manières synchronisées: par clic sur le polygone
+correspondant sur une carte des territoires (alimentée par territoires.geojson)
+ou via le menu déroulant déjà en place depuis la phase 1
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Opus 4.8 |
+| **Mode** | Vérification des données avant implémentation, puis édition guidée |
+
+---
+
+### 📦 Sortie obtenue
+
+**Dorsale**
+- Nouvelle route `GET /gti525/v1/territoires` dans `backend/server.js` qui sert `territoires.geojson` (même patron que `/pistes`), avec `Content-Type: application/geo+json` et gestion d'erreur `{ erreur: "..." }` sans stack trace.
+
+**Frontale**
+- `src/lib/arrondissement.js` : `normArr()` (normalisation des noms d'arrondissement entre les jeux de données), `pointInFeature()` / `arrondissementOf()` (test point-dans-polygone par ray-casting, gestion des trous), `arrOptionsFrom()` et la constante `ALL`.
+- `src/lib/useTerritoires.js` : hook React qui charge `territoires.geojson` une fois.
+- `src/components/ArrondissementMapDialog.jsx` : modale Leaflet réutilisable affichant les 34 territoires ; polygone sélectionné surligné ; clic → sélection / re-clic → désélection ; `invalidateSize()` au montage pour le rendu correct des tuiles en modale.
+- Câblage dans `Reseau.jsx`, `Statistic.jsx` et `PointInteret.jsx` : le menu déroulant et le bouton « Carte » pilotent le **même état** → les deux moyens restent synchronisés. Filtrage par nom d'arrondissement pour Réseau/POI, et par **point-dans-polygone** pour les compteurs (`compteurs.csv` n'ayant pas de colonne arrondissement, seulement lat/lng).
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune modification. 
+
+---
+
+### 🧠 Justification
+
+- **Accepté** :  
+
+---
+
+## Tâche 29 — Arrondissement : surbrillance du polygone et filtrage des données {#tache-29}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-06-26
+
+### 💬 Prompt
+
+```
+Tu es un ingenieurs specialise en development de logiciel backend et frontend. En
+suivant le tech stack du projet implemente cette fonctionalité en priorisant la
+simplicité et le bon fonctionnement : La sélection met le polygone en surbrillance
+et filtre effectivement les données affichées: pistes situées dans l'arrondissement,
+compteurs locaux, points d'intérêt locaux.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Opus 4.8 |
+| **Mode** | Constat de l'existant, puis ajout ciblé |
+
+---
+
+### 📦 Sortie obtenue
+
+- **Constat préalable** : le filtrage effectif des trois jeux (pistes de l'arrondissement, compteurs locaux par point-dans-polygone, POI locaux) et la surbrillance du polygone dans la modale carte avaient déjà été livrés à la tâche 24. Seule manquait la surbrillance du polygone sur la **carte principale du Réseau**, là où l'on consulte les pistes filtrées.
+- **Ajout (`src/pages/Reseau.jsx`)** :
+  - `selectedArrFeature` (useMemo) : retrouve le polygone du territoire sélectionné via `normArr` (robuste aux écarts de noms entre jeux de données).
+  - Une couche `<GeoJSON>` superposée aux pistes sur la carte principale, en **contour vert pointillé** (`weight: 3`, `fill: false`, `dashArray: '6 4'`), avec `interactive={false}` pour ne pas bloquer le clic sur les pistes situées en dessous.
+- **Validation** : `eslint` (0 erreur) et `vite build` (succès).
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- 
+
+---
+
+### 🧠 Justification
+
+- **Accepté** :  
+

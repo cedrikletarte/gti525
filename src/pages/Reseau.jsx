@@ -7,19 +7,24 @@ import {
 import CircleIcon from '@mui/icons-material/Circle';
 import ExpandMoreSharpIcon from '@mui/icons-material/ExpandMoreSharp';
 import ExpandLessSharpIcon from '@mui/icons-material/ExpandLessSharp';
+import MapIcon from '@mui/icons-material/Map';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Navbar from '../components/Navbar';
-import InteractiveMap, { getCategory } from '../components/InteractiveMap';
-import { MAP_CATEGORIES } from '../components/InteractiveMap';
+import ArrondissementMapDialog from '../components/ArrondissementMapDialog';
+import useTerritoires from '../lib/useTerritoires';
+import { normArr, arrOptionsFrom, ALL } from '../lib/arrondissement';
+import InteractiveMap, { getCategory, MAP_CATEGORIES } from '../components/InteractiveMap';
 
 export default function Reseau() {
   const [pistes, setPistes]         = useState(null);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [arrondissement, setArrondissement] = useState('all');
+  const [arrondissement, setArrondissement] = useState(ALL);
+  const [arrMapOpen, setArrMapOpen] = useState(false);
+  const territoires = useTerritoires();
   const [saison, setSaison]         = useState('all');
   const [checked, setChecked]       = useState({
     rev: true, voiePartagee: true, voieProtegee: true, sentierPolyvalent: true,
@@ -32,22 +37,27 @@ export default function Reseau() {
       .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load bike network.'); setLoading(false); });
   }, []);
 
-  const territoires = useMemo(() => {
-    if (!pistes) return [];
-    return [...new Set(pistes.features.map(f => f.properties.NOM_ARR_VILLE_DESC).filter(Boolean))].sort();
-  }, [pistes]);
+  const arrOptions = useMemo(() => arrOptionsFrom(territoires), [territoires]);
 
   const filteredFeatures = useMemo(() => {
     if (!pistes) return [];
+    const selArr = arrondissement === ALL ? null : normArr(arrondissement);
     return pistes.features.filter(f => {
       const props = f.properties;
       const cat   = getCategory(props);
       if (!cat || !checked[cat]) return false;
       if (saison !== 'all' && props.SAISONS4 !== (saison === '4' ? 'Oui' : 'Non')) return false;
-      if (arrondissement !== 'all' && props.NOM_ARR_VILLE_DESC !== arrondissement) return false;
+      if (selArr && normArr(props.NOM_ARR_VILLE_DESC) !== selArr) return false;
       return true;
     });
   }, [pistes, checked, saison, arrondissement]);
+
+  // Selected borough boundary, drawn highlighted over the pistes on the main map.
+  const selectedArrFeature = useMemo(() => {
+    if (arrondissement === ALL || !territoires) return null;
+    const target = normArr(arrondissement);
+    return territoires.features.find(f => normArr(f.properties.NOM) === target) || null;
+  }, [arrondissement, territoires]);
 
   const toggleCategory = (key) => setChecked(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -87,10 +97,21 @@ export default function Reseau() {
 
       <FormControl sx={{ width: '100%' }}>
         <Select value={arrondissement} sx={{ textAlign: 'left' }} onChange={e => setArrondissement(e.target.value)} variant="outlined">
-          <MenuItem value="all">Tous</MenuItem>
-          {territoires.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+          <MenuItem value={ALL}>Tous</MenuItem>
+          {arrOptions.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
         </Select>
       </FormControl>
+
+      <Button
+        variant="outlined"
+        size="small"
+        startIcon={<MapIcon />}
+        onClick={() => setArrMapOpen(true)}
+        disabled={!territoires}
+        sx={{ mt: 1, width: '100%', backgroundColor: '#ffffff', borderWidth: 2 }}
+      >
+        Choisir sur la carte
+      </Button>
 
       <Box sx={{ backgroundColor: '#8cc5984f', mt: 4, p: 2, borderRadius: 4, width: '100%' }}>
         <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', textAlign: 'left' }}>PISTES POPULAIRES</Typography>
@@ -140,9 +161,18 @@ export default function Reseau() {
             features={filteredFeatures}
             loading={loading}
             error={error}
+            overlayFeature={selectedArrFeature}
           />
         </Box>
       </Box>
+
+      <ArrondissementMapDialog
+        open={arrMapOpen}
+        onClose={() => setArrMapOpen(false)}
+        territoires={territoires}
+        value={arrondissement}
+        onChange={setArrondissement}
+      />
     </Box>
   );
 }

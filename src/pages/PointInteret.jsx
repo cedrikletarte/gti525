@@ -18,7 +18,11 @@ import {
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
+import MapIcon from '@mui/icons-material/Map';
 import Navbar from '../components/Navbar';
+import ArrondissementMapDialog from '../components/ArrondissementMapDialog';
+import useTerritoires from '../lib/useTerritoires';
+import { normArr, arrOptionsFrom, ALL } from '../lib/arrondissement';
 import InteractiveMap from "../components/InteractiveMap.jsx";
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -27,7 +31,9 @@ export default function PointInteret() {
   const [selectedPoi, setSelectedPoi] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedArrondissement, setSelectedArrondissement] = useState('Tous');
+  const [selectedArrondissement, setSelectedArrondissement] = useState(ALL);
+  const [arrMapOpen, setArrMapOpen] = useState(false);
+  const territoires = useTerritoires();
   const [searchName, setSearchName] = useState('');
   const [selectedType, setSelectedType] = useState('Tous');
 
@@ -38,9 +44,7 @@ export default function PointInteret() {
       .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load points of interest.'); setLoading(false); });
   }, []);
 
-  const territoires = useMemo(() => {
-    return [...new Set(pois.map(r => r.Arrondissement).filter(Boolean))].sort();
-  }, [pois]);
+  const arrOptions = useMemo(() => arrOptionsFrom(territoires), [territoires]);
 
   const data = useMemo(() => {
     return pois.filter(r => r.ID).map(row => ({
@@ -55,8 +59,9 @@ export default function PointInteret() {
   }, [pois]);
 
   const filteredData = useMemo(() => {
+    const selArr = selectedArrondissement === ALL ? null : normArr(selectedArrondissement);
     return data.filter(item => {
-      const matchArrond = selectedArrondissement === 'Tous' || item.Arrondissement === selectedArrondissement;
+      const matchArrond = !selArr || normArr(item.Arrondissement) === selArr;
       const matchType = selectedType === 'Tous' || item.Type === selectedType;
       const matchName = searchName === '' || item.Nom.toLowerCase().includes(searchName.toLowerCase());
       return matchArrond && matchType && matchName;
@@ -136,12 +141,23 @@ export default function PointInteret() {
             <FormControl size="small" sx={{ minWidth: 250 }}>
               <InputLabel id="arrondissement-select-label">Filtrer par arrondissement</InputLabel>
               <Select labelId="arrondissement-select-label" value={selectedArrondissement} label="Filtrer par arrondissement" onChange={(e) => setSelectedArrondissement(e.target.value)}>
-                <MenuItem value="Tous"><em>Tous les arrondissements</em></MenuItem>
-                {territoires.map((terr, index) => (
-                  <MenuItem key={index} value={terr}>{terr}</MenuItem>
+                <MenuItem value={ALL}><em>Tous les arrondissements</em></MenuItem>
+                {arrOptions.map((terr) => (
+                  <MenuItem key={terr} value={terr}>{terr}</MenuItem>
                 ))}
               </Select>
             </FormControl>
+
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<MapIcon />}
+              onClick={() => setArrMapOpen(true)}
+              disabled={!territoires}
+              sx={{ flexShrink: 0 }}
+            >
+              Carte
+            </Button>
           </Stack>
         </Paper>
 
@@ -164,6 +180,15 @@ export default function PointInteret() {
           }
         </Paper>
       </Container>
+
+      <ArrondissementMapDialog
+        open={arrMapOpen}
+        onClose={() => setArrMapOpen(false)}
+        territoires={territoires}
+        value={selectedArrondissement}
+        onChange={setSelectedArrondissement}
+      />
+
       <Dialog open={selectedPoi !== null } onClose={() => setSelectedPoi(null)} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ pr: 6, color: '#000000' }}>
           {selectedPoi?.nom}
