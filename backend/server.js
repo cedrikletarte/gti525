@@ -139,14 +139,17 @@ app.use((_req, res) => {
   res.status(404).json({ erreur: 'Route not found.' });
 });
 
-// Load database then start server
-initSqlJs().then(SQL => {
-  const fileBuffer = fs.readFileSync(path.join(DATA_DIR, 'comptage_velo.db'));
-  db = new SQL.Database(fileBuffer);
-  app.listen(PORT, () => {
-    console.log(`Serveur GTI525 démarré sur http://localhost:${PORT}`);
+module.exports = { app, setDb: (database) => { db = database; } };
+
+if (require.main === module) {
+  initSqlJs().then(SQL => {
+    const fileBuffer = fs.readFileSync(path.join(DATA_DIR, 'comptage_velo.db'));
+    db = new SQL.Database(fileBuffer);
+    app.listen(PORT, () => {
+      console.log(`Serveur GTI525 démarré sur http://localhost:${PORT}`);
+    });
+  }).catch(err => {
+    console.error('Failed to load the database:', err.message);
+    process.exit(1);
   });
-}).catch(err => {
-  console.error('Failed to load the database:', err.message);
-  process.exit(1);
-});
+}
