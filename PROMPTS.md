@@ -3072,7 +3072,7 @@ ou via le menu déroulant déjà en place depuis la phase 1
 
 ### 🧠 Justification
 
-- **Accepté** :  
+- **Accepté** :  J'ai accepté l'ensemble de la sortie sans modification. La solution respecte la stack existante (React, Leaflet, MUI) et reste simple : un seul état partagé garantit la synchronisation entre le menu déroulant et la carte, sans code de synchronisation en plus. J'ai vérifié que la sélection sur la carte et dans le menu déroulant restaient bien alignées dans les trois vues.
 
 ---
 
@@ -3120,7 +3120,7 @@ compteurs locaux, points d'intérêt locaux.
 
 ### 🧠 Justification
 
-- **Accepté** :  
+- **Accepté** :  J'ai accepté La solution car,  l'ajout était minimal et n'affectait pas les fonctionnalités existantes. J'ai vérifié que le polygone se met bien en surbrillance et que le filtrage des pistes, compteurs et points d'intérêt fonctionnait correctement pour l'arrondissement sélectionné.
 
 ---
 
