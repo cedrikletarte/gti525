@@ -41,6 +41,7 @@
 | [26](#tache-26) | Statistic.jsx — Ouvrir le popup du compteur sélectionné quand la carte s'ouvre | 2026-06-25 |
 | [27](#tache-27) | Statistic.jsx — Fonction pour changer le format de date | 2026-06-28 |
 | [29](#tache-29) | Arrondissement — Surbrillance du polygone et filtrage des données | 2026-06-26 |
+| [32](#tache-32) | ArrondissementMapDialog.jsx — Surbrillance au survol des territoires | 2026-06-30 |
 
 ### Dorsale
 
@@ -3072,7 +3073,7 @@ ou via le menu déroulant déjà en place depuis la phase 1
 
 ### 🧠 Justification
 
-- **Accepté** :  
+- **Accepté** :  J'ai accepté l'ensemble de la sortie sans modification. La solution respecte la stack existante (React, Leaflet, MUI) et reste simple : un seul état partagé garantit la synchronisation entre le menu déroulant et la carte, sans code de synchronisation en plus. J'ai vérifié que la sélection sur la carte et dans le menu déroulant restaient bien alignées dans les trois vues.
 
 ---
 
@@ -3114,13 +3115,13 @@ compteurs locaux, points d'intérêt locaux.
 
 ### ✏️ Modifications apportées par l'humain
 
-- 
+- Aucune modification 
 
 ---
 
 ### 🧠 Justification
 
-- **Accepté** :  
+- **Accepté** :  J'ai accepté La solution car,  l'ajout était minimal et n'affectait pas les fonctionnalités existantes. J'ai vérifié que le polygone se met bien en surbrillance et que le filtrage des pistes, compteurs et points d'intérêt fonctionnait correctement pour l'arrondissement sélectionné.
 
 ---
 
@@ -3269,3 +3270,47 @@ conclusion en citant le code concerné.
 - **Validation des entrées :** La route rejette `id` non numérique dès la ligne 56 (`!/^\d+$/.test(id)`) avant d'atteindre la base de données. Les paramètres de dates passent par `parseYYMMDD()` qui vérifie successivement le format (`/^\d{6}$/`), les bornes calendaires (mois 1–12, jour 1–31) et la cohérence temporelle (`debutIso > finIso` → 400). Fournir un seul des deux paramètres retourne également 400. Aucune entrée malformée ne peut atteindre la couche SQL.
 
 - **Fuite d'erreur :** Le paramètre de l'exception est nommé `_err` (convention underscore = ignoré volontairement). Le client reçoit uniquement la chaîne fixe `'Database query failed.'`, qui ne révèle ni le chemin du fichier `.db`, ni les noms de tables, ni la structure du schéma. Le détail de l'exception reste exclusivement côté serveur.
+
+---
+
+## Tâche 32 — ArrondissementMapDialog.jsx : surbrillance au survol des territoires {#tache-32}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-06-30
+
+### 💬 Prompt
+
+```
+tu es un ingenieur specialise en full stack, ajoute un mouseOver sur les layers dans
+les differents territoire
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Sonnet 5 |
+| **Mode** | Diagnostic à la lecture du code, puis ajout ciblé |
+
+---
+
+### 📦 Sortie obtenue
+
+- **Constat préalable** : dans `src/components/ArrondissementMapDialog.jsx`, `onEachFeature` ne posait qu'un `bindTooltip` et un handler `click` — aucun retour visuel au survol d'un territoire, seul le texte du tooltip apparaissait.
+- **Ajout (`src/components/ArrondissementMapDialog.jsx:41-42`)** :
+  - `layer.on('mouseover', ...)` : épaissit le contour (`weight: 3`) et augmente le remplissage (`fillOpacity: 0.35`) du territoire survolé.
+  - `layer.on('mouseout', ...)` : restaure `style(feature)`, qui recalcule le style selon l'état de sélection courant (donc un territoire déjà sélectionné revient à son style "sélectionné", pas à un état neutre).
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune modification.
+
+---
+
+### 🧠 Justification
+
+- **Accepté** : la solution réutilise directement la fonction `style()` déjà en place pour la sélection. On ajoute simplement une fonction `layer.on('mouseover')` pour ajouter de l'opacité à la zone affectée et `layer.on('mouseout')` pour setter le bon style.

@@ -38,6 +38,8 @@ export default function ArrondissementMapDialog({ open, onClose, territoires, va
   const onEachFeature = (feature, layer) => {
     const nom = feature.properties.NOM;
     layer.bindTooltip(nom, { sticky: true });
+    layer.on('mouseover', () => layer.setStyle({ weight: 3, fillOpacity: 0.35 }));
+    layer.on('mouseout', () => layer.setStyle(style(feature)));
     layer.on('click', () => {
       onChange(selectedNorm === normArr(nom) ? ALL : nom);
     });
