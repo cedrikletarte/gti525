@@ -42,6 +42,8 @@
 | [27](#tache-27) | Statistic.jsx — Fonction pour changer le format de date | 2026-06-28 |
 | [29](#tache-29) | Arrondissement — Surbrillance du polygone et filtrage des données | 2026-06-26 |
 | [32](#tache-32) | ArrondissementMapDialog.jsx — Surbrillance au survol des territoires | 2026-06-30 |
+| [36](#tache-36) | PointInteret.jsx — Pagination serveur complète | 2026-07-07 |
+| [37](#tache-37) | Statistic.jsx — Pagination serveur pour /compteurs | 2026-07-07 |
 
 ### Dorsale
 
@@ -51,6 +53,7 @@
 | [28](#tache-28) | Arrondissement — Sélection synchronisée carte/menu sur 3 vues | 2026-06-26 |
 | [33](#tache-33) | Authentification JWT + protection des routes /pointsdinteret | 2026-07-07 |
 | [34](#tache-34) | Route de découverte + migration des données vers SQLite | 2026-07-07 |
+| [35](#tache-35) | T2 — Enrichissement des ressources compteurs et points d'intérêt | 2026-07-07 |
 
 > Tâche 28 touche également les pages frontales (`src/pages/`) pour le câblage du menu déroulant et de la carte des territoires.
 
@@ -3461,3 +3464,197 @@ Résultat : 18 tests passent sans régression.
 - **Colonnes indexables séparées pour les filtres :** Même si le feature complet est en TEXT, les propriétés filtrables (`nom_arr_ville_desc`, `saisons4`, etc.) sont extraites dans des colonnes dédiées au moment de l'INSERT. Cela évite un scan complet avec `json_extract()` sur chaque requête filtrée.
 
 - **Pattern `makeDb` par fermeture :** Chaque appel à `makeDb(rows)` crée un compteur `index` isolé. Deux tests dans le même fichier ne peuvent pas s'interférer, même s'ils appellent `step()` et `getAsObject()` un nombre de fois différent. Pas besoin d'`afterEach` pour réinitialiser l'état.
+
+---
+
+## Tâche 35 — T2 : Enrichissement des ressources compteurs et points d'intérêt {#tache-35}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+T2: Ressources compteurs et points d'intérêt
+
+T2.1: GET /compteurs - liste paginée avec paramètres limite, page, implantation (année minimale),
+nom (recherche textuelle), arrondissement. Réponse: { donnees, total, page, limite }.
+
+T2.2: GET /compteurs/:id - informations d'un compteur (sans les passages).
+
+T2.3: GET /compteurs/:id/passages avec paramètres debut, fin (YYYY-MM-DD), intervalle
+(jour, semaine, mois) - déjà esquissé en phase 2, à étoffer ici.
+
+T2.4: GET /pointsdinteret - liste paginée avec filtres par type, arrondissement, nom.
+
+T2.5: Opérations POST, PUT et DELETE sur /pointsdinteret, protégées par jeton (voir T4). Toute
+requête sans jeton ou avec un jeton invalide retourne 401.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Génération de code précédée d'une phase de planification (plan mode) |
+
+---
+
+### 📦 Sortie obtenue
+
+**`backend/server.js`** — routes enrichies et nouveaux schémas :
+
+| Route | Changements |
+|-------|-------------|
+| `GET /compteurs` | Filtre dynamique WHERE (nom LIKE, statut =, arrondissement =, implantation ≥) + COUNT(*) + LIMIT/OFFSET ; réponse `{ donnees, total, page, limite }` |
+| `GET /compteurs/:id` | Nouvelle route enregistrée avant `/:id/passages` ; 200 / 404 |
+| `GET /compteurs/:id/passages` | Format de dates migré de YYMMDD → YYYY-MM-DD (`parseISODate`), paramètre `?intervalle=` (jour/semaine/mois), clé de groupement dynamique dans la réponse ; `parseYYMMDD` supprimé |
+| `GET /pointsdinteret` | Filtres nom (LIKE), type (=), arrondissement (=) + pagination COUNT*/LIMIT/OFFSET |
+| `POST /pointsdinteret` | Validation `nom_parc_lieu`, `latitude`, `longitude` ; INSERT + `SELECT last_insert_rowid()` ; 201 |
+| `PUT /pointsdinteret/:id` | SELECT existence → 404 ; UPDATE → 200 |
+| `DELETE /pointsdinteret/:id` | SELECT existence → 404 ; DELETE → 204 |
+
+Schémas modifiés :
+- Table `compteurs` : ajout colonne `arrondissement TEXT` (7ème colonne, `null` dans tous les CSV)
+- Table `pointsdinteret` : ajout colonne `type TEXT` (14ème colonne, `'Fontaine'` pour toutes les lignes)
+- Tous les `catch (_err)` → `catch {}` (optional catch binding ES2019)
+
+**`backend/tests/compteurs.test.js`** — mis à jour pour la réponse paginée ; ajout `describe GET /gti525/v1/compteurs/:id` (200, 404, 500) ; `reset: jest.fn()` ajouté au stub.
+
+**`backend/tests/passages.test.js`** — toutes les dates YYMMDD → YYYY-MM-DD ; messages d'erreur mis à jour en français ; ajout tests `?intervalle=semaine`, `?intervalle=mois`, `?intervalle=annee` (400).
+
+**`backend/tests/pointsdinteret.test.js`** — entièrement réécrit : GET attend `{ donnees, total, page, limite }` ; describe POST (201, 400, 401) ; describe PUT (200, 404, 401) ; describe DELETE (204, 404, 401) ; JWT `VALID_TOKEN` signé avec `jwt.sign`.
+
+Résultat : 33 tests passants, 0 régression.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Enveloppe paginée `{ donnees, total, page, limite }` :** Charger l'intégralité d'une ressource (848 POI, ~75 compteurs) pour filtrer ensuite côté client charge la mémoire du navigateur et ne respecte pas les contraintes du livrable. La pagination serveur délègue WHERE/LIMIT/OFFSET à SQLite, qui ne retourne que la tranche demandée.
+
+- **`parseISODate` en remplacement de `parseYYMMDD` :** Le format YYYY-MM-DD est le format ISO 8601 standard ; il est directement comparable par SQLite sans conversion, élimine les ambiguïtés de siècle et est plus lisible dans les URLs. Le changement n'était pas rétrocompatible, mais aucun client existant ne dépendait de l'ancien format.
+
+- **`GET /compteurs/:id` enregistré avant `/:id/passages` :** Express résout les routes dans l'ordre de déclaration. Si `/:id/passages` était enregistré en premier, `GET /compteurs/100` pourrait matcher `/:id` mais jamais être atteint si le moteur de routage consommait `:id` trop tôt. L'ordre d'enregistrement garantit la bonne résolution.
+
+- **`INSERT OR IGNORE` au démarrage :** La base sql.js est in-memory (tables recréées à chaque démarrage), donc les doublons sont théoriquement impossibles. La clause reste présente par conformité au contrat SQL et pour protéger contre d'éventuels appels de démarrage multiples dans les tests.
+
+- **`makeDb` avec `reset: jest.fn()` :** Certaines routes appellent `stmt.reset()` après `stmt.step()` dans les boucles ; l'absence de cette méthode dans le stub provoquait `TypeError: stmt.reset is not a function` dans les tests de T2.5. L'ajout est non intrusif pour les tests existants.
+
+---
+
+## Tâche 36 — PointInteret.jsx : pagination serveur complète {#tache-36}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+Modifie le frontend pour qu'il fonctionne avec les modifications fait dans le backend
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Correction puis refactorisation ciblée |
+
+---
+
+### 📦 Sortie obtenue
+
+**Premier prompt** (compatibilité avec l'enveloppe paginée) :
+- `src/pages/PointInteret.jsx` : `setPois(data.donnees ?? [])` — déballage de l'enveloppe JSON
+- `src/pages/Statistic.jsx` : `setCompteurs(data.donnees ?? [])` + `?limite=200` comme contournement temporaire
+- `src/pages/Statistic.jsx` : `changeDateFormat` migré de YYMMDD → YYYY-MM-DD
+
+**Deuxième prompt** (pagination serveur pour Points d'intérêt) :
+
+| Changement | Détail |
+|------------|--------|
+| Nouveaux états | `paginationModel { page: 0, pageSize: 20 }` et `rowCount` |
+| `useEffect` | Deps `[paginationModel, searchName, selectedArrondissement, selectedType]` ; URLSearchParams avec `limite`, `page`, `nom`, `arrondissement`, `type` |
+| `setLoading(true)` | Déplacé dans les handlers d'événements uniquement (règle linter : pas de setState synchrone dans useEffect) |
+| `filteredData` useMemo | Supprimé — filtrage délégué au serveur |
+| DataGrid | `paginationMode="server"`, `rowCount`, `paginationModel` contrôlé, `onPaginationModelChange`, `pageSizeOptions={[20, 50, 100]}` |
+| Handlers | `handleSearchChange`, `handleTypeChange`, `handleArrondissementChange` réinitialisent `page: 0` |
+| Import `normArr` | Retiré (utilisé uniquement dans `filteredData` supprimé) |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **`paginationMode="server"` obligatoire :** En mode par défaut (`client`), la DataGrid MUI X attend que *toutes* les lignes soient en mémoire et pagine localement. En mode `server`, elle expose `onPaginationModelChange` et respecte `rowCount` pour afficher les contrôles de navigation sans charger les autres pages. Sans ce mode, le composant ne déclenche aucun nouveau fetch au changement de page.
+
+- **`setLoading(true)` dans les handlers, pas dans `useEffect` :** Appeler `setState` de manière synchrone à l'intérieur d'un `useEffect` déclenche un second cycle de rendu immédiat, ce que le linter signale comme une cascade potentiellement infinie. Le déplacer dans les handlers d'événements (onChange, onPaginationModelChange) garantit que l'indicateur de chargement s'affiche avant que le useEffect ne se ré-exécute.
+
+- **Filtrage arrondissement côté serveur pour POI :** La colonne `Arrondissement` est présente directement dans les données `poi.csv` ; le backend peut filtrer par `WHERE Arrondissement = ?` sans traitement supplémentaire. Contrairement aux compteurs (voir tâche 37), aucun reverse-geocoding n'est nécessaire.
+
+---
+
+## Tâche 37 — Statistic.jsx : pagination serveur pour /compteurs {#tache-37}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+fait aussi une vrai pagination pour /compteur dans la page statistique
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Refactorisation ciblée |
+
+---
+
+### 📦 Sortie obtenue
+
+| Changement | Détail |
+|------------|--------|
+| `?limite=200` retiré | Remplacé par URLSearchParams avec `limite`, `page`, `nom` |
+| Nouveaux états | `paginationModel { page: 0, pageSize: 20 }` et `rowCount` |
+| `useEffect` | Deps `[paginationModel, search]` ; `nom` passé comme `?nom=` côté serveur |
+| `rows` useMemo | Filtre `search` retiré (serveur) ; filtre `selectedArr` conservé (reverse-geocoding côté client) |
+| `handleSearchChange` | Réinitialise `page: 0` et `setLoading(true)` |
+| `handleClear` | Réinitialise également `page: 0` et `setLoading(true)` |
+| DataGrid | `paginationMode="server"`, `rowCount`, `paginationModel` contrôlé, `pageSizeOptions={[20, 50]}` |
+| `ArrondissementMapDialog.onChange` | Réinitialise `page: 0` |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Filtre arrondissement conservé côté client :** La table `compteurs` n'a pas de colonne `Arrondissement` dans le CSV source. L'arrondissement est calculé par reverse-geocoding (algorithme point-dans-polygone sur `territoires.geojson`) uniquement côté client via `arrondissementOf()`. Déplacer ce calcul côté serveur impliquerait de charger le GeoJSON complet des territoires dans le backend et d'implémenter le ray-casting en SQL ou en JS dans le serveur — effort disproportionné pour ~75 compteurs. Le filtre s'applique donc sur la page courante, ce qui peut réduire le nombre de lignes affichées par rapport à `pageSize`.
+
+- **Recherche par nom côté serveur (`?nom=`) :** Contrairement à l'arrondissement, le nom est une colonne directe de la table `compteurs`. Passer `nom` comme paramètre de filtre SQL (`WHERE Nom LIKE ?`) est cohérent avec le pattern adopté pour Points d'intérêt et conforme aux exigences T2.1 du livrable.

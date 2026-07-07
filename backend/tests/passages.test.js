@@ -21,7 +21,7 @@ describe('Route GET /gti525/v1/compteurs/:id/passages', () => {
       { jour: '2022-01-02', total_passages: 200 },
     ]));
 
-    const res = await request(app).get('/gti525/v1/compteurs/1/passages?debut=220101&fin=220102');
+    const res = await request(app).get('/gti525/v1/compteurs/1/passages?debut=2022-01-01&fin=2022-01-02');
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
@@ -41,6 +41,33 @@ describe('Route GET /gti525/v1/compteurs/:id/passages', () => {
     expect(res.body[0]).toHaveProperty('total_passages');
   });
 
+  it('devrait retourner 200 avec la clé semaine pour intervalle=semaine', async () => {
+    setDb(makeDb([{ semaine: '2022-01', total_passages: 980 }]));
+
+    const res = await request(app).get('/gti525/v1/compteurs/1/passages?intervalle=semaine');
+
+    expect(res.status).toBe(200);
+    expect(res.body[0]).toHaveProperty('semaine');
+    expect(res.body[0]).toHaveProperty('total_passages');
+  });
+
+  it('devrait retourner 200 avec la clé mois pour intervalle=mois', async () => {
+    setDb(makeDb([{ mois: '2022-01', total_passages: 4500 }]));
+
+    const res = await request(app).get('/gti525/v1/compteurs/1/passages?intervalle=mois');
+
+    expect(res.status).toBe(200);
+    expect(res.body[0]).toHaveProperty('mois');
+    expect(res.body[0]).toHaveProperty('total_passages');
+  });
+
+  it('devrait retourner 400 pour un intervalle invalide', async () => {
+    const res = await request(app).get('/gti525/v1/compteurs/1/passages?intervalle=annee');
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('erreur', 'Intervalle invalide. Valeurs acceptées : jour, semaine, mois.');
+  });
+
   it('devrait retourner 404 quand l\'identifiant ne correspond à aucun compteur', async () => {
     setDb(makeDb([]));
 
@@ -58,37 +85,37 @@ describe('Route GET /gti525/v1/compteurs/:id/passages', () => {
   });
 
   it('devrait retourner 400 quand seul le paramètre debut est fourni sans fin', async () => {
-    const res = await request(app).get('/gti525/v1/compteurs/1/passages?debut=220101');
+    const res = await request(app).get('/gti525/v1/compteurs/1/passages?debut=2022-01-01');
 
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('erreur', 'Parameters debut and fin must be provided together (format YYMMDD).');
+    expect(res.body).toHaveProperty('erreur', 'Les paramètres debut et fin doivent être fournis ensemble (format YYYY-MM-DD).');
   });
 
   it('devrait retourner 400 quand seul le paramètre fin est fourni sans debut', async () => {
-    const res = await request(app).get('/gti525/v1/compteurs/1/passages?fin=220131');
+    const res = await request(app).get('/gti525/v1/compteurs/1/passages?fin=2022-01-31');
 
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('erreur', 'Parameters debut and fin must be provided together (format YYMMDD).');
+    expect(res.body).toHaveProperty('erreur', 'Les paramètres debut et fin doivent être fournis ensemble (format YYYY-MM-DD).');
   });
 
   it('devrait retourner 400 quand debut est postérieur à fin', async () => {
-    const res = await request(app).get('/gti525/v1/compteurs/1/passages?debut=221231&fin=220101');
+    const res = await request(app).get('/gti525/v1/compteurs/1/passages?debut=2022-12-31&fin=2022-01-01');
 
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('erreur', 'Start date must be before or equal to end date.');
+    expect(res.body).toHaveProperty('erreur', 'La date de début doit être antérieure ou égale à la date de fin.');
   });
 
-  it('devrait retourner 400 quand le format de date de debut est invalide', async () => {
-    const res = await request(app).get('/gti525/v1/compteurs/1/passages?debut=abc123&fin=220131');
+  it('devrait retourner 400 quand le format de date est invalide', async () => {
+    const res = await request(app).get('/gti525/v1/compteurs/1/passages?debut=abc&fin=2022-01-31');
 
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('erreur', 'Invalid date format. Use YYMMDD (e.g. 220101).');
+    expect(res.body).toHaveProperty('erreur', 'Format de date invalide. Utilisez YYYY-MM-DD (ex. 2022-01-01).');
   });
 
-  it('devrait retourner 400 quand le mois de debut est hors plage (ex. 13)', async () => {
-    const res = await request(app).get('/gti525/v1/compteurs/1/passages?debut=221301&fin=221301');
+  it('devrait retourner 400 quand le mois est hors plage (ex. 13)', async () => {
+    const res = await request(app).get('/gti525/v1/compteurs/1/passages?debut=2022-13-01&fin=2022-13-01');
 
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('erreur', 'Invalid date format. Use YYMMDD (e.g. 220101).');
+    expect(res.body).toHaveProperty('erreur', 'Format de date invalide. Utilisez YYYY-MM-DD (ex. 2022-01-01).');
   });
 });
