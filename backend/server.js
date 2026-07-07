@@ -1,15 +1,20 @@
+require('dotenv').config();
 'use strict';
 
-const express = require('express');
-const initSqlJs = require('sql.js');
-const fs = require('fs');
-const path = require('path');
+const express      = require('express');
+const initSqlJs    = require('sql.js');
+const fs           = require('fs');
+const path         = require('path');
+const bcrypt       = require('bcryptjs');
+const jwt          = require('jsonwebtoken');
+
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET manquant dans .env');
+  process.exit(1);
+}
 
 const DATA_DIR = path.join(__dirname, 'data');
 const PORT = 8080;
-
-const app = express();
-let db;
 
 // Converts YYMMDD → YYYY-MM-DD. Returns null if the format is invalid.
 function parseYYMMDD(yymmdd) {
@@ -37,6 +42,73 @@ function parseCsv(content) {
     return obj;
   });
 }
+
+const app = express();
+let db;
+
+app.use(express.json());
+
+// Middleware — Checks for the presence and validity of a JWT Bearer token
+function requireAuth(req, res, next) {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({ erreur: 'Jeton manquant ou invalide.' });
+  }
+  try {
+    req.user = jwt.verify(auth.slice(7), process.env.JWT_SECRET);
+    next();
+  } catch (_err) {
+    return res.status(401).json({ erreur: 'Jeton manquant ou invalide.' });
+  }
+}
+
+// POST /gti525/v1/auth/inscription — Creates a new user account
+app.post('/gti525/v1/auth/inscription', async (req, res) => {
+  const { courriel, motDePasse } = req.body ?? {};
+  if (!courriel || !motDePasse) {
+    return res.status(400).json({ erreur: 'Courriel et mot de passe requis.' });
+  }
+  try {
+    const mdpHash = await bcrypt.hash(motDePasse, 10);
+    const stmt = db.prepare('INSERT INTO utilisateurs (courriel, mdp_hash) VALUES (?, ?)');
+    stmt.bind([courriel, mdpHash]);
+    stmt.step();
+    stmt.free();
+    return res.status(201).json({ message: 'Compte créé.' });
+  } catch (err) {
+    if (err.message && err.message.includes('UNIQUE constraint failed')) {
+      return res.status(409).json({ erreur: 'Ce courriel est déjà utilisé.' });
+    }
+    return res.status(500).json({ erreur: 'Erreur serveur.' });
+  }
+});
+
+// POST /gti525/v1/auth/connexion — Authenticates a user and returns a JWT
+app.post('/gti525/v1/auth/connexion', async (req, res) => {
+  const { courriel, motDePasse } = req.body ?? {};
+  if (!courriel || !motDePasse) {
+    return res.status(400).json({ erreur: 'Courriel et mot de passe requis.' });
+  }
+  try {
+    const stmt = db.prepare('SELECT id, mdp_hash FROM utilisateurs WHERE courriel = ?');
+    stmt.bind([courriel]);
+    const row = stmt.step() ? stmt.getAsObject() : null;
+    stmt.free();
+
+    if (!row || !(await bcrypt.compare(motDePasse, row.mdp_hash))) {
+      return res.status(401).json({ erreur: 'Identifiants invalides.' });
+    }
+
+    const jeton = jwt.sign(
+      { sub: row.id, courriel },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    return res.status(200).json({ jeton });
+  } catch (_err) {
+    return res.status(500).json({ erreur: 'Erreur serveur.' });
+  }
+});
 
 // GET /gti525/v1/compteurs — returns all counters (from compteurs.csv)
 app.get('/gti525/v1/compteurs', (req, res) => {
@@ -135,7 +207,7 @@ app.get('/gti525/v1/territoires', (req, res) => {
   }
 });
 
-// GET /gti525/v1/pointsdinteret — points of interest (poi.csv → JSON)
+// GET /gti525/v1/pointsdinteret — points of interest (poi.csv → JSON) — public
 app.get('/gti525/v1/pointsdinteret', (req, res) => {
   try {
     const content = fs.readFileSync(path.join(DATA_DIR, 'poi.csv'), 'utf8');
@@ -143,6 +215,19 @@ app.get('/gti525/v1/pointsdinteret', (req, res) => {
   } catch (_err) {
     res.status(500).json({ erreur: 'Failed to read the points of interest file.' });
   }
+});
+
+// POST /PUT /DELETE /gti525/v1/pointsdinteret — protected mutations (not yet implemented)
+app.post('/gti525/v1/pointsdinteret', requireAuth, (_req, res) => {
+  res.status(501).json({ erreur: 'Non implémenté.' });
+});
+
+app.put('/gti525/v1/pointsdinteret/:id', requireAuth, (_req, res) => {
+  res.status(501).json({ erreur: 'Non implémenté.' });
+});
+
+app.delete('/gti525/v1/pointsdinteret/:id', requireAuth, (_req, res) => {
+  res.status(501).json({ erreur: 'Non implémenté.' });
 });
 
 // Generic 404 handler
@@ -156,6 +241,12 @@ if (require.main === module) {
   initSqlJs().then(SQL => {
     const fileBuffer = fs.readFileSync(path.join(DATA_DIR, 'comptage_velo.db'));
     db = new SQL.Database(fileBuffer);
+    db.run(`CREATE TABLE IF NOT EXISTS utilisateurs (
+      id       INTEGER PRIMARY KEY AUTOINCREMENT,
+      courriel TEXT    NOT NULL UNIQUE,
+      mdp_hash TEXT    NOT NULL,
+      cree_le  TEXT    NOT NULL DEFAULT (datetime('now'))
+    )`);
     app.listen(PORT, () => {
       console.log(`Serveur GTI525 démarré sur http://localhost:${PORT}`);
     });

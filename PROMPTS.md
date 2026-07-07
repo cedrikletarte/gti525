@@ -49,6 +49,7 @@
 |---|-------|-------|
 | [19](#tache-19) | Backend Node.js + Express — 4 routes API | 2026-06-11 |
 | [28](#tache-28) | Arrondissement — Sélection synchronisée carte/menu sur 3 vues | 2026-06-26 |
+| [33](#tache-33) | Authentification JWT + protection des routes /pointsdinteret | 2026-07-07 |
 
 > Tâche 28 touche également les pages frontales (`src/pages/`) pour le câblage du menu déroulant et de la carte des territoires.
 
@@ -3314,3 +3315,77 @@ les differents territoire
 ### 🧠 Justification
 
 - **Accepté** : la solution réutilise directement la fonction `style()` déjà en place pour la sélection. On ajoute simplement une fonction `layer.on('mouseover')` pour ajouter de l'opacité à la zone affectée et `layer.on('mouseout')` pour setter le bon style.
+
+---
+
+## Tâche 33 — T4 : Authentification JWT + protection des routes /pointsdinteret {#tache-33}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+PROMPT — T4 : Authentification JWT + protection des routes /pointsdinteret
+
+Implémenter les quatre sous-tâches dans backend/server.js, backend/package.json,
+backend/.env et backend/.env-example :
+
+T4.1 — Table utilisateurs + routes d'auth
+  - CREATE TABLE utilisateurs (id, courriel UNIQUE, mdp_hash, cree_le)
+  - POST /gti525/v1/auth/inscription → 201 / 400 / 409
+  - POST /gti525/v1/auth/connexion  → 200 { jeton } / 400 / 401
+  - JWT : { sub, courriel }, durée 24h, signé avec JWT_SECRET
+
+T4.2 — Hachage : bcryptjs (pure JS), saltRounds = 10, jamais de mdp en clair
+
+T4.3 — Middleware requireAuth (Bearer token) + routes protégées
+  - POST / PUT / DELETE /gti525/v1/pointsdinteret → requireAuth + 501
+  - GET /gti525/v1/pointsdinteret reste public
+
+T4.4 — Secrets : dotenv, .env (ignoré), .env-example (commité),
+  process.exit(1) si JWT_SECRET absent au démarrage
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Génération de code précédée d'une phase de planification (plan mode) |
+
+---
+
+### 📦 Sortie obtenue
+
+- `backend/.env-example` — créé : commentaire + `JWT_SECRET=` vide
+- `backend/.env` — créé et ignoré par git (JWT_SECRET peuplé)
+- `.gitignore` (racine) — `backend/.env` ajouté
+- `backend/server.js` — réécrit : `require('dotenv').config()` en première ligne, guard `JWT_SECRET`, `express.json()`, middleware `requireAuth`, `POST /auth/inscription` (201 / 400 / 409), `POST /auth/connexion` (200 / 400 / 401), `POST` / `PUT` / `DELETE /pointsdinteret` protégés (501), table `utilisateurs` créée au démarrage après chargement de `comptage_velo.db`
+- `backend/package.json` — `bcryptjs`, `jsonwebtoken`, `dotenv` ajoutés dans `dependencies`
+
+Résultat : 18 tests existants passent sans modification.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **`bcryptjs` plutôt que `bcrypt` :** `bcrypt` repose sur un binding natif C++ qui peut échouer à la compilation selon l'environnement (Windows, CI). `bcryptjs` est une implémentation pure JavaScript compatible partout, sans configuration supplémentaire.
+
+- **`jwt.verify` obligatoire :** `jwt.decode` décode le token sans vérifier la signature — n'importe qui pourrait forger un payload valide. `jwt.verify` rejette tout token dont la signature ne correspond pas au `JWT_SECRET` courant, ce qui couvre également les tokens expirés et ceux émis avant un changement de secret.
+
+- **Réponse 401 uniforme pour connexion échouée :** Retourner le même message `'Identifiants invalides.'` qu'il s'agisse d'un courriel inexistant ou d'un mauvais mot de passe empêche l'énumération de comptes — un attaquant ne peut pas distinguer les deux cas.
+
+- **Guard `JWT_SECRET` au démarrage :** Placer `process.exit(1)` avant `app.listen` garantit que le serveur ne démarre jamais sans secret valide. Sans cette vérification, les routes d'auth démarreraient avec une clé `undefined`, signant des tokens invalides silencieusement.
+
+- **Table `utilisateurs` in-memory :** Créée après le chargement de `comptage_velo.db` dans le même objet `sql.js`. Les comptes ne survivent pas un redémarrage — comportement explicitement attendu pour ce livrable.
+
+- **`express.json()` avant toutes les routes :** Sans ce middleware, `req.body` est `undefined` sur les routes POST. Le placer en premier garantit que toutes les routes, présentes et futures, ont accès au corps JSON parsé.
