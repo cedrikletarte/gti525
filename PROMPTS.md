@@ -50,6 +50,7 @@
 | [19](#tache-19) | Backend Node.js + Express — 4 routes API | 2026-06-11 |
 | [28](#tache-28) | Arrondissement — Sélection synchronisée carte/menu sur 3 vues | 2026-06-26 |
 | [33](#tache-33) | Authentification JWT + protection des routes /pointsdinteret | 2026-07-07 |
+| [34](#tache-34) | Route de découverte + migration des données vers SQLite | 2026-07-07 |
 
 > Tâche 28 touche également les pages frontales (`src/pages/`) pour le câblage du menu déroulant et de la carte des territoires.
 
@@ -3318,7 +3319,7 @@ les differents territoire
 
 ---
 
-## Tâche 33 — T4 : Authentification JWT + protection des routes /pointsdinteret {#tache-33}
+## Tâche 33 — Authentification JWT + protection des routes /pointsdinteret {#tache-33}
 
 **Auteur** : Cédrik Letarte - 2026-07-07
 
@@ -3389,3 +3390,74 @@ Résultat : 18 tests existants passent sans modification.
 - **Table `utilisateurs` in-memory :** Créée après le chargement de `comptage_velo.db` dans le même objet `sql.js`. Les comptes ne survivent pas un redémarrage — comportement explicitement attendu pour ce livrable.
 
 - **`express.json()` avant toutes les routes :** Sans ce middleware, `req.body` est `undefined` sur les routes POST. Le placer en premier garantit que toutes les routes, présentes et futures, ont accès au corps JSON parsé.
+
+---
+
+## Tâche 34 — Route de découverte + migration des données vers SQLite {#tache-34}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+T1.1 : Une requête GET /gti525/v1/ retourne un JSON listant tous les points
+de terminaison disponibles avec une brève description et le verbe HTTP attendu.
+
+T1.2 : Toutes les données (compteurs, pistes, points d'intérêt, passages) sont
+accessibles via la base. Les opérations de filtrage et de pagination doivent être
+déléguées à la base (pas de filtrage applicatif sur des collections complètes
+chargées en mémoire).
+
+Implémentation dans backend/server.js :
+- GET /gti525/v1/ → JSON hardcodé listant les 11 endpoints (méthode, chemin, description, paramètres)
+- Startup : 4 nouvelles tables (compteurs, pointsdinteret, pistes, territoires)
+  chargées respectivement depuis compteurs.csv, poi.csv, reseau_cyclable.geojson,
+  territoires.geojson — tout en BEGIN TRANSACTION / COMMIT
+- GET /compteurs  → SQL avec ?statut=, ?limit=, ?offset=
+- GET /pistes     → SQL avec ?arrondissement=, ?saisons4= ; reassemble FeatureCollection
+- GET /territoires → SQL SELECT all ; reassemble FeatureCollection
+- GET /pointsdinteret → SQL avec ?arrondissement=, ?limit=, ?offset=, AS aliases
+Migrer compteurs.test.js, pistes.test.js, pointsdinteret.test.js :
+  remplacer jest.spyOn(fs, 'readFileSync') par setDb(makeDb([...])).
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Génération de code précédée d'une phase de planification (plan mode) |
+
+---
+
+### 📦 Sortie obtenue
+
+- `backend/server.js` — réécrit : `GET /gti525/v1/` ajouté (11 entrées) ; startup crée et peuple 4 tables ; 4 routes réécrites en SQL avec clauses WHERE/LIMIT/OFFSET ; pistes et territoires assemblent une FeatureCollection depuis les lignes `feature TEXT`
+- `backend/tests/compteurs.test.js` — `fs.readFileSync` spy retiré ; `setDb(makeDb([...]))` utilisé ; message d'erreur mis à jour (`'Database query failed.'`)
+- `backend/tests/pistes.test.js` — idem ; fixture `{ feature: JSON.stringify({...}) }`
+- `backend/tests/pointsdinteret.test.js` — idem ; fixture avec AS aliases (`ID`, `Arrondissement`, etc.)
+
+Résultat : 18 tests passent sans régression.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Filtrage SQL vs filtrage applicatif :** Charger l'intégralité d'un fichier (11 Mo pour `reseau_cyclable.geojson`) à chaque requête pour filtrer ensuite en JS consomme de la mémoire à chaque appel et ne passe pas à l'échelle. Déléguer WHERE/LIMIT/OFFSET à SQLite limite les données transférées à ce qui est réellement demandé.
+
+- **BEGIN TRANSACTION / COMMIT au chargement :** En SQLite, chaque INSERT sans transaction ouvre et ferme implicitement sa propre transaction — ce qui multiplie les écritures disque par le nombre de lignes. Un seul bloc BEGIN/COMMIT réduit le temps de chargement des milliers de features GeoJSON de plusieurs minutes à quelques secondes.
+
+- **GeoJSON stocké en colonne TEXT :** Éclater la géométrie en colonnes relationnelles n'apporterait aucun bénéfice pour ce cas d'usage (pas de requête spatiale). Sérialiser chaque feature via `JSON.stringify` préserve la structure GeoJSON exacte et permet de réassembler la `FeatureCollection` simplement avec `rows.map(r => JSON.parse(r.feature))`.
+
+- **Colonnes indexables séparées pour les filtres :** Même si le feature complet est en TEXT, les propriétés filtrables (`nom_arr_ville_desc`, `saisons4`, etc.) sont extraites dans des colonnes dédiées au moment de l'INSERT. Cela évite un scan complet avec `json_extract()` sur chaque requête filtrée.
+
+- **Pattern `makeDb` par fermeture :** Chaque appel à `makeDb(rows)` crée un compteur `index` isolé. Deux tests dans le même fichier ne peuvent pas s'interférer, même s'ils appellent `step()` et `getAsObject()` un nombre de fois différent. Pas besoin d'`afterEach` pour réinitialiser l'état.

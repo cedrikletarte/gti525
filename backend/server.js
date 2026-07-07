@@ -23,7 +23,7 @@ function parseYYMMDD(yymmdd) {
   const mm = yymmdd.slice(2, 4);
   const dd = yymmdd.slice(4, 6);
   const month = parseInt(mm, 10);
-  const day = parseInt(dd, 10);
+  const day   = parseInt(dd, 10);
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
   return `20${yy}-${mm}-${dd}`;
 }
@@ -61,6 +61,27 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ erreur: 'Jeton manquant ou invalide.' });
   }
 }
+
+// GET /gti525/v1/ — API discovery endpoint
+app.get('/gti525/v1/', (_req, res) => {
+  res.json({
+    api: 'GTI525 — MTL Vélo',
+    version: 'v1',
+    endpoints: [
+      { methode: 'GET',    chemin: '/gti525/v1/',                       description: 'Liste tous les points de terminaison disponibles' },
+      { methode: 'POST',   chemin: '/gti525/v1/auth/inscription',       description: 'Crée un compte utilisateur', corps: { courriel: 'string', motDePasse: 'string' } },
+      { methode: 'POST',   chemin: '/gti525/v1/auth/connexion',         description: 'Authentifie et retourne un JWT valide 24h', corps: { courriel: 'string', motDePasse: 'string' } },
+      { methode: 'GET',    chemin: '/gti525/v1/compteurs',              description: 'Liste tous les compteurs de vélo', parametres: { statut: 'filtre (ex. Actif)', limit: 'entier', offset: 'entier' } },
+      { methode: 'GET',    chemin: '/gti525/v1/compteurs/:id/passages', description: 'Passages journaliers agrégés pour un compteur', parametres: { debut: 'YYMMDD', fin: 'YYMMDD' } },
+      { methode: 'GET',    chemin: '/gti525/v1/pistes',                 description: 'Réseau cyclable (GeoJSON FeatureCollection)', parametres: { arrondissement: 'filtre par nom', saisons4: 'Oui|Non' } },
+      { methode: 'GET',    chemin: '/gti525/v1/territoires',            description: 'Limites des arrondissements (GeoJSON FeatureCollection)' },
+      { methode: 'GET',    chemin: '/gti525/v1/pointsdinteret',         description: 'Points d\'intérêt cyclables', parametres: { arrondissement: 'filtre par nom', limit: 'entier', offset: 'entier' } },
+      { methode: 'POST',   chemin: '/gti525/v1/pointsdinteret',         description: 'Ajouter un point d\'intérêt (authentification requise)' },
+      { methode: 'PUT',    chemin: '/gti525/v1/pointsdinteret/:id',     description: 'Modifier un point d\'intérêt (authentification requise)' },
+      { methode: 'DELETE', chemin: '/gti525/v1/pointsdinteret/:id',     description: 'Supprimer un point d\'intérêt (authentification requise)' },
+    ],
+  });
+});
 
 // POST /gti525/v1/auth/inscription — Creates a new user account
 app.post('/gti525/v1/auth/inscription', async (req, res) => {
@@ -110,13 +131,32 @@ app.post('/gti525/v1/auth/connexion', async (req, res) => {
   }
 });
 
-// GET /gti525/v1/compteurs — returns all counters (from compteurs.csv)
+// GET /gti525/v1/compteurs — bike counters with optional filtering and pagination
 app.get('/gti525/v1/compteurs', (req, res) => {
+  const { statut, limit, offset } = req.query;
   try {
-    const content = fs.readFileSync(path.join(DATA_DIR, 'compteurs.csv'), 'utf8');
-    res.json(parseCsv(content));
+    const conditions = [];
+    const params     = [];
+
+    if (statut) { conditions.push('statut = ?'); params.push(statut); }
+
+    let sql = `SELECT id AS ID, nom AS Nom, statut AS Statut,
+                      latitude AS Latitude, longitude AS Longitude,
+                      annee_implante AS Annee_implante
+               FROM compteurs`;
+    if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
+    sql += ' ORDER BY id';
+    if (limit)  { sql += ' LIMIT ?';  params.push(parseInt(limit,  10)); }
+    if (offset) { sql += ' OFFSET ?'; params.push(parseInt(offset, 10)); }
+
+    const stmt = db.prepare(sql);
+    if (params.length) stmt.bind(params);
+    const rows = [];
+    while (stmt.step()) rows.push(stmt.getAsObject());
+    stmt.free();
+    res.json(rows);
   } catch (_err) {
-    res.status(500).json({ erreur: 'Failed to read the counter list.' });
+    res.status(500).json({ erreur: 'Database query failed.' });
   }
 });
 
@@ -130,14 +170,14 @@ app.get('/gti525/v1/compteurs/:id/passages', (req, res) => {
   }
 
   let debutIso = null;
-  let finIso = null;
+  let finIso   = null;
 
   if (debut !== undefined || fin !== undefined) {
     if (!debut || !fin) {
       return res.status(400).json({ erreur: 'Parameters debut and fin must be provided together (format YYMMDD).' });
     }
     debutIso = parseYYMMDD(debut);
-    finIso = parseYYMMDD(fin);
+    finIso   = parseYYMMDD(fin);
     if (!debutIso || !finIso) {
       return res.status(400).json({ erreur: 'Invalid date format. Use YYMMDD (e.g. 220101).' });
     }
@@ -170,9 +210,7 @@ app.get('/gti525/v1/compteurs/:id/passages', (req, res) => {
     stmt.bind(params);
 
     const rows = [];
-    while (stmt.step()) {
-      rows.push(stmt.getAsObject());
-    }
+    while (stmt.step()) rows.push(stmt.getAsObject());
     stmt.free();
 
     if (rows.length === 0) {
@@ -185,35 +223,77 @@ app.get('/gti525/v1/compteurs/:id/passages', (req, res) => {
   }
 });
 
-// GET /gti525/v1/pistes — bike network (GeoJSON)
+// GET /gti525/v1/pistes — bike network (GeoJSON) with optional filtering
 app.get('/gti525/v1/pistes', (req, res) => {
+  const { arrondissement, saisons4 } = req.query;
   try {
-    const content = fs.readFileSync(path.join(DATA_DIR, 'reseau_cyclable.geojson'), 'utf8');
+    const conditions = [];
+    const params     = [];
+
+    if (arrondissement) { conditions.push('nom_arr_ville_desc = ?'); params.push(arrondissement); }
+    if (saisons4)       { conditions.push('saisons4 = ?');           params.push(saisons4); }
+
+    let sql = 'SELECT feature FROM pistes';
+    if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
+
+    const stmt = db.prepare(sql);
+    if (params.length) stmt.bind(params);
+    const features = [];
+    while (stmt.step()) features.push(JSON.parse(stmt.getAsObject().feature));
+    stmt.free();
+
     res.setHeader('Content-Type', 'application/geo+json');
-    res.send(content);
+    res.json({ type: 'FeatureCollection', features });
   } catch (_err) {
-    res.status(500).json({ erreur: 'Failed to read the bike network file.' });
+    res.status(500).json({ erreur: 'Database query failed.' });
   }
 });
 
 // GET /gti525/v1/territoires — borough boundaries (GeoJSON)
-app.get('/gti525/v1/territoires', (req, res) => {
+app.get('/gti525/v1/territoires', (_req, res) => {
   try {
-    const content = fs.readFileSync(path.join(DATA_DIR, 'territoires.geojson'), 'utf8');
+    const stmt = db.prepare('SELECT feature FROM territoires');
+    const features = [];
+    while (stmt.step()) features.push(JSON.parse(stmt.getAsObject().feature));
+    stmt.free();
+
     res.setHeader('Content-Type', 'application/geo+json');
-    res.send(content);
+    res.json({ type: 'FeatureCollection', features });
   } catch (_err) {
-    res.status(500).json({ erreur: 'Failed to read the borough boundaries file.' });
+    res.status(500).json({ erreur: 'Database query failed.' });
   }
 });
 
-// GET /gti525/v1/pointsdinteret — points of interest (poi.csv → JSON) — public
+// GET /gti525/v1/pointsdinteret — points of interest with optional filtering and pagination
 app.get('/gti525/v1/pointsdinteret', (req, res) => {
+  const { arrondissement, limit, offset } = req.query;
   try {
-    const content = fs.readFileSync(path.join(DATA_DIR, 'poi.csv'), 'utf8');
-    res.json(parseCsv(content));
+    const conditions = [];
+    const params     = [];
+
+    if (arrondissement) { conditions.push('arrondissement = ?'); params.push(arrondissement); }
+
+    let sql = `SELECT id AS ID, arrondissement AS Arrondissement,
+                      nom_parc_lieu AS Nom_parc_lieu,
+                      proximite_jeux_repere AS "Proximité_jeux_repère",
+                      intersection AS Intersection, etat AS Etat,
+                      date_installation AS Date_installation, remarque AS Remarque,
+                      precision_localisation AS Precision_localisation,
+                      x AS X, y AS Y, longitude AS Longitude, latitude AS Latitude
+               FROM pointsdinteret`;
+    if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
+    sql += ' ORDER BY id';
+    if (limit)  { sql += ' LIMIT ?';  params.push(parseInt(limit,  10)); }
+    if (offset) { sql += ' OFFSET ?'; params.push(parseInt(offset, 10)); }
+
+    const stmt = db.prepare(sql);
+    if (params.length) stmt.bind(params);
+    const rows = [];
+    while (stmt.step()) rows.push(stmt.getAsObject());
+    stmt.free();
+    res.json(rows);
   } catch (_err) {
-    res.status(500).json({ erreur: 'Failed to read the points of interest file.' });
+    res.status(500).json({ erreur: 'Database query failed.' });
   }
 });
 
@@ -241,12 +321,109 @@ if (require.main === module) {
   initSqlJs().then(SQL => {
     const fileBuffer = fs.readFileSync(path.join(DATA_DIR, 'comptage_velo.db'));
     db = new SQL.Database(fileBuffer);
+
+    // user table
     db.run(`CREATE TABLE IF NOT EXISTS utilisateurs (
       id       INTEGER PRIMARY KEY AUTOINCREMENT,
       courriel TEXT    NOT NULL UNIQUE,
       mdp_hash TEXT    NOT NULL,
       cree_le  TEXT    NOT NULL DEFAULT (datetime('now'))
     )`);
+
+    // compteurs table — loaded from compteurs.csv
+    db.run(`CREATE TABLE IF NOT EXISTS compteurs (
+      id             TEXT NOT NULL PRIMARY KEY,
+      nom            TEXT,
+      statut         TEXT,
+      latitude       REAL,
+      longitude      REAL,
+      annee_implante INTEGER
+    )`);
+    db.run('BEGIN TRANSACTION');
+    const compteurRows = parseCsv(fs.readFileSync(path.join(DATA_DIR, 'compteurs.csv'), 'utf8'));
+    const stmtC = db.prepare('INSERT OR IGNORE INTO compteurs VALUES (?,?,?,?,?,?)');
+    for (const r of compteurRows) {
+      stmtC.bind([r.ID, r.Nom, r.Statut, parseFloat(r.Latitude), parseFloat(r.Longitude), parseInt(r.Annee_implante, 10)]);
+      stmtC.step();
+      stmtC.reset();
+    }
+    stmtC.free();
+    db.run('COMMIT');
+
+    // pointsdinteret table — loaded from poi.csv
+    db.run(`CREATE TABLE IF NOT EXISTS pointsdinteret (
+      id                     INTEGER PRIMARY KEY,
+      arrondissement         TEXT,
+      nom_parc_lieu          TEXT,
+      proximite_jeux_repere  TEXT,
+      intersection           TEXT,
+      etat                   TEXT,
+      date_installation      TEXT,
+      remarque               TEXT,
+      precision_localisation TEXT,
+      x REAL, y REAL, longitude REAL, latitude REAL
+    )`);
+    db.run('BEGIN TRANSACTION');
+    const poiRows = parseCsv(fs.readFileSync(path.join(DATA_DIR, 'poi.csv'), 'utf8'));
+    const stmtP = db.prepare('INSERT OR IGNORE INTO pointsdinteret VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)');
+    for (const r of poiRows) {
+      stmtP.bind([
+        parseInt(r.ID, 10), r.Arrondissement, r.Nom_parc_lieu,
+        r['Proximité_jeux_repère'], r.Intersection, r.Etat,
+        r.Date_installation, r.Remarque, r.Precision_localisation,
+        parseFloat(r.X), parseFloat(r.Y), parseFloat(r.Longitude), parseFloat(r.Latitude),
+      ]);
+      stmtP.step();
+      stmtP.reset();
+    }
+    stmtP.free();
+    db.run('COMMIT');
+
+    // pistes table — loaded from reseau_cyclable.geojson
+    db.run(`CREATE TABLE IF NOT EXISTS pistes (
+      id_cycl             INTEGER PRIMARY KEY,
+      feature             TEXT NOT NULL,
+      nom_arr_ville_desc  TEXT,
+      avancement_code     TEXT,
+      type_voie_code      TEXT,
+      rev_avancement_code TEXT,
+      saisons4            TEXT
+    )`);
+    db.run('BEGIN TRANSACTION');
+    const pistesGeoJson = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'reseau_cyclable.geojson'), 'utf8'));
+    const stmtF = db.prepare('INSERT OR IGNORE INTO pistes VALUES (?,?,?,?,?,?,?)');
+    for (const feature of pistesGeoJson.features) {
+      const p = feature.properties;
+      stmtF.bind([
+        p.ID_CYCL, JSON.stringify(feature),
+        p.NOM_ARR_VILLE_DESC ?? null,
+        p.AVANCEMENT_CODE    ?? null,
+        p.TYPE_VOIE_CODE     ?? null,
+        p.REV_AVANCEMENT_CODE ?? null,
+        p.SAISONS4           ?? null,
+      ]);
+      stmtF.step();
+      stmtF.reset();
+    }
+    stmtF.free();
+    db.run('COMMIT');
+
+    // territoires table — loaded from territoires.geojson
+    db.run(`CREATE TABLE IF NOT EXISTS territoires (
+      nom     TEXT NOT NULL PRIMARY KEY,
+      feature TEXT NOT NULL
+    )`);
+    db.run('BEGIN TRANSACTION');
+    const territoiresGeoJson = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'territoires.geojson'), 'utf8'));
+    const stmtT = db.prepare('INSERT OR IGNORE INTO territoires VALUES (?,?)');
+    for (const feature of territoiresGeoJson.features) {
+      stmtT.bind([feature.properties.NOM, JSON.stringify(feature)]);
+      stmtT.step();
+      stmtT.reset();
+    }
+    stmtT.free();
+    db.run('COMMIT');
+
     app.listen(PORT, () => {
       console.log(`Serveur GTI525 démarré sur http://localhost:${PORT}`);
     });
