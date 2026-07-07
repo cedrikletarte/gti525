@@ -44,6 +44,7 @@
 | [32](#tache-32) | ArrondissementMapDialog.jsx — Surbrillance au survol des territoires | 2026-06-30 |
 | [36](#tache-36) | PointInteret.jsx — Pagination serveur complète | 2026-07-07 |
 | [37](#tache-37) | Statistic.jsx — Pagination serveur pour /compteurs | 2026-07-07 |
+| [40](#tache-40) | Statistic.jsx — Filtre arrondissement côté serveur | 2026-07-07 |
 
 ### Dorsale
 
@@ -54,6 +55,8 @@
 | [33](#tache-33) | Authentification JWT + protection des routes /pointsdinteret | 2026-07-07 |
 | [34](#tache-34) | Route de découverte + migration des données vers SQLite | 2026-07-07 |
 | [35](#tache-35) | T2 — Enrichissement des ressources compteurs et points d'intérêt | 2026-07-07 |
+| [38](#tache-38) | T3 — Enrichissement de la route /pistes (catégorie + pistes populaires) | 2026-07-07 |
+| [39](#tache-39) | Refactorisation du backend en modules | 2026-07-07 |
 
 > Tâche 28 touche également les pages frontales (`src/pages/`) pour le câblage du menu déroulant et de la carte des territoires.
 
@@ -3658,3 +3661,204 @@ fait aussi une vrai pagination pour /compteur dans la page statistique
 - **Filtre arrondissement conservé côté client :** La table `compteurs` n'a pas de colonne `Arrondissement` dans le CSV source. L'arrondissement est calculé par reverse-geocoding (algorithme point-dans-polygone sur `territoires.geojson`) uniquement côté client via `arrondissementOf()`. Déplacer ce calcul côté serveur impliquerait de charger le GeoJSON complet des territoires dans le backend et d'implémenter le ray-casting en SQL ou en JS dans le serveur — effort disproportionné pour ~75 compteurs. Le filtre s'applique donc sur la page courante, ce qui peut réduire le nombre de lignes affichées par rapport à `pageSize`.
 
 - **Recherche par nom côté serveur (`?nom=`) :** Contrairement à l'arrondissement, le nom est une colonne directe de la table `compteurs`. Passer `nom` comme paramètre de filtre SQL (`WHERE Nom LIKE ?`) est cohérent avec le pattern adopté pour Points d'intérêt et conforme aux exigences T2.1 du livrable.
+
+---
+
+## Tâche 38 — T3 : Enrichissement de la route /pistes (catégorie + pistes populaires) {#tache-38}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+T3: Ressource pistes cyclables et requête géospatiale
+T3.1: GET /pistes - retourne une FeatureCollection GeoJSON construite à partir de la base.
+Paramètres arrondissement, categorie, populaireDebut et populaireFin (active la logique «
+pistes populaires »).
+T3.2: Logique des pistes populaires: calculer les trois arrondissements avec le ratio Σ passages /
+N compteurs le plus élevé sur la période demandée, puis retourner toutes les pistes traversant
+ces arrondissements (requête géospatiale dans la base ou calcul applicatif documenté)
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Plan puis implémentation |
+
+---
+
+### 📦 Sortie obtenue
+
+**Helpers JS ajoutés dans `backend/server.js` :**
+
+| Fonction | Rôle |
+|----------|------|
+| `normArr(s)` | Normalise les noms d'arrondissement (accents, casse, tirets, articles « le/la/les ») — port de `src/lib/arrondissement.js` |
+| `pointInRing(x,y,ring)` | Ray-casting — point dans polygone simple |
+| `pointInFeature(lng,lat,feature)` | Point dans feature (Multi)Polygon avec trous |
+| `CATEGORIE_SQL` | Map `categorie` → condition SQL (rev / voiePartagee / voieProtegee / sentierPolyvalent) |
+
+**Modifications schéma et startup :**
+
+| Changement | Détail |
+|------------|--------|
+| Table `pistes` | Nouvelle colonne `norm_arr TEXT` (valeur normalisée de `NOM_ARR_VILLE_DESC`) calculée à l'INSERT |
+| Table `compteurs` | Colonne `arrondissement TEXT` déjà présente ; peuplée au démarrage via point-in-polygon contre les territoires |
+| Startup | Chargement de `territoires.geojson`, puis `UPDATE compteurs SET arrondissement = ?` pour chaque compteur dont les coordonnées tombent dans un territoire |
+
+**Route `GET /gti525/v1/pistes` enrichie :**
+
+| Paramètre | Comportement |
+|-----------|-------------|
+| `categorie` | Filtre SQL via `CATEGORIE_SQL` ; 400 si valeur inconnue |
+| `populaireDebut` + `populaireFin` | Calcule les 3 arrondissements avec le ratio `Σpassages / N_compteurs` le plus élevé sur la période (JOIN `comptage_velo ↔ compteurs`) ; filtre ensuite `WHERE norm_arr IN (?,?,?)` |
+| Les deux paramètres sont obligatoires ensemble | 400 si un seul est fourni ; 400 si format invalide ; 400 si début > fin |
+
+**Tests `backend/tests/pistes.test.js` :**
+
+| Cas | Résultat |
+|-----|---------|
+| makeDb multi-ensembles | Chaque `prepare()` consomme le prochain tableau de lignes |
+| 200 content-type geo+json | ✅ |
+| 200 FeatureCollection valide | ✅ |
+| 200 `?categorie=voiePartagee` | ✅ |
+| 400 catégorie invalide | ✅ |
+| 200 `?populaireDebut=&populaireFin=` | ✅ (2 prepares : pop arrs + pistes) |
+| 400 `populaireDebut` seul | ✅ |
+| 400 `populaireFin` seul | ✅ |
+| 400 début > fin | ✅ |
+| 500 DB inaccessible | ✅ |
+
+Suite complète : 39/39 tests passent.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Point-in-polygon au démarrage plutôt qu'à la requête :** `sql.js` (WebAssembly) ne dispose pas de SpatiaLite ; toute logique spatiale doit s'écrire en JS. Plutôt que de recalculer l'arrondissement de chaque compteur à chaque appel `GET /pistes?populaire...`, l'arrondissement est calculé une seule fois au démarrage (~75 compteurs × 34 territoires = 2 550 opérations) et stocké dans la colonne `compteurs.arrondissement`. Les requêtes SQL suivantes font un simple JOIN sans calcul géospatial.
+
+- **`norm_arr` pré-calculé à l'INSERT :** Les noms d'arrondissement dans `reseau_cyclable.geojson` utilisent des tirets cadratins et le préfixe « Le » (ex. « Le Plateau-Mont-Royal »), tandis que les territoires utilisent des tirets simples (ex. « Plateau-Mont-Royal »). Stocker la forme normalisée dans la colonne `norm_arr` permet le filtre `WHERE norm_arr IN (?,?,?)` sans transformation à l'exécution.
+
+- **Ratio Σpassages / N_compteurs :** Ce ratio évite qu'un arrondissement avec beaucoup de compteurs domine simplement parce qu'il en a plus. Un arrondissement avec 2 compteurs à 5 000 passages chacun sera préféré à un arrondissement avec 10 compteurs à 500 passages chacun.
+
+---
+
+## Tâche 39 — Refactorisation du backend en modules {#tache-39}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+backend/server.js est pas mal gros. Possible de simplifier la lecture pour les programmeurs?
+probablement de faire plusieurs fichiers différents à la place de tout mettre dans celui-ci
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Refactorisation structurelle |
+
+---
+
+### 📦 Sortie obtenue
+
+`backend/server.js` (~700 lignes) découpé en 10 fichiers :
+
+| Fichier | Contenu | Lignes |
+|---------|---------|--------|
+| `server.js` | Entrée + init DB (CREATE TABLE, INSERT CSV/GeoJSON, point-in-polygon startup) | ~100 |
+| `app.js` | Express + montage des routes + endpoint de découverte + 404 | ~40 |
+| `lib/db.js` | Singleton `getDb` / `setDb` partagé entre tous les modules | 3 |
+| `lib/utils.js` | `parseISODate`, `parseCsv` | ~20 |
+| `lib/geo.js` | `normArr`, `pointInRing`, `pointInFeature`, `CATEGORIE_SQL` | ~35 |
+| `middleware/auth.js` | `requireAuth` (vérification JWT Bearer) | ~15 |
+| `routes/auth.js` | `POST /inscription`, `POST /connexion` | ~45 |
+| `routes/compteurs.js` | `GET /`, `GET /:id`, `GET /:id/passages` | ~90 |
+| `routes/pistes.js` | `GET /` avec catégorie + pistes populaires | ~70 |
+| `routes/territoires.js` | `GET /` | ~15 |
+| `routes/pointsdinteret.js` | `GET /`, `POST /`, `PUT /:id`, `DELETE /:id` | ~115 |
+
+**Compatibilité tests :** `server.js` ré-exporte `{ app, setDb }` via `app.js` et `lib/db.js` — tous les tests `require('../server')` continuent de fonctionner sans modification. Suite complète : 39/39 tests passent.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **`lib/db.js` comme singleton partagé :** Dans Express avec des fichiers de routes séparés, chaque module a besoin d'accéder à `db`. Passer `db` en paramètre à chaque routeur (factory function) est verbeux. Un module singleton avec `getDb()` / `setDb()` est la solution standard en CommonJS : tous les modules importent le même objet et partagent la même référence, ce qui préserve aussi le pattern `setDb(mockDb)` utilisé dans les tests.
+
+- **`server.js` conserve l'export `{ app, setDb }` :** Les 4 fichiers de tests importent depuis `'../server'`. Plutôt que de mettre à jour tous les imports, `server.js` ré-exporte `{ app, setDb }` de `app.js`, qui lui-même ré-exporte `setDb` de `lib/db.js`. La chaîne est transparente et aucun test n'a été modifié.
+
+---
+
+## Tâche 40 — Statistic.jsx : filtre arrondissement côté serveur {#tache-40}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+Avec cette modification est-ce qu'il est possible de réduire la charge de calcul dans le frontend?
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Refactorisation ciblée |
+
+---
+
+### 📦 Sortie obtenue
+
+| Changement | Détail |
+|------------|--------|
+| `arrByCounter` useMemo supprimé | Élimine le calcul point-in-polygon O(n_compteurs × 34 territoires) côté client |
+| `rows` useMemo supprimé | Le filtre arrondissement n'est plus client-side ; `rows={compteurs}` directement dans DataGrid |
+| Import `arrondissementOf` et `normArr` retirés | Devenus inutiles dans `Statistic.jsx` |
+| `useEffect` | `selectedArr` ajouté aux deps ; `?arrondissement=` passé au serveur quand `selectedArr !== ALL` |
+| Select arrondissement `onChange` | `setPaginationModel(page: 0)` + `setLoading(true)` ajoutés |
+| `ArrondissementMapDialog onChange` | `setLoading(true)` ajouté |
+| `useTerritoires` conservé | Encore nécessaire pour alimenter la liste déroulante (`arrOptions`) et la carte de sélection |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Rendu possible par T3 startup :** La tâche 38 a ajouté une routine de démarrage qui peuple `compteurs.arrondissement` via point-in-polygon contre les territoires (une seule fois au boot). Le backend peut donc filtrer `WHERE arrondissement = ?` directement en SQL. Avant T3, cette colonne était nulle dans la base.
+
+- **Pagination vraiment correcte :** Avant ce changement, la pagination était serveur pour le nombre de pages, mais le filtre arrondissement s'appliquait *après* réception de la page — pouvant afficher moins de 20 lignes même s'il y en avait plus en base. Maintenant `?arrondissement=` fait partie de la requête SQL incluant `LIMIT` et `OFFSET`, donc le total et les pages reflètent exactement les compteurs de l'arrondissement sélectionné.
+
+- **`useTerritoires` conservé :** Le hook est encore nécessaire pour deux raisons indépendantes du filtrage : (1) alimenter la liste déroulante des arrondissements, (2) afficher la carte de sélection `ArrondissementMapDialog`. Ces deux usages n'ont pas de substitut côté serveur sans nouvel endpoint.

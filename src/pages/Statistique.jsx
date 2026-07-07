@@ -21,12 +21,12 @@ import {
 import MapIcon from '@mui/icons-material/Map';
 import { DataGrid } from '@mui/x-data-grid';
 import { frFR } from '@mui/x-data-grid/locales';
-import Navbar from '../components/Navbar';
-import ArrondissementMapDialog from '../components/ArrondissementMapDialog';
-import useTerritoires from '../lib/useTerritoires';
-import { arrondissementOf, normArr, arrOptionsFrom, ALL } from '../lib/arrondissement';
+import Navbar from '../components/Navbar.jsx';
+import ArrondissementMapDialog from '../components/ArrondissementMapDialog.jsx';
+import useTerritoires from '../lib/useTerritoires.js';
+import { arrOptionsFrom, ALL } from '../lib/arrondissement.js';
 import CloseIcon from '@mui/icons-material/Close';
-import InteractiveMap from '../components/InteractiveMap';
+import InteractiveMap from '../components/InteractiveMap.jsx';
 import Chart from "../components/Chart.jsx";
 import {LocalizationProvider} from "@mui/x-date-pickers/LocalizationProvider";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
@@ -134,7 +134,8 @@ export default function Statistic() {
       limite: paginationModel.pageSize,
       page:   paginationModel.page + 1,
     });
-    if (search) params.append('nom', search);
+    if (search)              params.append('nom',           search);
+    if (selectedArr !== ALL) params.append('arrondissement', selectedArr);
 
     fetch(`/gti525/v1/compteurs?${params}`)
       .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
@@ -144,27 +145,9 @@ export default function Statistic() {
         setLoading(false);
       })
       .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load counters.'); setLoading(false); });
-  }, [paginationModel, search]);
-
-  // compteurs.csv has no borough column, so locate each counter by its coordinates.
-  const arrByCounter = useMemo(() => {
-    const map = {};
-    if (!territoires) return map;
-    for (const c of compteurs) {
-      const lat = parseFloat(c.Latitude);
-      const lng = parseFloat(c.Longitude);
-      map[c.ID] = (lat && lng) ? arrondissementOf(lng, lat, territoires) : null;
-    }
-    return map;
-  }, [compteurs, territoires]);
+  }, [paginationModel, search, selectedArr]);
 
   const arrOptions = useMemo(() => arrOptionsFrom(territoires), [territoires]);
-
-  const rows = useMemo(() => {
-    const selArr = selectedArr === ALL ? null : normArr(selectedArr);
-    if (!selArr) return compteurs;
-    return compteurs.filter((r) => normArr(arrByCounter[r.ID]) === selArr);
-  }, [compteurs, selectedArr, arrByCounter]);
 
   const columns = useMemo(() => [
     ...COLUMNS,
@@ -280,7 +263,7 @@ export default function Statistic() {
                   labelId="arr-select-label"
                   value={selectedArr}
                   label="Filtrer par arrondissement"
-                  onChange={(e) => setSelectedArr(e.target.value)}
+                  onChange={(e) => { setSelectedArr(e.target.value); setLoading(true); setPaginationModel(prev => ({ ...prev, page: 0 })); }}
                 >
                   <MenuItem value={ALL}><em>Tous les arrondissements</em></MenuItem>
                   {arrOptions.map((terr) => (
@@ -312,7 +295,7 @@ export default function Statistic() {
             {loading
               ? <CircularProgress sx={{ mt: 6 }} />
               : <DataGrid
-                  rows={rows}
+                  rows={compteurs}
                   columns={columns}
                   getRowId={(row) => row.ID}
                   localeText={frFR.components.MuiDataGrid.defaultProps.localeText}
@@ -346,7 +329,7 @@ export default function Statistic() {
                 <InteractiveMap
                     center={[selectedCompteur?.Latitude, selectedCompteur?.Longitude]}
                     zoom={20}
-                    markers = {rows.map((m) => ({
+                    markers = {compteurs.map((m) => ({
                       ID: m.ID,
                       Nom: m.Nom,
                       Latitude: m.Latitude,
@@ -397,6 +380,7 @@ export default function Statistic() {
         value={selectedArr}
         onChange={(val) => {
           setSelectedArr(val);
+          setLoading(true);
           setPaginationModel(prev => ({ ...prev, page: 0 }));
         }}
       />
