@@ -42,6 +42,9 @@
 | [27](#tache-27) | Statistic.jsx — Fonction pour changer le format de date | 2026-06-28 |
 | [29](#tache-29) | Arrondissement — Surbrillance du polygone et filtrage des données | 2026-06-26 |
 | [32](#tache-32) | ArrondissementMapDialog.jsx — Surbrillance au survol des territoires | 2026-06-30 |
+| [36](#tache-36) | PointInteret.jsx — Pagination serveur complète | 2026-07-07 |
+| [37](#tache-37) | Statistic.jsx — Pagination serveur pour /compteurs | 2026-07-07 |
+| [40](#tache-40) | Statistic.jsx — Filtre arrondissement côté serveur | 2026-07-07 |
 
 ### Dorsale
 
@@ -49,6 +52,11 @@
 |---|-------|-------|
 | [19](#tache-19) | Backend Node.js + Express — 4 routes API | 2026-06-11 |
 | [28](#tache-28) | Arrondissement — Sélection synchronisée carte/menu sur 3 vues | 2026-06-26 |
+| [33](#tache-33) | Authentification JWT + protection des routes /pointsdinteret | 2026-07-07 |
+| [34](#tache-34) | Route de découverte + migration des données vers SQLite | 2026-07-07 |
+| [35](#tache-35) | T2 — Enrichissement des ressources compteurs et points d'intérêt | 2026-07-07 |
+| [38](#tache-38) | T3 — Enrichissement de la route /pistes (catégorie + pistes populaires) | 2026-07-07 |
+| [39](#tache-39) | Refactorisation du backend en modules | 2026-07-07 |
 
 > Tâche 28 touche également les pages frontales (`src/pages/`) pour le câblage du menu déroulant et de la carte des territoires.
 
@@ -3314,3 +3322,543 @@ les differents territoire
 ### 🧠 Justification
 
 - **Accepté** : la solution réutilise directement la fonction `style()` déjà en place pour la sélection. On ajoute simplement une fonction `layer.on('mouseover')` pour ajouter de l'opacité à la zone affectée et `layer.on('mouseout')` pour setter le bon style.
+
+---
+
+## Tâche 33 — Authentification JWT + protection des routes /pointsdinteret {#tache-33}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+PROMPT — T4 : Authentification JWT + protection des routes /pointsdinteret
+
+Implémenter les quatre sous-tâches dans backend/server.js, backend/package.json,
+backend/.env et backend/.env-example :
+
+T4.1 — Table utilisateurs + routes d'auth
+  - CREATE TABLE utilisateurs (id, courriel UNIQUE, mdp_hash, cree_le)
+  - POST /gti525/v1/auth/inscription → 201 / 400 / 409
+  - POST /gti525/v1/auth/connexion  → 200 { jeton } / 400 / 401
+  - JWT : { sub, courriel }, durée 24h, signé avec JWT_SECRET
+
+T4.2 — Hachage : bcryptjs (pure JS), saltRounds = 10, jamais de mdp en clair
+
+T4.3 — Middleware requireAuth (Bearer token) + routes protégées
+  - POST / PUT / DELETE /gti525/v1/pointsdinteret → requireAuth + 501
+  - GET /gti525/v1/pointsdinteret reste public
+
+T4.4 — Secrets : dotenv, .env (ignoré), .env-example (commité),
+  process.exit(1) si JWT_SECRET absent au démarrage
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Génération de code précédée d'une phase de planification (plan mode) |
+
+---
+
+### 📦 Sortie obtenue
+
+- `backend/.env-example` — créé : commentaire + `JWT_SECRET=` vide
+- `backend/.env` — créé et ignoré par git (JWT_SECRET peuplé)
+- `.gitignore` (racine) — `backend/.env` ajouté
+- `backend/server.js` — réécrit : `require('dotenv').config()` en première ligne, guard `JWT_SECRET`, `express.json()`, middleware `requireAuth`, `POST /auth/inscription` (201 / 400 / 409), `POST /auth/connexion` (200 / 400 / 401), `POST` / `PUT` / `DELETE /pointsdinteret` protégés (501), table `utilisateurs` créée au démarrage après chargement de `comptage_velo.db`
+- `backend/package.json` — `bcryptjs`, `jsonwebtoken`, `dotenv` ajoutés dans `dependencies`
+
+Résultat : 18 tests existants passent sans modification.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **`bcryptjs` plutôt que `bcrypt` :** `bcrypt` repose sur un binding natif C++ qui peut échouer à la compilation selon l'environnement (Windows, CI). `bcryptjs` est une implémentation pure JavaScript compatible partout, sans configuration supplémentaire.
+
+- **`jwt.verify` obligatoire :** `jwt.decode` décode le token sans vérifier la signature — n'importe qui pourrait forger un payload valide. `jwt.verify` rejette tout token dont la signature ne correspond pas au `JWT_SECRET` courant, ce qui couvre également les tokens expirés et ceux émis avant un changement de secret.
+
+- **Réponse 401 uniforme pour connexion échouée :** Retourner le même message `'Identifiants invalides.'` qu'il s'agisse d'un courriel inexistant ou d'un mauvais mot de passe empêche l'énumération de comptes — un attaquant ne peut pas distinguer les deux cas.
+
+- **Guard `JWT_SECRET` au démarrage :** Placer `process.exit(1)` avant `app.listen` garantit que le serveur ne démarre jamais sans secret valide. Sans cette vérification, les routes d'auth démarreraient avec une clé `undefined`, signant des tokens invalides silencieusement.
+
+- **Table `utilisateurs` in-memory :** Créée après le chargement de `comptage_velo.db` dans le même objet `sql.js`. Les comptes ne survivent pas un redémarrage — comportement explicitement attendu pour ce livrable.
+
+- **`express.json()` avant toutes les routes :** Sans ce middleware, `req.body` est `undefined` sur les routes POST. Le placer en premier garantit que toutes les routes, présentes et futures, ont accès au corps JSON parsé.
+
+---
+
+## Tâche 34 — Route de découverte + migration des données vers SQLite {#tache-34}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+T1.1 : Une requête GET /gti525/v1/ retourne un JSON listant tous les points
+de terminaison disponibles avec une brève description et le verbe HTTP attendu.
+
+T1.2 : Toutes les données (compteurs, pistes, points d'intérêt, passages) sont
+accessibles via la base. Les opérations de filtrage et de pagination doivent être
+déléguées à la base (pas de filtrage applicatif sur des collections complètes
+chargées en mémoire).
+
+Implémentation dans backend/server.js :
+- GET /gti525/v1/ → JSON hardcodé listant les 11 endpoints (méthode, chemin, description, paramètres)
+- Startup : 4 nouvelles tables (compteurs, pointsdinteret, pistes, territoires)
+  chargées respectivement depuis compteurs.csv, poi.csv, reseau_cyclable.geojson,
+  territoires.geojson — tout en BEGIN TRANSACTION / COMMIT
+- GET /compteurs  → SQL avec ?statut=, ?limit=, ?offset=
+- GET /pistes     → SQL avec ?arrondissement=, ?saisons4= ; reassemble FeatureCollection
+- GET /territoires → SQL SELECT all ; reassemble FeatureCollection
+- GET /pointsdinteret → SQL avec ?arrondissement=, ?limit=, ?offset=, AS aliases
+Migrer compteurs.test.js, pistes.test.js, pointsdinteret.test.js :
+  remplacer jest.spyOn(fs, 'readFileSync') par setDb(makeDb([...])).
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Génération de code précédée d'une phase de planification (plan mode) |
+
+---
+
+### 📦 Sortie obtenue
+
+- `backend/server.js` — réécrit : `GET /gti525/v1/` ajouté (11 entrées) ; startup crée et peuple 4 tables ; 4 routes réécrites en SQL avec clauses WHERE/LIMIT/OFFSET ; pistes et territoires assemblent une FeatureCollection depuis les lignes `feature TEXT`
+- `backend/tests/compteurs.test.js` — `fs.readFileSync` spy retiré ; `setDb(makeDb([...]))` utilisé ; message d'erreur mis à jour (`'Database query failed.'`)
+- `backend/tests/pistes.test.js` — idem ; fixture `{ feature: JSON.stringify({...}) }`
+- `backend/tests/pointsdinteret.test.js` — idem ; fixture avec AS aliases (`ID`, `Arrondissement`, etc.)
+
+Résultat : 18 tests passent sans régression.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Filtrage SQL vs filtrage applicatif :** Charger l'intégralité d'un fichier (11 Mo pour `reseau_cyclable.geojson`) à chaque requête pour filtrer ensuite en JS consomme de la mémoire à chaque appel et ne passe pas à l'échelle. Déléguer WHERE/LIMIT/OFFSET à SQLite limite les données transférées à ce qui est réellement demandé.
+
+- **BEGIN TRANSACTION / COMMIT au chargement :** En SQLite, chaque INSERT sans transaction ouvre et ferme implicitement sa propre transaction — ce qui multiplie les écritures disque par le nombre de lignes. Un seul bloc BEGIN/COMMIT réduit le temps de chargement des milliers de features GeoJSON de plusieurs minutes à quelques secondes.
+
+- **GeoJSON stocké en colonne TEXT :** Éclater la géométrie en colonnes relationnelles n'apporterait aucun bénéfice pour ce cas d'usage (pas de requête spatiale). Sérialiser chaque feature via `JSON.stringify` préserve la structure GeoJSON exacte et permet de réassembler la `FeatureCollection` simplement avec `rows.map(r => JSON.parse(r.feature))`.
+
+- **Colonnes indexables séparées pour les filtres :** Même si le feature complet est en TEXT, les propriétés filtrables (`nom_arr_ville_desc`, `saisons4`, etc.) sont extraites dans des colonnes dédiées au moment de l'INSERT. Cela évite un scan complet avec `json_extract()` sur chaque requête filtrée.
+
+- **Pattern `makeDb` par fermeture :** Chaque appel à `makeDb(rows)` crée un compteur `index` isolé. Deux tests dans le même fichier ne peuvent pas s'interférer, même s'ils appellent `step()` et `getAsObject()` un nombre de fois différent. Pas besoin d'`afterEach` pour réinitialiser l'état.
+
+---
+
+## Tâche 35 — T2 : Enrichissement des ressources compteurs et points d'intérêt {#tache-35}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+T2: Ressources compteurs et points d'intérêt
+
+T2.1: GET /compteurs - liste paginée avec paramètres limite, page, implantation (année minimale),
+nom (recherche textuelle), arrondissement. Réponse: { donnees, total, page, limite }.
+
+T2.2: GET /compteurs/:id - informations d'un compteur (sans les passages).
+
+T2.3: GET /compteurs/:id/passages avec paramètres debut, fin (YYYY-MM-DD), intervalle
+(jour, semaine, mois) - déjà esquissé en phase 2, à étoffer ici.
+
+T2.4: GET /pointsdinteret - liste paginée avec filtres par type, arrondissement, nom.
+
+T2.5: Opérations POST, PUT et DELETE sur /pointsdinteret, protégées par jeton (voir T4). Toute
+requête sans jeton ou avec un jeton invalide retourne 401.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Génération de code précédée d'une phase de planification (plan mode) |
+
+---
+
+### 📦 Sortie obtenue
+
+**`backend/server.js`** — routes enrichies et nouveaux schémas :
+
+| Route | Changements |
+|-------|-------------|
+| `GET /compteurs` | Filtre dynamique WHERE (nom LIKE, statut =, arrondissement =, implantation ≥) + COUNT(*) + LIMIT/OFFSET ; réponse `{ donnees, total, page, limite }` |
+| `GET /compteurs/:id` | Nouvelle route enregistrée avant `/:id/passages` ; 200 / 404 |
+| `GET /compteurs/:id/passages` | Format de dates migré de YYMMDD → YYYY-MM-DD (`parseISODate`), paramètre `?intervalle=` (jour/semaine/mois), clé de groupement dynamique dans la réponse ; `parseYYMMDD` supprimé |
+| `GET /pointsdinteret` | Filtres nom (LIKE), type (=), arrondissement (=) + pagination COUNT*/LIMIT/OFFSET |
+| `POST /pointsdinteret` | Validation `nom_parc_lieu`, `latitude`, `longitude` ; INSERT + `SELECT last_insert_rowid()` ; 201 |
+| `PUT /pointsdinteret/:id` | SELECT existence → 404 ; UPDATE → 200 |
+| `DELETE /pointsdinteret/:id` | SELECT existence → 404 ; DELETE → 204 |
+
+Schémas modifiés :
+- Table `compteurs` : ajout colonne `arrondissement TEXT` (7ème colonne, `null` dans tous les CSV)
+- Table `pointsdinteret` : ajout colonne `type TEXT` (14ème colonne, `'Fontaine'` pour toutes les lignes)
+- Tous les `catch (_err)` → `catch {}` (optional catch binding ES2019)
+
+**`backend/tests/compteurs.test.js`** — mis à jour pour la réponse paginée ; ajout `describe GET /gti525/v1/compteurs/:id` (200, 404, 500) ; `reset: jest.fn()` ajouté au stub.
+
+**`backend/tests/passages.test.js`** — toutes les dates YYMMDD → YYYY-MM-DD ; messages d'erreur mis à jour en français ; ajout tests `?intervalle=semaine`, `?intervalle=mois`, `?intervalle=annee` (400).
+
+**`backend/tests/pointsdinteret.test.js`** — entièrement réécrit : GET attend `{ donnees, total, page, limite }` ; describe POST (201, 400, 401) ; describe PUT (200, 404, 401) ; describe DELETE (204, 404, 401) ; JWT `VALID_TOKEN` signé avec `jwt.sign`.
+
+Résultat : 33 tests passants, 0 régression.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Enveloppe paginée `{ donnees, total, page, limite }` :** Charger l'intégralité d'une ressource (848 POI, ~75 compteurs) pour filtrer ensuite côté client charge la mémoire du navigateur et ne respecte pas les contraintes du livrable. La pagination serveur délègue WHERE/LIMIT/OFFSET à SQLite, qui ne retourne que la tranche demandée.
+
+- **`parseISODate` en remplacement de `parseYYMMDD` :** Le format YYYY-MM-DD est le format ISO 8601 standard ; il est directement comparable par SQLite sans conversion, élimine les ambiguïtés de siècle et est plus lisible dans les URLs. Le changement n'était pas rétrocompatible, mais aucun client existant ne dépendait de l'ancien format.
+
+- **`GET /compteurs/:id` enregistré avant `/:id/passages` :** Express résout les routes dans l'ordre de déclaration. Si `/:id/passages` était enregistré en premier, `GET /compteurs/100` pourrait matcher `/:id` mais jamais être atteint si le moteur de routage consommait `:id` trop tôt. L'ordre d'enregistrement garantit la bonne résolution.
+
+- **`INSERT OR IGNORE` au démarrage :** La base sql.js est in-memory (tables recréées à chaque démarrage), donc les doublons sont théoriquement impossibles. La clause reste présente par conformité au contrat SQL et pour protéger contre d'éventuels appels de démarrage multiples dans les tests.
+
+- **`makeDb` avec `reset: jest.fn()` :** Certaines routes appellent `stmt.reset()` après `stmt.step()` dans les boucles ; l'absence de cette méthode dans le stub provoquait `TypeError: stmt.reset is not a function` dans les tests de T2.5. L'ajout est non intrusif pour les tests existants.
+
+---
+
+## Tâche 36 — PointInteret.jsx : pagination serveur complète {#tache-36}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+Modifie le frontend pour qu'il fonctionne avec les modifications fait dans le backend
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Correction puis refactorisation ciblée |
+
+---
+
+### 📦 Sortie obtenue
+
+**Premier prompt** (compatibilité avec l'enveloppe paginée) :
+- `src/pages/PointInteret.jsx` : `setPois(data.donnees ?? [])` — déballage de l'enveloppe JSON
+- `src/pages/Statistic.jsx` : `setCompteurs(data.donnees ?? [])` + `?limite=200` comme contournement temporaire
+- `src/pages/Statistic.jsx` : `changeDateFormat` migré de YYMMDD → YYYY-MM-DD
+
+**Deuxième prompt** (pagination serveur pour Points d'intérêt) :
+
+| Changement | Détail |
+|------------|--------|
+| Nouveaux états | `paginationModel { page: 0, pageSize: 20 }` et `rowCount` |
+| `useEffect` | Deps `[paginationModel, searchName, selectedArrondissement, selectedType]` ; URLSearchParams avec `limite`, `page`, `nom`, `arrondissement`, `type` |
+| `setLoading(true)` | Déplacé dans les handlers d'événements uniquement (règle linter : pas de setState synchrone dans useEffect) |
+| `filteredData` useMemo | Supprimé — filtrage délégué au serveur |
+| DataGrid | `paginationMode="server"`, `rowCount`, `paginationModel` contrôlé, `onPaginationModelChange`, `pageSizeOptions={[20, 50, 100]}` |
+| Handlers | `handleSearchChange`, `handleTypeChange`, `handleArrondissementChange` réinitialisent `page: 0` |
+| Import `normArr` | Retiré (utilisé uniquement dans `filteredData` supprimé) |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **`paginationMode="server"` obligatoire :** En mode par défaut (`client`), la DataGrid MUI X attend que *toutes* les lignes soient en mémoire et pagine localement. En mode `server`, elle expose `onPaginationModelChange` et respecte `rowCount` pour afficher les contrôles de navigation sans charger les autres pages. Sans ce mode, le composant ne déclenche aucun nouveau fetch au changement de page.
+
+- **`setLoading(true)` dans les handlers, pas dans `useEffect` :** Appeler `setState` de manière synchrone à l'intérieur d'un `useEffect` déclenche un second cycle de rendu immédiat, ce que le linter signale comme une cascade potentiellement infinie. Le déplacer dans les handlers d'événements (onChange, onPaginationModelChange) garantit que l'indicateur de chargement s'affiche avant que le useEffect ne se ré-exécute.
+
+- **Filtrage arrondissement côté serveur pour POI :** La colonne `Arrondissement` est présente directement dans les données `poi.csv` ; le backend peut filtrer par `WHERE Arrondissement = ?` sans traitement supplémentaire. Contrairement aux compteurs (voir tâche 37), aucun reverse-geocoding n'est nécessaire.
+
+---
+
+## Tâche 37 — Statistic.jsx : pagination serveur pour /compteurs {#tache-37}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+fait aussi une vrai pagination pour /compteur dans la page statistique
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Refactorisation ciblée |
+
+---
+
+### 📦 Sortie obtenue
+
+| Changement | Détail |
+|------------|--------|
+| `?limite=200` retiré | Remplacé par URLSearchParams avec `limite`, `page`, `nom` |
+| Nouveaux états | `paginationModel { page: 0, pageSize: 20 }` et `rowCount` |
+| `useEffect` | Deps `[paginationModel, search]` ; `nom` passé comme `?nom=` côté serveur |
+| `rows` useMemo | Filtre `search` retiré (serveur) ; filtre `selectedArr` conservé (reverse-geocoding côté client) |
+| `handleSearchChange` | Réinitialise `page: 0` et `setLoading(true)` |
+| `handleClear` | Réinitialise également `page: 0` et `setLoading(true)` |
+| DataGrid | `paginationMode="server"`, `rowCount`, `paginationModel` contrôlé, `pageSizeOptions={[20, 50]}` |
+| `ArrondissementMapDialog.onChange` | Réinitialise `page: 0` |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Filtre arrondissement conservé côté client :** La table `compteurs` n'a pas de colonne `Arrondissement` dans le CSV source. L'arrondissement est calculé par reverse-geocoding (algorithme point-dans-polygone sur `territoires.geojson`) uniquement côté client via `arrondissementOf()`. Déplacer ce calcul côté serveur impliquerait de charger le GeoJSON complet des territoires dans le backend et d'implémenter le ray-casting en SQL ou en JS dans le serveur — effort disproportionné pour ~75 compteurs. Le filtre s'applique donc sur la page courante, ce qui peut réduire le nombre de lignes affichées par rapport à `pageSize`.
+
+- **Recherche par nom côté serveur (`?nom=`) :** Contrairement à l'arrondissement, le nom est une colonne directe de la table `compteurs`. Passer `nom` comme paramètre de filtre SQL (`WHERE Nom LIKE ?`) est cohérent avec le pattern adopté pour Points d'intérêt et conforme aux exigences T2.1 du livrable.
+
+---
+
+## Tâche 38 — T3 : Enrichissement de la route /pistes (catégorie + pistes populaires) {#tache-38}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+T3: Ressource pistes cyclables et requête géospatiale
+T3.1: GET /pistes - retourne une FeatureCollection GeoJSON construite à partir de la base.
+Paramètres arrondissement, categorie, populaireDebut et populaireFin (active la logique «
+pistes populaires »).
+T3.2: Logique des pistes populaires: calculer les trois arrondissements avec le ratio Σ passages /
+N compteurs le plus élevé sur la période demandée, puis retourner toutes les pistes traversant
+ces arrondissements (requête géospatiale dans la base ou calcul applicatif documenté)
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Plan puis implémentation |
+
+---
+
+### 📦 Sortie obtenue
+
+**Helpers JS ajoutés dans `backend/server.js` :**
+
+| Fonction | Rôle |
+|----------|------|
+| `normArr(s)` | Normalise les noms d'arrondissement (accents, casse, tirets, articles « le/la/les ») — port de `src/lib/arrondissement.js` |
+| `pointInRing(x,y,ring)` | Ray-casting — point dans polygone simple |
+| `pointInFeature(lng,lat,feature)` | Point dans feature (Multi)Polygon avec trous |
+| `CATEGORIE_SQL` | Map `categorie` → condition SQL (rev / voiePartagee / voieProtegee / sentierPolyvalent) |
+
+**Modifications schéma et startup :**
+
+| Changement | Détail |
+|------------|--------|
+| Table `pistes` | Nouvelle colonne `norm_arr TEXT` (valeur normalisée de `NOM_ARR_VILLE_DESC`) calculée à l'INSERT |
+| Table `compteurs` | Colonne `arrondissement TEXT` déjà présente ; peuplée au démarrage via point-in-polygon contre les territoires |
+| Startup | Chargement de `territoires.geojson`, puis `UPDATE compteurs SET arrondissement = ?` pour chaque compteur dont les coordonnées tombent dans un territoire |
+
+**Route `GET /gti525/v1/pistes` enrichie :**
+
+| Paramètre | Comportement |
+|-----------|-------------|
+| `categorie` | Filtre SQL via `CATEGORIE_SQL` ; 400 si valeur inconnue |
+| `populaireDebut` + `populaireFin` | Calcule les 3 arrondissements avec le ratio `Σpassages / N_compteurs` le plus élevé sur la période (JOIN `comptage_velo ↔ compteurs`) ; filtre ensuite `WHERE norm_arr IN (?,?,?)` |
+| Les deux paramètres sont obligatoires ensemble | 400 si un seul est fourni ; 400 si format invalide ; 400 si début > fin |
+
+**Tests `backend/tests/pistes.test.js` :**
+
+| Cas | Résultat |
+|-----|---------|
+| makeDb multi-ensembles | Chaque `prepare()` consomme le prochain tableau de lignes |
+| 200 content-type geo+json | ✅ |
+| 200 FeatureCollection valide | ✅ |
+| 200 `?categorie=voiePartagee` | ✅ |
+| 400 catégorie invalide | ✅ |
+| 200 `?populaireDebut=&populaireFin=` | ✅ (2 prepares : pop arrs + pistes) |
+| 400 `populaireDebut` seul | ✅ |
+| 400 `populaireFin` seul | ✅ |
+| 400 début > fin | ✅ |
+| 500 DB inaccessible | ✅ |
+
+Suite complète : 39/39 tests passent.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Point-in-polygon au démarrage plutôt qu'à la requête :** `sql.js` (WebAssembly) ne dispose pas de SpatiaLite ; toute logique spatiale doit s'écrire en JS. Plutôt que de recalculer l'arrondissement de chaque compteur à chaque appel `GET /pistes?populaire...`, l'arrondissement est calculé une seule fois au démarrage (~75 compteurs × 34 territoires = 2 550 opérations) et stocké dans la colonne `compteurs.arrondissement`. Les requêtes SQL suivantes font un simple JOIN sans calcul géospatial.
+
+- **`norm_arr` pré-calculé à l'INSERT :** Les noms d'arrondissement dans `reseau_cyclable.geojson` utilisent des tirets cadratins et le préfixe « Le » (ex. « Le Plateau-Mont-Royal »), tandis que les territoires utilisent des tirets simples (ex. « Plateau-Mont-Royal »). Stocker la forme normalisée dans la colonne `norm_arr` permet le filtre `WHERE norm_arr IN (?,?,?)` sans transformation à l'exécution.
+
+- **Ratio Σpassages / N_compteurs :** Ce ratio évite qu'un arrondissement avec beaucoup de compteurs domine simplement parce qu'il en a plus. Un arrondissement avec 2 compteurs à 5 000 passages chacun sera préféré à un arrondissement avec 10 compteurs à 500 passages chacun.
+
+---
+
+## Tâche 39 — Refactorisation du backend en modules {#tache-39}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+backend/server.js est pas mal gros. Possible de simplifier la lecture pour les programmeurs?
+probablement de faire plusieurs fichiers différents à la place de tout mettre dans celui-ci
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Refactorisation structurelle |
+
+---
+
+### 📦 Sortie obtenue
+
+`backend/server.js` (~700 lignes) découpé en 10 fichiers :
+
+| Fichier | Contenu | Lignes |
+|---------|---------|--------|
+| `server.js` | Entrée + init DB (CREATE TABLE, INSERT CSV/GeoJSON, point-in-polygon startup) | ~100 |
+| `app.js` | Express + montage des routes + endpoint de découverte + 404 | ~40 |
+| `lib/db.js` | Singleton `getDb` / `setDb` partagé entre tous les modules | 3 |
+| `lib/utils.js` | `parseISODate`, `parseCsv` | ~20 |
+| `lib/geo.js` | `normArr`, `pointInRing`, `pointInFeature`, `CATEGORIE_SQL` | ~35 |
+| `middleware/auth.js` | `requireAuth` (vérification JWT Bearer) | ~15 |
+| `routes/auth.js` | `POST /inscription`, `POST /connexion` | ~45 |
+| `routes/compteurs.js` | `GET /`, `GET /:id`, `GET /:id/passages` | ~90 |
+| `routes/pistes.js` | `GET /` avec catégorie + pistes populaires | ~70 |
+| `routes/territoires.js` | `GET /` | ~15 |
+| `routes/pointsdinteret.js` | `GET /`, `POST /`, `PUT /:id`, `DELETE /:id` | ~115 |
+
+**Compatibilité tests :** `server.js` ré-exporte `{ app, setDb }` via `app.js` et `lib/db.js` — tous les tests `require('../server')` continuent de fonctionner sans modification. Suite complète : 39/39 tests passent.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **`lib/db.js` comme singleton partagé :** Dans Express avec des fichiers de routes séparés, chaque module a besoin d'accéder à `db`. Passer `db` en paramètre à chaque routeur (factory function) est verbeux. Un module singleton avec `getDb()` / `setDb()` est la solution standard en CommonJS : tous les modules importent le même objet et partagent la même référence, ce qui préserve aussi le pattern `setDb(mockDb)` utilisé dans les tests.
+
+- **`server.js` conserve l'export `{ app, setDb }` :** Les 4 fichiers de tests importent depuis `'../server'`. Plutôt que de mettre à jour tous les imports, `server.js` ré-exporte `{ app, setDb }` de `app.js`, qui lui-même ré-exporte `setDb` de `lib/db.js`. La chaîne est transparente et aucun test n'a été modifié.
+
+---
+
+## Tâche 40 — Statistic.jsx : filtre arrondissement côté serveur {#tache-40}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+### 💬 Prompt
+
+```
+Avec cette modification est-ce qu'il est possible de réduire la charge de calcul dans le frontend?
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Refactorisation ciblée |
+
+---
+
+### 📦 Sortie obtenue
+
+| Changement | Détail |
+|------------|--------|
+| `arrByCounter` useMemo supprimé | Élimine le calcul point-in-polygon O(n_compteurs × 34 territoires) côté client |
+| `rows` useMemo supprimé | Le filtre arrondissement n'est plus client-side ; `rows={compteurs}` directement dans DataGrid |
+| Import `arrondissementOf` et `normArr` retirés | Devenus inutiles dans `Statistic.jsx` |
+| `useEffect` | `selectedArr` ajouté aux deps ; `?arrondissement=` passé au serveur quand `selectedArr !== ALL` |
+| Select arrondissement `onChange` | `setPaginationModel(page: 0)` + `setLoading(true)` ajoutés |
+| `ArrondissementMapDialog onChange` | `setLoading(true)` ajouté |
+| `useTerritoires` conservé | Encore nécessaire pour alimenter la liste déroulante (`arrOptions`) et la carte de sélection |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Rendu possible par T3 startup :** La tâche 38 a ajouté une routine de démarrage qui peuple `compteurs.arrondissement` via point-in-polygon contre les territoires (une seule fois au boot). Le backend peut donc filtrer `WHERE arrondissement = ?` directement en SQL. Avant T3, cette colonne était nulle dans la base.
+
+- **Pagination vraiment correcte :** Avant ce changement, la pagination était serveur pour le nombre de pages, mais le filtre arrondissement s'appliquait *après* réception de la page — pouvant afficher moins de 20 lignes même s'il y en avait plus en base. Maintenant `?arrondissement=` fait partie de la requête SQL incluant `LIMIT` et `OFFSET`, donc le total et les pages reflètent exactement les compteurs de l'arrondissement sélectionné.
+
+- **`useTerritoires` conservé :** Le hook est encore nécessaire pour deux raisons indépendantes du filtrage : (1) alimenter la liste déroulante des arrondissements, (2) afficher la carte de sélection `ArrondissementMapDialog`. Ces deux usages n'ont pas de substitut côté serveur sans nouvel endpoint.

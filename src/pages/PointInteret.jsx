@@ -22,7 +22,7 @@ import MapIcon from '@mui/icons-material/Map';
 import Navbar from '../components/Navbar';
 import ArrondissementMapDialog from '../components/ArrondissementMapDialog';
 import useTerritoires from '../lib/useTerritoires';
-import { normArr, arrOptionsFrom, ALL } from '../lib/arrondissement';
+import { arrOptionsFrom, ALL } from '../lib/arrondissement';
 import InteractiveMap from "../components/InteractiveMap.jsx";
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -36,13 +36,30 @@ export default function PointInteret() {
   const territoires = useTerritoires();
   const [searchName, setSearchName] = useState('');
   const [selectedType, setSelectedType] = useState('Tous');
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
+  const [rowCount, setRowCount] = useState(0);
 
   useEffect(() => {
-    fetch('/gti525/v1/pointsdinteret')
+    const params = new URLSearchParams({
+      limite: paginationModel.pageSize,
+      page:   paginationModel.page + 1,
+    });
+    if (searchName)                     params.append('nom',           searchName);
+    if (selectedArrondissement !== ALL) params.append('arrondissement', selectedArrondissement);
+    if (selectedType !== 'Tous')        params.append('type',           selectedType);
+
+    fetch(`/gti525/v1/pointsdinteret?${params}`)
       .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
-      .then(data => { setPois(data); setLoading(false); })
-      .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load points of interest.'); setLoading(false); });
-  }, []);
+      .then(json => {
+        setPois(json.donnees ?? []);
+        setRowCount(json.total ?? 0);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(typeof err === 'string' ? err : 'Failed to load points of interest.');
+        setLoading(false);
+      });
+  }, [paginationModel, searchName, selectedArrondissement, selectedType]);
 
   const arrOptions = useMemo(() => arrOptionsFrom(territoires), [territoires]);
 
@@ -50,7 +67,7 @@ export default function PointInteret() {
     return pois.filter(r => r.ID).map(row => ({
       id: `f_${row.ID}`,
       Arrondissement: row.Arrondissement || 'Non spécifié',
-      Type: 'Fontaine',
+      Type: row.Type || 'Fontaine',
       Nom: row.Nom_parc_lieu || '',
       Adresse: row.Intersection || '',
       Latitude: row.Latitude,
@@ -58,16 +75,23 @@ export default function PointInteret() {
     }));
   }, [pois]);
 
-  const filteredData = useMemo(() => {
-    const selArr = selectedArrondissement === ALL ? null : normArr(selectedArrondissement);
-    return data.filter(item => {
-      const matchArrond = !selArr || normArr(item.Arrondissement) === selArr;
-      const matchType = selectedType === 'Tous' || item.Type === selectedType;
-      const matchName = searchName === '' || item.Nom.toLowerCase().includes(searchName.toLowerCase());
-      return matchArrond && matchType && matchName;
-    });
-  }, [data, selectedArrondissement, selectedType, searchName]);
+  function handleSearchChange(e) {
+    setSearchName(e.target.value);
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
+    setLoading(true);
+  }
 
+  function handleTypeChange(e) {
+    setSelectedType(e.target.value);
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
+    setLoading(true);
+  }
+
+  function handleArrondissementChange(e) {
+    setSelectedArrondissement(e.target.value);
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
+    setLoading(true);
+  }
 
   function ActionsCell({ params, onCarteClick }) {
     if (!params.row?.Latitude || !params.row?.Longitude) return null;
@@ -126,13 +150,13 @@ export default function PointInteret() {
               label="Rechercher par nom"
               variant="outlined"
               value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
+              onChange={handleSearchChange}
               sx={{ minWidth: 250, flexGrow: { md: 1 } }}
             />
 
             <FormControl size="small" sx={{ minWidth: 150 }}>
               <InputLabel id="type-select-label">Type</InputLabel>
-              <Select labelId="type-select-label" value={selectedType} label="Type" onChange={(e) => setSelectedType(e.target.value)}>
+              <Select labelId="type-select-label" value={selectedType} label="Type" onChange={handleTypeChange}>
                 <MenuItem value="Tous">Tous</MenuItem>
                 <MenuItem value="Fontaine">Fontaine</MenuItem>
               </Select>
@@ -140,7 +164,7 @@ export default function PointInteret() {
 
             <FormControl size="small" sx={{ minWidth: 250 }}>
               <InputLabel id="arrondissement-select-label">Filtrer par arrondissement</InputLabel>
-              <Select labelId="arrondissement-select-label" value={selectedArrondissement} label="Filtrer par arrondissement" onChange={(e) => setSelectedArrondissement(e.target.value)}>
+              <Select labelId="arrondissement-select-label" value={selectedArrondissement} label="Filtrer par arrondissement" onChange={handleArrondissementChange}>
                 <MenuItem value={ALL}><em>Tous les arrondissements</em></MenuItem>
                 {arrOptions.map((terr) => (
                   <MenuItem key={terr} value={terr}>{terr}</MenuItem>
@@ -165,10 +189,13 @@ export default function PointInteret() {
           {loading
             ? <CircularProgress />
             : <DataGrid
-                rows={filteredData}
+                rows={data}
                 columns={columns}
-                initialState={{ pagination: { paginationModel: { pageSize: 20, page: 0 } } }}
-                pageSizeOptions={[20]}
+                paginationMode="server"
+                rowCount={rowCount}
+                paginationModel={paginationModel}
+                onPaginationModelChange={(model) => { setLoading(true); setPaginationModel(model); }}
+                pageSizeOptions={[20, 50, 100]}
                 disableRowSelectionOnClick
                 disableColumnMenu
                 sx={{
@@ -186,7 +213,11 @@ export default function PointInteret() {
         onClose={() => setArrMapOpen(false)}
         territoires={territoires}
         value={selectedArrondissement}
-        onChange={setSelectedArrondissement}
+        onChange={(val) => {
+          setSelectedArrondissement(val);
+          setPaginationModel(prev => ({ ...prev, page: 0 }));
+          setLoading(true);
+        }}
       />
 
       <Dialog open={selectedPoi !== null } onClose={() => setSelectedPoi(null)} maxWidth="xs" fullWidth>
@@ -200,7 +231,7 @@ export default function PointInteret() {
           <InteractiveMap
               center={[selectedPoi?.Latitude, selectedPoi?.Longitude]}
               zoom={20}
-              markers = {filteredData.map((m) => ({
+              markers = {data.map((m) => ({
                 ID: m.id,
                 Nom: m.Nom,
                 Latitude: m.Latitude,

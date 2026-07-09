@@ -21,12 +21,12 @@ import {
 import MapIcon from '@mui/icons-material/Map';
 import { DataGrid } from '@mui/x-data-grid';
 import { frFR } from '@mui/x-data-grid/locales';
-import Navbar from '../components/Navbar';
-import ArrondissementMapDialog from '../components/ArrondissementMapDialog';
-import useTerritoires from '../lib/useTerritoires';
-import { arrondissementOf, normArr, arrOptionsFrom, ALL } from '../lib/arrondissement';
+import Navbar from '../components/Navbar.jsx';
+import ArrondissementMapDialog from '../components/ArrondissementMapDialog.jsx';
+import useTerritoires from '../lib/useTerritoires.js';
+import { arrOptionsFrom, ALL } from '../lib/arrondissement.js';
 import CloseIcon from '@mui/icons-material/Close';
-import InteractiveMap from '../components/InteractiveMap';
+import InteractiveMap from '../components/InteractiveMap.jsx';
 import Chart from "../components/Chart.jsx";
 import {LocalizationProvider} from "@mui/x-date-pickers/LocalizationProvider";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
@@ -119,6 +119,8 @@ export default function Statistic() {
   const [search, setSearch] = useState('');
   const [selectedArr, setSelectedArr] = useState(ALL);
   const [arrMapOpen, setArrMapOpen] = useState(false);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
+  const [rowCount, setRowCount] = useState(0);
   const territoires = useTerritoires();
   const [selectedCompteur, setSelectedCompteur] = useState(null);
   const [passages, setPassages] = useState([]);
@@ -128,35 +130,24 @@ export default function Statistic() {
   const [dateFin, setDateFin] = useState(null);
 
   useEffect(() => {
-    fetch('/gti525/v1/compteurs')
-      .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
-      .then(data => { setCompteurs(data); setLoading(false); })
-      .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load counters.'); setLoading(false); });
-  }, []);
+    const params = new URLSearchParams({
+      limite: paginationModel.pageSize,
+      page:   paginationModel.page + 1,
+    });
+    if (search)              params.append('nom',           search);
+    if (selectedArr !== ALL) params.append('arrondissement', selectedArr);
 
-  // compteurs.csv has no borough column, so locate each counter by its coordinates.
-  const arrByCounter = useMemo(() => {
-    const map = {};
-    if (!territoires) return map;
-    for (const c of compteurs) {
-      const lat = parseFloat(c.Latitude);
-      const lng = parseFloat(c.Longitude);
-      map[c.ID] = (lat && lng) ? arrondissementOf(lng, lat, territoires) : null;
-    }
-    return map;
-  }, [compteurs, territoires]);
+    fetch(`/gti525/v1/compteurs?${params}`)
+      .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
+      .then(data => {
+        setCompteurs(data.donnees ?? []);
+        setRowCount(data.total ?? 0);
+        setLoading(false);
+      })
+      .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load counters.'); setLoading(false); });
+  }, [paginationModel, search, selectedArr]);
 
   const arrOptions = useMemo(() => arrOptionsFrom(territoires), [territoires]);
-
-  const rows = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const selArr = selectedArr === ALL ? null : normArr(selectedArr);
-    return compteurs.filter((r) => {
-      if (q && !r.Nom.toLowerCase().includes(q)) return false;
-      if (selArr && normArr(arrByCounter[r.ID]) !== selArr) return false;
-      return true;
-    });
-  }, [search, compteurs, selectedArr, arrByCounter]);
 
   const columns = useMemo(() => [
     ...COLUMNS,
@@ -173,7 +164,18 @@ export default function Statistic() {
     },
   ], []);
 
-  const handleClear = () => { setSearch(''); setSelectedArr(ALL); };
+  function handleSearchChange(e) {
+    setSearch(e.target.value);
+    setLoading(true);
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
+  }
+
+  const handleClear = () => {
+    setSearch('');
+    setSelectedArr(ALL);
+    setLoading(true);
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
+  };
 
 
   function handleCarteClick(params){
@@ -221,11 +223,11 @@ export default function Statistic() {
   function changeDateFormat(input){
     const date = new Date(input);
 
-    const yy = String(date.getUTCFullYear()).slice(-2);
+    const yyyy = date.getUTCFullYear();
     const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
     const dd = String(date.getUTCDate()).padStart(2, '0');
 
-    return `${yy}${mm}${dd}`;
+    return `${yyyy}-${mm}-${dd}`;
   }
 
 
@@ -251,7 +253,7 @@ export default function Statistic() {
                 variant="outlined"
                 size="small"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={handleSearchChange}
                 sx={{ minWidth: 220, flexGrow: { md: 1 } }}
               />
 
@@ -261,7 +263,7 @@ export default function Statistic() {
                   labelId="arr-select-label"
                   value={selectedArr}
                   label="Filtrer par arrondissement"
-                  onChange={(e) => setSelectedArr(e.target.value)}
+                  onChange={(e) => { setSelectedArr(e.target.value); setLoading(true); setPaginationModel(prev => ({ ...prev, page: 0 })); }}
                 >
                   <MenuItem value={ALL}><em>Tous les arrondissements</em></MenuItem>
                   {arrOptions.map((terr) => (
@@ -293,12 +295,15 @@ export default function Statistic() {
             {loading
               ? <CircularProgress sx={{ mt: 6 }} />
               : <DataGrid
-                  rows={rows}
+                  rows={compteurs}
                   columns={columns}
                   getRowId={(row) => row.ID}
                   localeText={frFR.components.MuiDataGrid.defaultProps.localeText}
-                  initialState={{pagination: { paginationModel: { pageSize: 20, page: 0 } } }}
-                  pageSizeOptions={[20]}
+                  paginationMode="server"
+                  rowCount={rowCount}
+                  paginationModel={paginationModel}
+                  onPaginationModelChange={(model) => { setLoading(true); setPaginationModel(model); }}
+                  pageSizeOptions={[20, 50]}
                   disableRowSelectionOnClick
                   sx={{
                     border: 'none',
@@ -324,7 +329,7 @@ export default function Statistic() {
                 <InteractiveMap
                     center={[selectedCompteur?.Latitude, selectedCompteur?.Longitude]}
                     zoom={20}
-                    markers = {rows.map((m) => ({
+                    markers = {compteurs.map((m) => ({
                       ID: m.ID,
                       Nom: m.Nom,
                       Latitude: m.Latitude,
@@ -373,7 +378,11 @@ export default function Statistic() {
         onClose={() => setArrMapOpen(false)}
         territoires={territoires}
         value={selectedArr}
-        onChange={setSelectedArr}
+        onChange={(val) => {
+          setSelectedArr(val);
+          setLoading(true);
+          setPaginationModel(prev => ({ ...prev, page: 0 }));
+        }}
       />
     </Box>
   );
