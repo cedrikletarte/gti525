@@ -23,19 +23,19 @@ const SUGGESTIONS = [
   'Statistiques du réseau',
 ];
 
-// Réponses simulées (maquette). À remplacer plus tard par un appel à l'API.
-function mockReply(question) {
-  const q = question.toLowerCase();
-  if (q.includes('fontaine') || q.includes('eau')) {
-    return "D'après les données ouvertes de la Ville de Montréal, la fontaine la plus proche se trouve dans l'arrondissement du Plateau-Mont-Royal, au parc La Fontaine.";
+// Interroge la route serveur POST /gti525/v1/assistant. La clé d'API du LLM
+// reste côté serveur : la frontale ne fait qu'envoyer la question.
+async function fetchReply(question) {
+  const res = await fetch('/gti525/v1/assistant', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.erreur || "L'assistant est momentanément indisponible.");
   }
-  if (q.includes('statistique') || q.includes('passage') || q.includes('compteur')) {
-    return 'Le réseau compte 64 compteurs vélo. Le compteur le plus fréquenté enregistre en moyenne plus de 5 000 passages par jour en période estivale.';
-  }
-  if (q.includes('piste') || q.includes('réseau') || q.includes('reseau')) {
-    return 'Le réseau cyclable de Montréal totalise 970,4 km répartis sur 8 088 segments, incluant le REV, des voies protégées, des voies partagées et des sentiers polyvalents.';
-  }
-  return "Merci pour votre question ! Ceci est une réponse simulée : l'assistant sera bientôt connecté aux données réelles du réseau cyclable de Montréal.";
+  return data.reponse;
 }
 
 let nextId = 1;
@@ -51,7 +51,7 @@ export default function Assistant() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  function sendMessage(rawText) {
+  async function sendMessage(rawText) {
     const text = rawText.trim();
     if (!text || isTyping) return;
 
@@ -59,14 +59,17 @@ export default function Assistant() {
     setInputText('');
     setIsTyping(true);
 
-    // Réponse simulée avec un léger délai pour imiter un temps de traitement.
-    setTimeout(() => {
+    try {
+      const reponse = await fetchReply(text);
+      setMessages((prev) => [...prev, { id: nextId++, sender: 'bot', text: reponse }]);
+    } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { id: nextId++, sender: 'bot', text: mockReply(text) },
+        { id: nextId++, sender: 'bot', text: `⚠️ ${err.message}`, isError: true },
       ]);
+    } finally {
       setIsTyping(false);
-    }, 700);
+    }
   }
 
   function handleSubmit() {

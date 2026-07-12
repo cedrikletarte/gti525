@@ -22,6 +22,7 @@ app.get('/gti525/v1/', (_req, res) => {
       { methode: 'POST',   chemin: '/gti525/v1/pointsdinteret',         description: "Ajouter un point d'intérêt (authentification requise)" },
       { methode: 'PUT',    chemin: '/gti525/v1/pointsdinteret/:id',     description: "Modifier un point d'intérêt (authentification requise)" },
       { methode: 'DELETE', chemin: '/gti525/v1/pointsdinteret/:id',     description: "Supprimer un point d'intérêt (authentification requise)" },
+      { methode: 'POST',   chemin: '/gti525/v1/assistant',             description: "Assistant conversationnel : pose une question et reçoit une réponse basée sur les données du réseau", corps: { question: 'string (max 1000 caractères)' } },
     ],
   });
 });
@@ -31,6 +32,7 @@ app.use('/gti525/v1/compteurs',      require('./routes/compteurs'));
 app.use('/gti525/v1/pistes',         require('./routes/pistes'));
 app.use('/gti525/v1/territoires',    require('./routes/territoires'));
 app.use('/gti525/v1/pointsdinteret', require('./routes/pointsdinteret'));
+app.use('/gti525/v1/assistant',      require('./routes/assistant'));
 
 app.use((_req, res) => res.status(404).json({ erreur: 'Route not found.' }));
 
