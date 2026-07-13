@@ -57,6 +57,7 @@
 | [35](#tache-35) | T2 — Enrichissement des ressources compteurs et points d'intérêt | 2026-07-07 |
 | [38](#tache-38) | T3 — Enrichissement de la route /pistes (catégorie + pistes populaires) | 2026-07-07 |
 | [39](#tache-39) | Refactorisation du backend en modules | 2026-07-07 |
+| [41](#tache-41) | Auto-génération de la route de découverte depuis les routes réelles | 2026-07-12 |
 
 > Tâche 28 touche également les pages frontales (`src/pages/`) pour le câblage du menu déroulant et de la carte des territoires.
 
@@ -3862,3 +3863,50 @@ Avec cette modification est-ce qu'il est possible de réduire la charge de calcu
 - **Pagination vraiment correcte :** Avant ce changement, la pagination était serveur pour le nombre de pages, mais le filtre arrondissement s'appliquait *après* réception de la page — pouvant afficher moins de 20 lignes même s'il y en avait plus en base. Maintenant `?arrondissement=` fait partie de la requête SQL incluant `LIMIT` et `OFFSET`, donc le total et les pages reflètent exactement les compteurs de l'arrondissement sélectionné.
 
 - **`useTerritoires` conservé :** Le hook est encore nécessaire pour deux raisons indépendantes du filtrage : (1) alimenter la liste déroulante des arrondissements, (2) afficher la carte de sélection `ArrondissementMapDialog`. Ces deux usages n'ont pas de substitut côté serveur sans nouvel endpoint.
+
+---
+
+## Tâche 41 — Auto-génération de la route de découverte depuis les routes réelles {#tache-41}
+
+**Auteur** : Cédrik Letarte - 2026-07-12
+
+### 💬 Prompt
+
+```
+est-ce que /gti525/v1/ est auto-documenté?
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 5 |
+| **Mode** | Refactorisation ciblée |
+
+---
+
+### 📦 Sortie obtenue
+
+| Fichier | Contenu généré |
+|---------|---------------|
+| `backend/lib/listEndpoints.js` (nouveau) | `listEndpoints(router, mountPath)` — parcourt `router.stack`, filtre les `layer.route` définis, retourne `[{ methode, chemin }]` en combinant le chemin de montage et `route.path` |
+| `backend/lib/endpointsMeta.js` (nouveau) | Table `"METHODE chemin" → { description, parametres? , corps? }` reprenant le texte descriptif auparavant intégré directement dans `app.js` |
+| `backend/app.js` | Les 5 routeurs sont désormais stockés dans un tableau `mounts` `{ path, router }` ; `GET /gti525/v1/` construit `endpoints` en appelant `listEndpoints` sur chaque routeur réel puis enrichit chaque entrée avec `endpointsMeta[...]` ; `app.use(path, router)` itère le même tableau `mounts`, donc le montage et la documentation partagent une seule source |
+| `backend/tests/discovery.test.js` (nouveau) | Vérifie que `GET /gti525/v1/` liste des chemins réellement montés (`GET /gti525/v1/pointsdinteret`, `POST /gti525/v1/pointsdinteret`, `GET /gti525/v1/compteurs/:id/passages`) et que la description issue de `endpointsMeta.js` est bien fusionnée |
+
+**Pas de dépendance ajoutée** : `express-list-endpoints` a été écarté — aucune garantie de compatibilité avec Express 5 / path-to-regexp v8 (`backend/package.json` déclare `"express": "^5.2.1"`) ; `router.stack` est une API stable de `express.Router` réutilisée directement à la place.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Accepté** : La liste `méthode + chemin` provient désormais de `router.stack`, les mêmes objets `Router` utilisés pour monter les routes. Elle ne peut plus lister une route supprimée ni omettre une route ajoutée. C'était le vrai problème signalé ("il est hardcodé") : le tableau `endpoints` d'origine était une copie manuelle totalement déconnectée des `app.use()`.
