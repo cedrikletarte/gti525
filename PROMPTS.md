@@ -58,6 +58,7 @@
 | [38](#tache-38) | T3 — Enrichissement de la route /pistes (catégorie + pistes populaires) | 2026-07-07 |
 | [39](#tache-39) | Refactorisation du backend en modules | 2026-07-07 |
 | [41](#tache-41) | Auto-génération de la route de découverte depuis les routes réelles | 2026-07-12 |
+| [42](#tache-42) | Migration sql.js → MariaDB (mysql2/promise) | 2026-07-14 |
 
 > Tâche 28 touche également les pages frontales (`src/pages/`) pour le câblage du menu déroulant et de la carte des territoires.
 
@@ -3910,3 +3911,105 @@ est-ce que /gti525/v1/ est auto-documenté?
 ### 🧠 Justification
 
 - **Accepté** : La liste `méthode + chemin` provient désormais de `router.stack`, les mêmes objets `Router` utilisés pour monter les routes. Elle ne peut plus lister une route supprimée ni omettre une route ajoutée. C'était le vrai problème signalé ("il est hardcodé") : le tableau `endpoints` d'origine était une copie manuelle totalement déconnectée des `app.use()`.
+
+---
+
+## Tâche 42 — Migration sql.js → MariaDB (mysql2/promise) {#tache-42}
+
+**Auteur** : Cédrik Letarte - 2026-07-14
+
+### 💬 Prompt
+
+```
+Le backend utilise sql.js (SQLite WebAssembly in-memory). La base est rechargée
+depuis comptage_velo.db à chaque démarrage ; toutes les mutations (nouveaux
+utilisateurs, POI créés) sont perdues au redémarrage. Migrer vers MariaDB +
+mysql2/promise pour assurer la persistance des données.
+
+Fichiers à créer :
+- backend/scripts/seed.js   (script one-shot : crée les tables, peuple MariaDB)
+- backend/.env-example      (ajouter DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
+
+Fichiers à modifier :
+- backend/lib/db.js         (pool mysql2 à la place de getDb/setDb)
+- backend/server.js         (supprimer seeding inline ; setDb no-op pour compat tests)
+- backend/routes/auth.js    (async/await ; ER_DUP_ENTRY)
+- backend/routes/compteurs.js (async/await ; SQL MariaDB ; table passages)
+- backend/routes/pistes.js  (async/await ; CAST CHAR/DECIMAL ; 2 queries séquentielles)
+- backend/routes/pointsdinteret.js (async/await ; result.insertId)
+- backend/routes/territoires.js (async/await)
+- backend/tests/*.test.js (4 fichiers) → jest.mock('../lib/db') + pool.query.mockResolvedValueOnce
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Mode** | Migration multi-fichiers |
+
+---
+
+### 📦 Sortie obtenue
+
+**Nouveaux fichiers :**
+
+| Fichier | Contenu |
+|---------|---------|
+| `backend/scripts/seed.js` | Script idempotent : crée les 6 tables (`utilisateurs`, `compteurs`, `passages`, `pointsdinteret`, `pistes`, `territoires`), peuple depuis CSV/GeoJSON + `comptage_velo.db` (sql.js), calcule `compteurs.arrondissement` via point-in-polygon JS, insère `passages` par batch de 1 000 |
+| `backend/.env-example` | Variables `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME=mtlvelo` ajoutées |
+
+**Fichiers modifiés :**
+
+| Fichier | Nature du changement |
+|---------|---------------------|
+| `backend/lib/db.js` | Remplacé par `mysql.createPool(...)` — singleton `{ pool }` exporté |
+| `backend/server.js` | Seeding retiré ; vérification DB (`pool.query('SELECT 1')`) au démarrage ; `setDb: () => {}` conservé comme no-op ; vérification des env vars déplacée dans `if (require.main === module)` |
+| `backend/routes/auth.js` | `async/await` ; `ER_DUP_ENTRY` remplace `UNIQUE constraint failed` |
+| `backend/routes/compteurs.js` | `async/await` ; `[[countRow]]` pour COUNT ; dialecte MariaDB (`CONCAT(YEAR(...),'-',LPAD(WEEK(...,3),2,'0'))` pour semaine, `DATE_FORMAT` pour mois) ; table `passages` |
+| `backend/routes/pistes.js` | `async/await` ; `CAST AS CHAR/DECIMAL` ; 2 `pool.query` séquentiels pour les pistes populaires |
+| `backend/routes/pointsdinteret.js` | `async/await` ; `result.insertId` remplace `last_insert_rowid()` ; 2 queries (check + mutate) pour PUT/DELETE |
+| `backend/routes/territoires.js` | `async/await` ; `pool.query` |
+| `backend/tests/compteurs.test.js` | `jest.mock('../lib/db')` + `pool.query.mockResolvedValueOnce` ; suppression de `makeDb`/`setDb` |
+| `backend/tests/passages.test.js` | Idem |
+| `backend/tests/pointsdinteret.test.js` | Idem ; `[{ insertId: 42 }]` pour POST ; 2 mocks pour PUT/DELETE |
+| `backend/tests/pistes.test.js` | Idem ; 2 mocks pour le cas populaire |
+
+**Conversions SQL dialect SQLite → MariaDB :**
+
+| SQLite | MariaDB |
+|--------|---------|
+| `strftime('%Y-%W', d)` | `CONCAT(YEAR(d),'-',LPAD(WEEK(d,3),2,'0'))` |
+| `strftime('%Y-%m', d)` | `DATE_FORMAT(d, '%Y-%m')` |
+| `CAST(x AS TEXT)` | `CAST(x AS CHAR)` |
+| `CAST(x AS REAL)` | `CAST(x AS DECIMAL)` |
+| `last_insert_rowid()` | `result.insertId` |
+| `UNIQUE constraint failed` | `err.code === 'ER_DUP_ENTRY'` |
+| Table `comptage_velo` | Table `passages` |
+
+Suite complète : **41/41 tests passent**.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune
+
+---
+
+### 🧠 Justification
+
+- **Persistance réelle :** Avec sql.js, `new SQL.Database(fileBuffer)` charge la base en mémoire à chaque démarrage — toute mutation (inscription, ajout POI) est perdue au redémarrage. MariaDB résout ce problème structurel.
+
+- **Vérification env vars dans `require.main` :** La garde `process.exit(1)` était au niveau module, ce qui la déclenchait à chaque `require('../server')` dans les tests (où `DB_USER` n'est pas défini). Déplacée dans `if (require.main === module)`, elle ne s'exécute qu'au démarrage réel.
+
+- **Point-in-polygon en JS plutôt que ST_Contains :** Convertir des GeoJSON MultiPolygon avec trous en WKT pour MariaDB est complexe et risqué. Le `pointInFeature()` existant (`lib/geo.js`) donne exactement le même résultat en seed.js — zéro régression.
+
+- **Format semaine préservé :** `strftime('%Y-%W')` retourne `YYYY-WW`. `LPAD(WEEK(...,3),2,'0')` reproduit ce format à l'identique — les tests et le frontend ne voient aucune différence.
+
+- **`pool.query` retourne `[rows, fields]` :** La déstructuration `const [rows] = await pool.query(...)` ou `const [[countRow]] = await pool.query(...)` pour un COUNT est le pattern standard mysql2 — clair et sans intermédiaire.
+
+---

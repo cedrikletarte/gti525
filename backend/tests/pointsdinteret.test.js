@@ -1,23 +1,18 @@
 'use strict';
 
-const request = require('supertest');
-const { app, setDb } = require('../server');
+jest.mock('../lib/db', () => ({
+  pool: { query: jest.fn() },
+}));
 
-const JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
-const jwt = require('jsonwebtoken');
+const request = require('supertest');
+const { app }  = require('../server');
+const { pool } = require('../lib/db');
+const jwt      = require('jsonwebtoken');
+
+const JWT_SECRET  = process.env.JWT_SECRET || 'test-secret';
 const VALID_TOKEN = jwt.sign({ sub: 1, courriel: 'test@test.com' }, JWT_SECRET, { expiresIn: '1h' });
 
-function makeDb(rows) {
-  let index = 0;
-  const stmt = {
-    bind: jest.fn(),
-    step: jest.fn(() => index < rows.length),
-    getAsObject: jest.fn(() => rows[index++]),
-    free: jest.fn(),
-    reset: jest.fn(),
-  };
-  return { prepare: jest.fn(() => stmt) };
-}
+beforeEach(() => pool.query.mockReset());
 
 const POI_ROW = {
   ID: 1, Arrondissement: 'Rosemont', Nom_parc_lieu: 'Parc Molson',
@@ -29,7 +24,9 @@ const POI_ROW = {
 
 describe('Route GET /gti525/v1/pointsdinteret', () => {
   it('devrait retourner 200 avec un objet paginé non vide', async () => {
-    setDb(makeDb([{ n: 1 }, POI_ROW]));
+    pool.query
+      .mockResolvedValueOnce([[{ n: 1 }], []])
+      .mockResolvedValueOnce([[POI_ROW], []]);
 
     const res = await request(app).get('/gti525/v1/pointsdinteret');
 
@@ -42,8 +39,10 @@ describe('Route GET /gti525/v1/pointsdinteret', () => {
     expect(res.body.donnees.length).toBeGreaterThan(0);
   });
 
-  it('devrait retourner les champs attendus sur chaque point d\'intérêt', async () => {
-    setDb(makeDb([{ n: 1 }, POI_ROW]));
+  it("devrait retourner les champs attendus sur chaque point d'intérêt", async () => {
+    pool.query
+      .mockResolvedValueOnce([[{ n: 1 }], []])
+      .mockResolvedValueOnce([[POI_ROW], []]);
 
     const res = await request(app).get('/gti525/v1/pointsdinteret');
 
@@ -55,8 +54,8 @@ describe('Route GET /gti525/v1/pointsdinteret', () => {
     expect(poi).toHaveProperty('Longitude');
   });
 
-  it('devrait retourner 500 avec un message d\'erreur quand la base est inaccessible', async () => {
-    setDb({ prepare: () => { throw new Error('DB error'); } });
+  it("devrait retourner 500 avec un message d'erreur quand la base est inaccessible", async () => {
+    pool.query.mockRejectedValueOnce(new Error('DB error'));
 
     const res = await request(app).get('/gti525/v1/pointsdinteret');
 
@@ -67,7 +66,7 @@ describe('Route GET /gti525/v1/pointsdinteret', () => {
 
 describe('Route POST /gti525/v1/pointsdinteret', () => {
   it('devrait retourner 201 avec le point créé quand le corps est valide', async () => {
-    setDb(makeDb([{ id: 42 }]));
+    pool.query.mockResolvedValueOnce([{ insertId: 42 }, []]);
 
     const res = await request(app)
       .post('/gti525/v1/pointsdinteret')
@@ -89,7 +88,7 @@ describe('Route POST /gti525/v1/pointsdinteret', () => {
     expect(res.body).toHaveProperty('erreur');
   });
 
-  it('devrait retourner 401 sans jeton d\'authentification', async () => {
+  it("devrait retourner 401 sans jeton d'authentification", async () => {
     const res = await request(app)
       .post('/gti525/v1/pointsdinteret')
       .send({ nom_parc_lieu: 'Parc Test', latitude: 45.5, longitude: -73.5 });
@@ -100,7 +99,9 @@ describe('Route POST /gti525/v1/pointsdinteret', () => {
 
 describe('Route PUT /gti525/v1/pointsdinteret/:id', () => {
   it('devrait retourner 200 avec le point mis à jour', async () => {
-    setDb(makeDb([{ id: '5' }]));
+    pool.query
+      .mockResolvedValueOnce([[{ id: 5 }], []])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, []]);
 
     const res = await request(app)
       .put('/gti525/v1/pointsdinteret/5')
@@ -112,8 +113,8 @@ describe('Route PUT /gti525/v1/pointsdinteret/:id', () => {
     expect(res.body).toHaveProperty('nom_parc_lieu', 'Parc Modifié');
   });
 
-  it('devrait retourner 404 si le point n\'existe pas', async () => {
-    setDb(makeDb([]));
+  it("devrait retourner 404 si le point n'existe pas", async () => {
+    pool.query.mockResolvedValueOnce([[], []]);
 
     const res = await request(app)
       .put('/gti525/v1/pointsdinteret/9999')
@@ -124,7 +125,7 @@ describe('Route PUT /gti525/v1/pointsdinteret/:id', () => {
     expect(res.body).toHaveProperty('erreur');
   });
 
-  it('devrait retourner 401 sans jeton d\'authentification', async () => {
+  it("devrait retourner 401 sans jeton d'authentification", async () => {
     const res = await request(app)
       .put('/gti525/v1/pointsdinteret/5')
       .send({ nom_parc_lieu: 'X', latitude: 45.5, longitude: -73.5 });
@@ -135,7 +136,9 @@ describe('Route PUT /gti525/v1/pointsdinteret/:id', () => {
 
 describe('Route DELETE /gti525/v1/pointsdinteret/:id', () => {
   it('devrait retourner 204 quand le point est supprimé', async () => {
-    setDb(makeDb([{ id: '5' }]));
+    pool.query
+      .mockResolvedValueOnce([[{ id: 5 }], []])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, []]);
 
     const res = await request(app)
       .delete('/gti525/v1/pointsdinteret/5')
@@ -144,8 +147,8 @@ describe('Route DELETE /gti525/v1/pointsdinteret/:id', () => {
     expect(res.status).toBe(204);
   });
 
-  it('devrait retourner 404 si le point n\'existe pas', async () => {
-    setDb(makeDb([]));
+  it("devrait retourner 404 si le point n'existe pas", async () => {
+    pool.query.mockResolvedValueOnce([[], []]);
 
     const res = await request(app)
       .delete('/gti525/v1/pointsdinteret/9999')
@@ -155,7 +158,7 @@ describe('Route DELETE /gti525/v1/pointsdinteret/:id', () => {
     expect(res.body).toHaveProperty('erreur');
   });
 
-  it('devrait retourner 401 sans jeton d\'authentification', async () => {
+  it("devrait retourner 401 sans jeton d'authentification", async () => {
     const res = await request(app)
       .delete('/gti525/v1/pointsdinteret/5');
 

@@ -2,7 +2,7 @@
 const router  = require('express').Router();
 const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
-const { getDb } = require('../lib/db');
+const { pool } = require('../lib/db');
 
 router.post('/inscription', async (req, res) => {
   const { courriel, motDePasse } = req.body ?? {};
@@ -11,13 +11,10 @@ router.post('/inscription', async (req, res) => {
   }
   try {
     const mdpHash = await bcrypt.hash(motDePasse, 10);
-    const stmt = getDb().prepare('INSERT INTO utilisateurs (courriel, mdp_hash) VALUES (?, ?)');
-    stmt.bind([courriel, mdpHash]);
-    stmt.step();
-    stmt.free();
+    await pool.query('INSERT INTO utilisateurs (courriel, mdp_hash) VALUES (?, ?)', [courriel, mdpHash]);
     return res.status(201).json({ message: 'Compte créé.' });
   } catch (err) {
-    if (err.message && err.message.includes('UNIQUE constraint failed')) {
+    if (err.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ erreur: 'Ce courriel est déjà utilisé.' });
     }
     return res.status(500).json({ erreur: 'Erreur serveur.' });
@@ -30,10 +27,8 @@ router.post('/connexion', async (req, res) => {
     return res.status(400).json({ erreur: 'Courriel et mot de passe requis.' });
   }
   try {
-    const stmt = getDb().prepare('SELECT id, mdp_hash FROM utilisateurs WHERE courriel = ?');
-    stmt.bind([courriel]);
-    const row = stmt.step() ? stmt.getAsObject() : null;
-    stmt.free();
+    const [rows] = await pool.query('SELECT id, mdp_hash FROM utilisateurs WHERE courriel = ?', [courriel]);
+    const row    = rows[0] ?? null;
 
     if (!row || !(await bcrypt.compare(motDePasse, row.mdp_hash))) {
       return res.status(401).json({ erreur: 'Identifiants invalides.' });
