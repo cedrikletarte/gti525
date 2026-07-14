@@ -3,8 +3,10 @@ const express        = require('express');
 const { setDb }      = require('./lib/db');
 const listEndpoints  = require('./lib/listEndpoints');
 const endpointsMeta  = require('./lib/endpointsMeta');
+const cors      = require('cors');
 
 const app = express();
+app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
 
 const DISCOVERY_PATH = '/gti525/v1/';
