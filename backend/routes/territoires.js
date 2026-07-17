@@ -1,13 +1,11 @@
 'use strict';
 const router    = require('express').Router();
-const { getDb } = require('../lib/db');
+const { pool }  = require('../lib/db');
 
-router.get('/', (_req, res) => {
+router.get('/', async (_req, res) => {
   try {
-    const stmt = getDb().prepare('SELECT feature FROM territoires');
-    const features = [];
-    while (stmt.step()) features.push(JSON.parse(stmt.getAsObject().feature));
-    stmt.free();
+    const [rows] = await pool.query('SELECT feature FROM territoires');
+    const features = rows.map(r => JSON.parse(r.feature));
 
     res.setHeader('Content-Type', 'application/geo+json');
     res.json({ type: 'FeatureCollection', features });

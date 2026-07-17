@@ -1,27 +1,23 @@
 'use strict';
 
-const request = require('supertest');
-const { app, setDb } = require('../server');
+jest.mock('../lib/db', () => ({
+  pool: { query: jest.fn() },
+}));
 
-function makeDb(rows) {
-  let index = 0;
-  const stmt = {
-    bind: jest.fn(),
-    step: jest.fn(() => index < rows.length),
-    getAsObject: jest.fn(() => rows[index++]),
-    free: jest.fn(),
-    reset: jest.fn(),
-  };
-  return { prepare: jest.fn(() => stmt) };
-}
+const request = require('supertest');
+const { app }  = require('../server');
+const { pool } = require('../lib/db');
+
+beforeEach(() => pool.query.mockReset());
 
 describe('Route GET /gti525/v1/compteurs', () => {
   it('devrait retourner 200 avec un objet paginé ayant les champs attendus', async () => {
-    setDb(makeDb([
-      { n: 2 },
-      { ID: '100', Nom: 'Pont Jacques-Cartier', Statut: 'Actif', Latitude: 45.5236, Longitude: -73.5445, Annee_implante: 2012, Arrondissement: null },
-      { ID: '101', Nom: 'Rachel / Papineau',    Statut: 'Actif', Latitude: 45.5302, Longitude: -73.5688, Annee_implante: 2010, Arrondissement: null },
-    ]));
+    pool.query
+      .mockResolvedValueOnce([[{ n: 2 }], []])
+      .mockResolvedValueOnce([[
+        { ID: '100', Nom: 'Pont Jacques-Cartier', Statut: 'Actif', Latitude: 45.5236, Longitude: -73.5445, Annee_implante: 2012, Arrondissement: null },
+        { ID: '101', Nom: 'Rachel / Papineau',    Statut: 'Actif', Latitude: 45.5302, Longitude: -73.5688, Annee_implante: 2010, Arrondissement: null },
+      ], []]);
 
     const res = await request(app).get('/gti525/v1/compteurs');
 
@@ -34,10 +30,11 @@ describe('Route GET /gti525/v1/compteurs', () => {
   });
 
   it('devrait retourner les valeurs exactes des champs dans donnees', async () => {
-    setDb(makeDb([
-      { n: 1 },
-      { ID: '100', Nom: 'Pont Jacques-Cartier', Statut: 'Actif', Latitude: 45.5236, Longitude: -73.5445, Annee_implante: 2012, Arrondissement: null },
-    ]));
+    pool.query
+      .mockResolvedValueOnce([[{ n: 1 }], []])
+      .mockResolvedValueOnce([[
+        { ID: '100', Nom: 'Pont Jacques-Cartier', Statut: 'Actif', Latitude: 45.5236, Longitude: -73.5445, Annee_implante: 2012, Arrondissement: null },
+      ], []]);
 
     const res = await request(app).get('/gti525/v1/compteurs');
 
@@ -49,8 +46,8 @@ describe('Route GET /gti525/v1/compteurs', () => {
     expect(res.body.limite).toBe(20);
   });
 
-  it('devrait retourner 500 avec un message d\'erreur quand la base est inaccessible', async () => {
-    setDb({ prepare: () => { throw new Error('DB error'); } });
+  it("devrait retourner 500 avec un message d'erreur quand la base est inaccessible", async () => {
+    pool.query.mockRejectedValueOnce(new Error('DB error'));
 
     const res = await request(app).get('/gti525/v1/compteurs');
 
@@ -61,9 +58,9 @@ describe('Route GET /gti525/v1/compteurs', () => {
 
 describe('Route GET /gti525/v1/compteurs/:id', () => {
   it('devrait retourner 200 avec le compteur demandé', async () => {
-    setDb(makeDb([
+    pool.query.mockResolvedValueOnce([[
       { ID: '100', Nom: 'Pont Jacques-Cartier', Statut: 'Actif', Latitude: 45.5236, Longitude: -73.5445, Annee_implante: 2012, Arrondissement: null },
-    ]));
+    ], []]);
 
     const res = await request(app).get('/gti525/v1/compteurs/100');
 
@@ -72,8 +69,8 @@ describe('Route GET /gti525/v1/compteurs/:id', () => {
     expect(res.body).toHaveProperty('Nom', 'Pont Jacques-Cartier');
   });
 
-  it('devrait retourner 404 si le compteur n\'existe pas', async () => {
-    setDb(makeDb([]));
+  it("devrait retourner 404 si le compteur n'existe pas", async () => {
+    pool.query.mockResolvedValueOnce([[], []]);
 
     const res = await request(app).get('/gti525/v1/compteurs/9999');
 
@@ -82,7 +79,7 @@ describe('Route GET /gti525/v1/compteurs/:id', () => {
   });
 
   it('devrait retourner 500 quand la base est inaccessible', async () => {
-    setDb({ prepare: () => { throw new Error('DB error'); } });
+    pool.query.mockRejectedValueOnce(new Error('DB error'));
 
     const res = await request(app).get('/gti525/v1/compteurs/100');
 

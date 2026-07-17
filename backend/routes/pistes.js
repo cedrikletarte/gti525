@@ -1,10 +1,10 @@
 'use strict';
 const router           = require('express').Router();
-const { getDb }        = require('../lib/db');
+const { pool }         = require('../lib/db');
 const { parseISODate } = require('../lib/utils');
 const { normArr, CATEGORIE_SQL } = require('../lib/geo');
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { arrondissement, saisons4, categorie, populaireDebut, populaireFin } = req.query;
 
   if (categorie && !CATEGORIE_SQL[categorie]) {
@@ -30,30 +30,26 @@ router.get('/', (req, res) => {
   try {
     const conditions = [];
     const params     = [];
-    const db         = getDb();
 
     if (arrondissement) { conditions.push('nom_arr_ville_desc = ?'); params.push(arrondissement); }
     if (saisons4)       { conditions.push('saisons4 = ?');           params.push(saisons4); }
     if (categorie)      { conditions.push(CATEGORIE_SQL[categorie]); }
 
     if (debutPop && finPop) {
-      const stmtPop = db.prepare(`
+      const [popRows] = await pool.query(`
         SELECT c.arrondissement,
-               SUM(cv.nb_passages)            AS total_passages,
-               COUNT(DISTINCT cv.id_compteur) AS n_compteurs
-        FROM   comptage_velo cv
-        JOIN   compteurs c ON CAST(cv.id_compteur AS TEXT) = c.id
-        WHERE  date(cv.date_heure) BETWEEN ? AND ?
+               SUM(p.nb_passages)            AS total_passages,
+               COUNT(DISTINCT p.id_compteur) AS n_compteurs
+        FROM   passages p
+        JOIN   compteurs c ON CAST(p.id_compteur AS CHAR) = c.id
+        WHERE  DATE(p.date_heure) BETWEEN ? AND ?
         AND    c.arrondissement IS NOT NULL
         GROUP  BY c.arrondissement
-        ORDER  BY CAST(total_passages AS REAL) / n_compteurs DESC
+        ORDER  BY CAST(total_passages AS DECIMAL) / n_compteurs DESC
         LIMIT  3
-      `);
-      stmtPop.bind([debutPop, finPop]);
-      const top3 = [];
-      while (stmtPop.step()) top3.push(normArr(stmtPop.getAsObject().arrondissement));
-      stmtPop.free();
+      `, [debutPop, finPop]);
 
+      const top3 = popRows.map(r => normArr(r.arrondissement));
       if (top3.length) {
         conditions.push(`norm_arr IN (${top3.map(() => '?').join(',')})`);
         params.push(...top3);
@@ -63,11 +59,8 @@ router.get('/', (req, res) => {
     let sql = 'SELECT feature FROM pistes';
     if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
 
-    const stmt = db.prepare(sql);
-    if (params.length) stmt.bind(params);
-    const features = [];
-    while (stmt.step()) features.push(JSON.parse(stmt.getAsObject().feature));
-    stmt.free();
+    const [rows] = await pool.query(sql, params);
+    const features = rows.map(r => JSON.parse(r.feature));
 
     res.setHeader('Content-Type', 'application/geo+json');
     res.json({ type: 'FeatureCollection', features });
