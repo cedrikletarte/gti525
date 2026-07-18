@@ -68,6 +68,13 @@
 | [30](#tache-30) | T5.A.4 — Génération et validation de tests pour les routes API | 2026-06-30 |
 | [31](#tache-31) | T5.A.2 — Revue critique — Route passages | 2026-06-30 |
 
+### Fonctionnalité conversationnelle
+
+| # | Tâche | Date |
+|---|-------|-------|
+| [41](#tache-41) | T6.1 — Assistant.jsx : vue conversationnelle interactive (champ limité à 1000 car.) | 2026-07-12 |
+| [42](#tache-42) | T6.2 / T6.5 — Route POST /assistant : intégration LLM externe (RAG + garde-fous) | 2026-07-12 |
+
   
 
 ---
@@ -3862,3 +3869,158 @@ Avec cette modification est-ce qu'il est possible de réduire la charge de calcu
 - **Pagination vraiment correcte :** Avant ce changement, la pagination était serveur pour le nombre de pages, mais le filtre arrondissement s'appliquait *après* réception de la page — pouvant afficher moins de 20 lignes même s'il y en avait plus en base. Maintenant `?arrondissement=` fait partie de la requête SQL incluant `LIMIT` et `OFFSET`, donc le total et les pages reflètent exactement les compteurs de l'arrondissement sélectionné.
 
 - **`useTerritoires` conservé :** Le hook est encore nécessaire pour deux raisons indépendantes du filtrage : (1) alimenter la liste déroulante des arrondissements, (2) afficher la carte de sélection `ArrondissementMapDialog`. Ces deux usages n'ont pas de substitut côté serveur sans nouvel endpoint.
+
+---
+
+## Fonctionnalité conversationnelle
+
+> Parcours **avec IA** (T6.5) : le Vélobot appelle un LLM externe **gratuit** (Google Gemini / Groq / Mistral) **côté serveur uniquement**. La clé d'API reste dans `backend/.env` et n'est jamais exposée à la frontale (garde-fou P9). L'ancrage se fait par **RAG simple** : le serveur interroge la base SQLite pour rassembler un contexte factuel injecté dans le prompt.
+
+---
+
+## Tâche 41 — Assistant.jsx : vue conversationnelle interactive (T6.1) {#tache-41}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-07-12
+
+### 💬 Prompt
+
+```
+Tu es un specialiste en development full stack : implemente la fonctionnalité
+qui regroupe ceci : Modifier la vue « Assistant » accessible depuis le menu
+principal, avec une zone de conversation et un champ de saisie limité à
+1 000 caractères.
+
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Opus 4.8 |
+| **Mode** | Génération de code (page mockée d'abord, sur demande de l'humain) |
+
+---
+
+### 📦 Sortie obtenue
+
+| Fichier | Contenu généré |
+|---------|---------------|
+| `src/pages/Assistant.jsx` | Conversation devenue **interactive** : état `messages` (`useState`), envoi via bouton **Envoyer** et touche **Entrée** (Maj+Entrée = saut de ligne), indicateur « L'assistant écrit… », défilement automatique (`useRef` + `useEffect`), puces de suggestion cliquables. Le champ conserve la **limite de 1 000 caractères** (`maxLength` + `slice(0, 1000)`) et le compteur `x/1000`. Réponses d'abord **simulées** (fonction `mockReply`), puis remplacées par un appel réseau à la Tâche 42. |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- aucune modification
+
+---
+
+### 🧠 Justification
+
+- j'ai accepter les modificaiton apporté par l'ia car celle-ci respectait les contraintes de mon prompt. durant la phase 1 nous avions deja fait le setup de la page assitant avec des donne mocked maintenant il fallait rendre la boite de conversation interactive et lèutilisation d'un useState + une age interactive reponds au requis de la tachhe T6.1 
+---
+
+## Tâche 42 — Route POST /gti525/v1/assistant : intégration LLM externe (T6.2 / T6.5) {#tache-42}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-07-12
+
+### 💬 Prompt
+
+```
+le but est de maintenant implementer un assistant AI le plus simple possible
+qui reponds a ces requis : Implémenter la route POST /gti525/v1/assistant qui
+reçoit une question, consulte la base pour rassembler les données pertinentes,
+compose une réponse et la retourne.
+Parcours avec IA : appel à un LLM externe (Anthropic, OpenAI, Mistral, etc.)
+côté serveur uniquement. La clé d'API ne doit jamais être exposée à la frontale.
+Le serveur compose un prompt système clair, fournit le contexte issu de la base
+(RAG simple), valide la longueur de la question (1 000 caractères max), applique
+une limitation de débit simple par adresse IP, et journalise les appels
+(horodatage, longueur de la question, temps de réponse, présence d'erreur —
+sans données personnelles). Les appels d'API doivent être gratuits.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Opus 4.8 |
+| **Mode** | Génération multi-fichiers + débogage assisté |
+
+---
+
+### 📦 Sortie obtenue
+
+| Fichier | Contenu généré |
+|---------|---------------|
+| `backend/routes/assistant.js` | Route `POST /gti525/v1/assistant`. Ordre des garde-fous : **1)** limitation de débit par IP (15 req/min, Map en mémoire → `429`) ; **2)** validation `question` requise + **≤ 1 000 caractères** (`400`) ; **3)** service configuré ? (`503` si clé absente) ; **4)** RAG + appel LLM (`502` si échec). Prompt système clair (voir ci-dessous). |
+| `backend/lib/llm.js` | Appel LLM **provider-agnostique** via `fetch` natif (aucune dépendance ajoutée). Gemini (endpoint `generateContent`) et fournisseurs compatibles OpenAI (Groq, Mistral). Clé lue depuis `process.env.LLM_API_KEY` — **jamais renvoyée au client**. `AbortController` (timeout 20 s). |
+| `backend/lib/assistantContext.js` | **RAG simple** : selon la question, requêtes SQL **paramétrées** rassemblant résumé du réseau, arrondissement ciblé, points d'intérêt et compteurs les plus fréquentés. Détection d'arrondissement et de mots-clés **normalisée** (accents/tirets/fautes). |
+| `backend/app.js` | Route montée + ajoutée à l'endpoint de découverte `GET /gti525/v1/`. |
+| `backend/.env-example` | Variables documentées : `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`, `ASSISTANT_RATE_*` (aucune valeur sensible). |
+| `src/pages/Assistant.jsx` | `mockReply` remplacé par `fetch('/gti525/v1/assistant')` ; gestion d'erreur affichée en bulle `⚠️`. |
+| `backend/tests/assistant.test.js` | Tests Jest (LLM et RAG mockés) : `200`, `400` (absente/vide/>1000), `503`, `502`, `429`. |
+
+**Journalisation (sans données personnelles) :** `[assistant] <ISO> len=<n> ms=<durée> erreur=<bool>` — ni la question, ni l'IP, ni la réponse ne sont journalisées.
+
+---
+
+### 🧠 Prompt système final
+
+```
+Tu es l'assistant de MTL Vélo, une application sur le réseau cyclable de la
+Ville de Montréal. Réponds en français, de façon concise, polie et factuelle.
+Fonde ta réponse UNIQUEMENT sur les données fournies dans la section CONTEXTE.
+Si l'information demandée ne figure pas dans le CONTEXTE, dis simplement que tu
+ne disposes pas de cette donnée. N'invente aucun chiffre ni aucun nom.
+N'utilise pas de mise en forme Markdown.
+```
+
+Le message utilisateur envoyé au LLM est structuré ainsi :
+`CONTEXTE :\n<données issues de la base>\n\nQUESTION :\n<question de l'utilisateur>`.
+
+---
+
+### 🔁 Itération principale du RAG (avant / après)
+
+**Problème observé** en test réel avec la question « donne moi point interert anjou » : l'assistant répond « *Je ne dispose pas de données sur les points d'intérêt dans l'arrondissement d'Anjou* », alors que la base contient **26 points d'intérêt** pour Anjou. Le contexte envoyé au LLM ne contenait aucune fontaine → **refus inapproprié** (et non une hallucination : l'ancrage a bien empêché l'invention).
+
+
+**Avant :**
+```js
+const q = question.toLowerCase();
+if (has(q, 'fontaine', 'eau', 'boire', 'point d')) {
+  const rows = arr
+    ? all(db, 'SELECT ... WHERE arrondissement = ? LIMIT 8', [arr]) // NOM de territoire
+    : all(db, 'SELECT ... LIMIT 8');
+```
+
+**Après :**
+```js
+const qn = normArr(question); // normalisation : accents, tirets, casse
+if (has(qn, 'fontaine', 'eau', 'boire', 'point', 'interet', 'parc', 'lieu')) {
+  const poiArr = arr ? resolvePoiArr(db, arr) : null; // correspondance normalisée
+  const rows = poiArr
+    ? all(db, 'SELECT ... WHERE arrondissement = ? LIMIT 10', [poiArr])
+    : all(db, 'SELECT ... LIMIT 8');
+```
+
+Deux correctifs : (1) **détection insensible aux accents/fautes** (question normalisée + mots-clés élargis) ; (2) **correspondance robuste des arrondissements** — les points d'intérêt orthographient l'arrondissement autrement que les territoires, `resolvePoiArr` retrouve la valeur exacte via forme normalisée. Ajout aussi d'un message explicite quand un arrondissement est reconnu mais sans point d'intérêt recensé, pour lever toute ambiguïté côté LLM (T6.4).
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- aucune modification
+
+---
+
+### 🧠 Justification
+
+- J'ai accepté les modifications du code car elles répondent aux requis que j'avais demandés : la route `POST /gti525/v1/assistant` a bien été ajoutée, avec la validation des questions et le respect du nombre de caractères (1 000). Pour ce qui est du modèle LLM, nous utilisons Groq car notre clé Gemini gratuite avait atteint son quota (`429`) ; le code demeure néanmoins compatible avec Gemini et Mistral, qui offrent aussi un palier gratuit — le changement de fournisseur ne demande que deux lignes dans `.env`, sans modifier le code.
