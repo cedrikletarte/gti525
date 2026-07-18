@@ -74,6 +74,7 @@
 |---|-------|-------|
 | [41](#tache-41) | T6.1 — Assistant.jsx : vue conversationnelle interactive (champ limité à 1000 car.) | 2026-07-12 |
 | [42](#tache-42) | T6.2 / T6.5 — Route POST /assistant : intégration LLM externe (RAG + garde-fous) | 2026-07-12 |
+| [43](#tache-43) | T6.3 — Enrichissement du RAG : couverture des 5 familles de questions | 2026-07-12 |
 
   
 
@@ -4024,3 +4025,57 @@ Deux correctifs : (1) **détection insensible aux accents/fautes** (question nor
 ### 🧠 Justification
 
 - J'ai accepté les modifications du code car elles répondent aux requis que j'avais demandés : la route `POST /gti525/v1/assistant` a bien été ajoutée, avec la validation des questions et le respect du nombre de caractères (1 000). Pour ce qui est du modèle LLM, nous utilisons Groq car notre clé Gemini gratuite avait atteint son quota (`429`) ; le code demeure néanmoins compatible avec Gemini et Mistral, qui offrent aussi un palier gratuit — le changement de fournisseur ne demande que deux lignes dans `.env`, sans modifier le code.
+
+---
+
+## Tâche 43 — RAG : couverture des 5 familles de questions (T6.3) {#tache-43}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-07-12
+
+### 💬 Prompt
+
+```
+Dans le but d'améliorer notre assistant nous devons être capable de répondre à
+au moins 3 familles de questions : statistiques de passages sur une période,
+recherche d'un point d'intérêt par proximité, informations sur les pistes
+(longueur, catégorie) dans un arrondissement, identification de la piste la plus
+achalandée, comparaison entre deux périodes ou deux arrondissements. Améliore
+notre assistant pour permettre de répondre à ces familles de questions.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Opus 4.8 |
+| **Mode** | Enrichissement du RAG + vérification contre les données réelles |
+
+---
+
+### 📦 Sortie obtenue
+
+| Fichier | Contenu généré |
+|---------|---------------|
+| `backend/lib/assistantContext.js` | Enrichissement du RAG pour couvrir les **5 familles** (T6.3 demande au moins 3). Ajout de : `detectArrondissements` (détection **multiple** pour la comparaison), `detectPeriodes` (dates ISO `YYYY-MM-DD`, « mois année », et années seules → jusqu'à 2 périodes), `passagesPeriode` (somme réseau ou par arrondissement sur une période), `topCompteurs` (par période ou tout l'historique), `pistesInfo` (nombre de segments, **longueur en km** et **répartition par catégorie** via `CATEGORIE_SQL`), `resolvePoiArr` (correspondance normalisée des arrondissements de POI). Le contexte est plafonné à 6000 caractères. |
+
+**Familles couvertes et vérifiées contre la base réelle :**
+1. **Passages sur une période** — ex. « en 2022 » → 18 212 754 passages + top compteurs.
+2. **Points d'intérêt par proximité** (arrondissement) — ex. Anjou → liste des POI.
+3. **Pistes dans un arrondissement** — ex. Rosemont–La Petite-Patrie → 607 segments, 84,5 km, réparties par catégorie.
+4. **Secteur le plus achalandé** — top compteurs + note d'honnêteté (l'achalandage est mesuré par les compteurs, pas par les pistes).
+5. **Comparaison 2 arrondissements / 2 périodes** — ex. Ville-Marie (3 578 504) vs Verdun (167 537) en 2022.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- aucune modification
+
+---
+
+### 🧠 Justification
+
+- J'ai accepté les modifications car elles répondent au requis T6.3 : l'assistant couvre désormais les **5 familles** de questions alors que seulement 3 étaient exigées. L'IA a ajouté plus de contexte dans le RAG (Retrieval-Augmented Generation), qui consiste principalement à récupérer à partir de la question de l'utilisateur les données pertinentes dans la base et les ajouter au prompt du LLM comme contexte et enfin à laisser le LLM rédiger une réponse à la question de l'utilisateur.
