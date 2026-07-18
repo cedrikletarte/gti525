@@ -13,6 +13,7 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import PersonIcon from '@mui/icons-material/Person';
+import OutlinedFlagIcon from '@mui/icons-material/OutlinedFlag';
 import Navbar from '../components/Navbar';
 
 const MAX_LENGTH = 1000;
@@ -61,7 +62,7 @@ export default function Assistant() {
 
     try {
       const reponse = await fetchReply(text);
-      setMessages((prev) => [...prev, { id: nextId++, sender: 'bot', text: reponse }]);
+      setMessages((prev) => [...prev, { id: nextId++, sender: 'bot', text: reponse, question: text }]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -69,6 +70,21 @@ export default function Assistant() {
       ]);
     } finally {
       setIsTyping(false);
+    }
+  }
+
+  // Signale une mauvaise réponse : consignée dans le journal serveur (T6.4).
+  async function reportMessage(msg) {
+    setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, reporting: true } : m)));
+    try {
+      await fetch('/gti525/v1/assistant/signalement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: msg.question ?? '', reponse: msg.text }),
+      });
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, reported: true, reporting: false } : m)));
+    } catch {
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, reporting: false } : m)));
     }
   }
 
@@ -175,24 +191,32 @@ export default function Assistant() {
                   }}
                 >
                   <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>{msg.text}</Typography>
-                  {msg.actionLabel && (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      sx={{
-                        mt: 2,
-                        display: 'block',
-                        textTransform: 'none',
-                        bgcolor: 'white',
-                        borderColor: 'primary.main',
-                        color: 'primary.main',
-                        '&:hover': {
-                          bgcolor: 'rgba(45,106,79,0.05)',
-                        },
-                      }}
-                    >
-                      {msg.actionLabel}
-                    </Button>
+
+                  {/* Signaler une mauvaise réponse (uniquement pour les réponses du bot) */}
+                  {msg.sender === 'bot' && !msg.isError && (
+                    msg.reported ? (
+                      <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'text.secondary', fontStyle: 'italic' }}>
+                        Réponse signalée — merci de votre retour.
+                      </Typography>
+                    ) : (
+                      <Button
+                        onClick={() => reportMessage(msg)}
+                        disabled={msg.reporting}
+                        size="small"
+                        startIcon={<OutlinedFlagIcon sx={{ fontSize: 16 }} />}
+                        sx={{
+                          mt: 1,
+                          p: 0.5,
+                          minWidth: 0,
+                          fontSize: 12,
+                          textTransform: 'none',
+                          color: 'text.secondary',
+                          '&:hover': { color: 'error.main', bgcolor: 'transparent' },
+                        }}
+                      >
+                        Signaler une mauvaise réponse
+                      </Button>
+                    )
                   )}
                 </Box>
               </Box>

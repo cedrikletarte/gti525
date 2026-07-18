@@ -75,6 +75,7 @@
 | [41](#tache-41) | T6.1 — Assistant.jsx : vue conversationnelle interactive (champ limité à 1000 car.) | 2026-07-12 |
 | [42](#tache-42) | T6.2 / T6.5 — Route POST /assistant : intégration LLM externe (RAG + garde-fous) | 2026-07-12 |
 | [43](#tache-43) | T6.3 — Enrichissement du RAG : couverture des 5 familles de questions | 2026-07-12 |
+| [44](#tache-44) | T6.4 — Ancrage/honnêteté : bouton « signaler » + journal serveur | 2026-07-12 |
 
   
 
@@ -4030,7 +4031,7 @@ Deux correctifs : (1) **détection insensible aux accents/fautes** (question nor
 
 ## Tâche 43 — RAG : couverture des 5 familles de questions (T6.3) {#tache-43}
 
-**Auteur** : Youcef Mekki Daouadji - 2026-07-12
+**Auteur** : Youcef Mekki Daouadji - 2026-07-18
 
 ### 💬 Prompt
 
@@ -4079,3 +4080,55 @@ notre assistant pour permettre de répondre à ces familles de questions.
 ### 🧠 Justification
 
 - J'ai accepté les modifications car elles répondent au requis T6.3 : l'assistant couvre désormais les **5 familles** de questions alors que seulement 3 étaient exigées. L'IA a ajouté plus de contexte dans le RAG (Retrieval-Augmented Generation), qui consiste principalement à récupérer à partir de la question de l'utilisateur les données pertinentes dans la base et les ajouter au prompt du LLM comme contexte et enfin à laisser le LLM rédiger une réponse à la question de l'utilisateur.
+
+---
+
+## Tâche 44 — T6.4 : ancrage, honnêteté et signalement des mauvaises réponses {#tache-44}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-07-18
+
+### 💬 Prompt
+
+```
+Dans le but de s'assurer que les données sont correctes et précises et dans le
+but d'améliorer notre assistant il faut suivre ces requis : l'assistant ne doit
+pas inventer de chiffres. Si la donnée n'est pas disponible, il doit le dire
+explicitement. L'interface indique clairement que les réponses sont générées et
+permet à l'utilisateur de signaler une mauvaise réponse (un simple bouton qui
+consigne l'événement dans un journal serveur est suffisant).
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Opus 4.8 |
+| **Mode** | Ajout de fonctionnalité full-stack + vérification |
+
+---
+
+### 📦 Sortie obtenue
+
+Le requis T6.4 comporte quatre volets ; trois étaient déjà en place, le quatrième (signalement) a été ajouté.
+
+| Volet | Fichier | État / contenu |
+|-------|---------|----------------|
+| Ne pas inventer de chiffres | `backend/routes/assistant.js` | Déjà en place : prompt système « Fonde ta réponse UNIQUEMENT sur le CONTEXTE… n'invente aucun chiffre ». |
+| Dire si la donnée est absente | `backend/routes/assistant.js` + `lib/assistantContext.js` | Déjà en place : consigne du prompt système + note « aucun point d'intérêt recensé » du RAG. |
+| Indiquer que les réponses sont générées | `src/pages/Assistant.jsx` | Déjà en place : mention « Les messages sont générés par l'IA… » sous le champ. |
+| **Bouton « signaler » + journal serveur** | `backend/routes/assistant.js`, `backend/app.js`, `src/pages/Assistant.jsx` | **Ajouté** : route `POST /gti525/v1/assistant/signalement` qui consigne l'événement (horodatage, longueurs, question et réponse signalées) dans `backend/logs/signalements.log` (une ligne JSON par signalement) et en console. Côté frontale, un bouton discret « Signaler une mauvaise réponse » sous chaque réponse du bot, qui passe à « Réponse signalée — merci de votre retour » après envoi. |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- aucune modification
+
+---
+
+### 🧠 Justification
+
+- J'ai accepté les modifications car elles complètent le requis T6.4 : les trois premiers volets (pas d'invention de chiffres, refus explicite si donnée absente, mention que les réponses sont générées) étaient déjà satisfaits par les tâches précédentes, et il ne manquait que le bouton de signalement avec journalisation serveur. le signalement est écrit dans un fichier `logs/signalements.log` afin d'obtenir un vrai journal persistant et consultable en démonstration.

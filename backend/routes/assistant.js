@@ -1,10 +1,17 @@
 'use strict';
 const router = require('express').Router();
+const fs   = require('fs');
+const path = require('path');
 const { getDb } = require('../lib/db');
 const { callLlm, isConfigured } = require('../lib/llm');
 const { buildContext } = require('../lib/assistantContext');
 
 const MAX_QUESTION_LEN = 1000;
+const MAX_REPONSE_LEN  = 4000;
+
+// Journal serveur des signalements de mauvaises réponses (T6.4).
+const LOG_DIR          = path.join(__dirname, '..', 'logs');
+const SIGNALEMENTS_LOG = path.join(LOG_DIR, 'signalements.log');
 
 // ─── Limitation de débit simple, en mémoire, par adresse IP ─────────────────
 const RATE_MAX       = parseInt(process.env.ASSISTANT_RATE_MAX, 10) || 15;   // requêtes
@@ -27,6 +34,18 @@ function self_now() { return Date.now(); }
 // réponse et présence d'erreur. Jamais la question, l'IP ou la réponse.
 function logAppel({ questionLen, dureeMs, erreur }) {
   console.log(`[assistant] ${new Date().toISOString()} len=${questionLen} ms=${dureeMs} erreur=${erreur}`);
+}
+
+// Consigne un signalement dans un fichier journal serveur (une ligne JSON par
+// événement). Le contenu signalé (question + réponse) est le contenu même de
+// l'assistant, soumis volontairement par l'utilisateur pour révision.
+function logSignalement(entry) {
+  const ligne = JSON.stringify({ horodatage: new Date().toISOString(), ...entry }) + '\n';
+  try {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+    fs.appendFileSync(SIGNALEMENTS_LOG, ligne);
+  } catch { /* si l'écriture fichier échoue, le console.log ci-dessous reste le journal */ }
+  console.log(`[assistant][signalement] ${ligne.trim()}`);
 }
 
 // ─── Prompt système ─────────────────────────────────────────────────────────
@@ -78,6 +97,27 @@ router.post('/', async (req, res) => {
     console.error('[assistant] échec LLM :', err.message); // diagnostic serveur (pas de données personnelles)
     return res.status(502).json({ erreur: "L'assistant est momentanément indisponible. Réessayez plus tard." });
   }
+});
+
+// ─── Signalement d'une mauvaise réponse (T6.4) ──────────────────────────────
+// L'utilisateur clique sur « Signaler » ; l'événement (question + réponse
+// signalée) est consigné dans le journal serveur pour révision par l'équipe.
+router.post('/signalement', (req, res) => {
+  const ip = req.ip || req.socket?.remoteAddress || 'inconnue';
+  if (rateLimited(ip)) {
+    return res.status(429).json({ erreur: 'Trop de requêtes. Réessayez dans un instant.' });
+  }
+
+  const body = req.body ?? {};
+  const question = typeof body.question === 'string' ? body.question.slice(0, MAX_QUESTION_LEN) : '';
+  const reponse  = typeof body.reponse  === 'string' ? body.reponse.slice(0, MAX_REPONSE_LEN)   : '';
+
+  if (!reponse) {
+    return res.status(400).json({ erreur: 'La réponse signalée est requise.' });
+  }
+
+  logSignalement({ questionLen: question.length, reponseLen: reponse.length, question, reponse });
+  return res.status(201).json({ message: 'Signalement enregistré. Merci de votre retour.' });
 });
 
 module.exports = router;

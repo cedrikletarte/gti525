@@ -23,6 +23,7 @@ app.get('/gti525/v1/', (_req, res) => {
       { methode: 'PUT',    chemin: '/gti525/v1/pointsdinteret/:id',     description: "Modifier un point d'intérêt (authentification requise)" },
       { methode: 'DELETE', chemin: '/gti525/v1/pointsdinteret/:id',     description: "Supprimer un point d'intérêt (authentification requise)" },
       { methode: 'POST',   chemin: '/gti525/v1/assistant',             description: "Assistant conversationnel : pose une question et reçoit une réponse basée sur les données du réseau", corps: { question: 'string (max 1000 caractères)' } },
+      { methode: 'POST',   chemin: '/gti525/v1/assistant/signalement', description: "Signaler une mauvaise réponse de l'assistant (consignée dans un journal serveur)", corps: { question: 'string', reponse: 'string' } },
     ],
   });
 });
