@@ -70,6 +70,16 @@
 | [30](#tache-30) | T5.A.4 — Génération et validation de tests pour les routes API | 2026-06-30 |
 | [31](#tache-31) | T5.A.2 — Revue critique — Route passages | 2026-06-30 |
 
+### Fonctionnalité conversationnelle
+
+| # | Tâche | Date |
+|---|-------|-------|
+| [43](#tache-43) | T6.1 — Assistant.jsx : vue conversationnelle interactive (champ limité à 1000 car.) | 2026-07-12 |
+| [44](#tache-44) | T6.2 / T6.5 — Route POST /assistant : intégration LLM externe (RAG + garde-fous) | 2026-07-12 |
+| [45](#tache-45) | T6.3 — Enrichissement du RAG : couverture des 5 familles de questions | 2026-07-12 |
+| [46](#tache-46) | T6.4 — Ancrage/honnêteté : bouton « signaler » + journal serveur | 2026-07-12 |
+| [47](#tache-47) | Portage de l'assistant sur MariaDB (RAG async mysql2) après merge de main | 2026-07-14 |
+
   
 
 ---
@@ -4013,3 +4023,313 @@ Suite complète : **41/41 tests passent**.
 - **`pool.query` retourne `[rows, fields]` :** La déstructuration `const [rows] = await pool.query(...)` ou `const [[countRow]] = await pool.query(...)` pour un COUNT est le pattern standard mysql2 — clair et sans intermédiaire.
 
 ---
+
+## Fonctionnalité conversationnelle
+
+> Parcours **avec IA** (T6.5) : le Vélobot appelle un LLM externe **gratuit** (Google Gemini / Groq / Mistral) **côté serveur uniquement**. La clé d'API reste dans `backend/.env` et n'est jamais exposée à la frontale (garde-fou P9). L'ancrage se fait par **RAG simple** : le serveur interroge la base SQLite pour rassembler un contexte factuel injecté dans le prompt.
+
+---
+
+## Tâche 43 — Assistant.jsx : vue conversationnelle interactive (T6.1) {#tache-43}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-07-12
+
+### 💬 Prompt
+
+```
+Tu es un specialiste en development full stack : implemente la fonctionnalité
+qui regroupe ceci : Modifier la vue « Assistant » accessible depuis le menu
+principal, avec une zone de conversation et un champ de saisie limité à
+1 000 caractères.
+
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Opus 4.8 |
+| **Mode** | Génération de code (page mockée d'abord, sur demande de l'humain) |
+
+---
+
+### 📦 Sortie obtenue
+
+| Fichier | Contenu généré |
+|---------|---------------|
+| `src/pages/Assistant.jsx` | Conversation devenue **interactive** : état `messages` (`useState`), envoi via bouton **Envoyer** et touche **Entrée** (Maj+Entrée = saut de ligne), indicateur « L'assistant écrit… », défilement automatique (`useRef` + `useEffect`), puces de suggestion cliquables. Le champ conserve la **limite de 1 000 caractères** (`maxLength` + `slice(0, 1000)`) et le compteur `x/1000`. Réponses d'abord **simulées** (fonction `mockReply`), puis remplacées par un appel réseau à la Tâche 44. |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- aucune modification
+
+---
+
+### 🧠 Justification
+
+- j'ai accepter les modificaiton apporté par l'ia car celle-ci respectait les contraintes de mon prompt. durant la phase 1 nous avions deja fait le setup de la page assitant avec des donne mocked maintenant il fallait rendre la boite de conversation interactive et lèutilisation d'un useState + une age interactive reponds au requis de la tachhe T6.1 
+---
+
+## Tâche 44 — Route POST /gti525/v1/assistant : intégration LLM externe (T6.2 / T6.5) {#tache-44}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-07-12
+
+### 💬 Prompt
+
+```
+le but est de maintenant implementer un assistant AI le plus simple possible
+qui reponds a ces requis : Implémenter la route POST /gti525/v1/assistant qui
+reçoit une question, consulte la base pour rassembler les données pertinentes,
+compose une réponse et la retourne.
+Parcours avec IA : appel à un LLM externe (Anthropic, OpenAI, Mistral, etc.)
+côté serveur uniquement. La clé d'API ne doit jamais être exposée à la frontale.
+Le serveur compose un prompt système clair, fournit le contexte issu de la base
+(RAG simple), valide la longueur de la question (1 000 caractères max), applique
+une limitation de débit simple par adresse IP, et journalise les appels
+(horodatage, longueur de la question, temps de réponse, présence d'erreur —
+sans données personnelles). Les appels d'API doivent être gratuits.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Opus 4.8 |
+| **Mode** | Génération multi-fichiers + débogage assisté |
+
+---
+
+### 📦 Sortie obtenue
+
+| Fichier | Contenu généré |
+|---------|---------------|
+| `backend/routes/assistant.js` | Route `POST /gti525/v1/assistant`. Ordre des garde-fous : **1)** limitation de débit par IP (15 req/min, Map en mémoire → `429`) ; **2)** validation `question` requise + **≤ 1 000 caractères** (`400`) ; **3)** service configuré ? (`503` si clé absente) ; **4)** RAG + appel LLM (`502` si échec). Prompt système clair (voir ci-dessous). |
+| `backend/lib/llm.js` | Appel LLM **provider-agnostique** via `fetch` natif (aucune dépendance ajoutée). Gemini (endpoint `generateContent`) et fournisseurs compatibles OpenAI (Groq, Mistral). Clé lue depuis `process.env.LLM_API_KEY` — **jamais renvoyée au client**. `AbortController` (timeout 20 s). |
+| `backend/lib/assistantContext.js` | **RAG simple** : selon la question, requêtes SQL **paramétrées** rassemblant résumé du réseau, arrondissement ciblé, points d'intérêt et compteurs les plus fréquentés. Détection d'arrondissement et de mots-clés **normalisée** (accents/tirets/fautes). |
+| `backend/app.js` | Route montée + ajoutée à l'endpoint de découverte `GET /gti525/v1/`. |
+| `backend/.env-example` | Variables documentées : `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`, `ASSISTANT_RATE_*` (aucune valeur sensible). |
+| `src/pages/Assistant.jsx` | `mockReply` remplacé par `fetch('/gti525/v1/assistant')` ; gestion d'erreur affichée en bulle `⚠️`. |
+| `backend/tests/assistant.test.js` | Tests Jest (LLM et RAG mockés) : `200`, `400` (absente/vide/>1000), `503`, `502`, `429`. |
+
+**Journalisation (sans données personnelles) :** `[assistant] <ISO> len=<n> ms=<durée> erreur=<bool>` — ni la question, ni l'IP, ni la réponse ne sont journalisées.
+
+---
+
+### 🧠 Prompt système final
+
+```
+Tu es l'assistant de MTL Vélo, une application sur le réseau cyclable de la
+Ville de Montréal. Réponds en français, de façon concise, polie et factuelle.
+Fonde ta réponse UNIQUEMENT sur les données fournies dans la section CONTEXTE.
+Si l'information demandée ne figure pas dans le CONTEXTE, dis simplement que tu
+ne disposes pas de cette donnée. N'invente aucun chiffre ni aucun nom.
+N'utilise pas de mise en forme Markdown.
+```
+
+Le message utilisateur envoyé au LLM est structuré ainsi :
+`CONTEXTE :\n<données issues de la base>\n\nQUESTION :\n<question de l'utilisateur>`.
+
+---
+
+### 🔁 Itération principale du RAG (avant / après)
+
+**Problème observé** en test réel avec la question « donne moi point interert anjou » : l'assistant répond « *Je ne dispose pas de données sur les points d'intérêt dans l'arrondissement d'Anjou* », alors que la base contient **26 points d'intérêt** pour Anjou. Le contexte envoyé au LLM ne contenait aucune fontaine.
+
+
+**Avant :**
+```js
+const q = question.toLowerCase();
+if (has(q, 'fontaine', 'eau', 'boire', 'point d')) {
+  const rows = arr
+    ? all(db, 'SELECT ... WHERE arrondissement = ? LIMIT 8', [arr]) // NOM de territoire
+    : all(db, 'SELECT ... LIMIT 8');
+```
+
+**Après :**
+```js
+const qn = normArr(question); // normalisation : accents, tirets, casse
+if (has(qn, 'fontaine', 'eau', 'boire', 'point', 'interet', 'parc', 'lieu')) {
+  const poiArr = arr ? resolvePoiArr(db, arr) : null; // correspondance normalisée
+  const rows = poiArr
+    ? all(db, 'SELECT ... WHERE arrondissement = ? LIMIT 10', [poiArr])
+    : all(db, 'SELECT ... LIMIT 8');
+```
+
+Deux correctifs : (1) **détection insensible aux accents/fautes** (question normalisée + mots-clés élargis) ; (2) **correspondance robuste des arrondissements** — les points d'intérêt orthographient l'arrondissement autrement que les territoires, `resolvePoiArr` retrouve la valeur exacte via forme normalisée. Ajout aussi d'un message explicite quand un arrondissement est reconnu mais sans point d'intérêt recensé, pour lever toute ambiguïté côté LLM (T6.4).
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- aucune modification
+
+---
+
+### 🧠 Justification
+
+- J'ai accepté les modifications du code car elles répondent aux requis que j'avais demandés : la route `POST /gti525/v1/assistant` a bien été ajoutée, avec la validation des questions et le respect du nombre de caractères (1 000). Pour ce qui est du modèle LLM, nous utilisons Groq car notre clé Gemini gratuite avait atteint son quota (`429`) ; le code demeure néanmoins compatible avec Gemini et Mistral, qui offrent aussi un palier gratuit — le changement de fournisseur ne demande que deux lignes dans `.env`, sans modifier le code.
+
+---
+
+## Tâche 45 — RAG : couverture des 5 familles de questions (T6.3) {#tache-45}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-07-18
+
+### 💬 Prompt
+
+```
+Dans le but d'améliorer notre assistant nous devons être capable de répondre à
+au moins 3 familles de questions : statistiques de passages sur une période,
+recherche d'un point d'intérêt par proximité, informations sur les pistes
+(longueur, catégorie) dans un arrondissement, identification de la piste la plus
+achalandée, comparaison entre deux périodes ou deux arrondissements. Améliore
+notre assistant pour permettre de répondre à ces familles de questions.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Opus 4.8 |
+| **Mode** | Enrichissement du RAG + vérification contre les données réelles |
+
+---
+
+### 📦 Sortie obtenue
+
+| Fichier | Contenu généré |
+|---------|---------------|
+| `backend/lib/assistantContext.js` | Enrichissement du RAG pour couvrir les **5 familles** (T6.3 demande au moins 3). Ajout de : `detectArrondissements` (détection **multiple** pour la comparaison), `detectPeriodes` (dates ISO `YYYY-MM-DD`, « mois année », et années seules → jusqu'à 2 périodes), `passagesPeriode` (somme réseau ou par arrondissement sur une période), `topCompteurs` (par période ou tout l'historique), `pistesInfo` (nombre de segments, **longueur en km** et **répartition par catégorie** via `CATEGORIE_SQL`), `resolvePoiArr` (correspondance normalisée des arrondissements de POI). Le contexte est plafonné à 6000 caractères. |
+
+**Familles couvertes et vérifiées contre la base réelle :**
+1. **Passages sur une période** — ex. « en 2022 » → 18 212 754 passages + top compteurs.
+2. **Points d'intérêt par proximité** (arrondissement) — ex. Anjou → liste des POI.
+3. **Pistes dans un arrondissement** — ex. Rosemont–La Petite-Patrie → 607 segments, 84,5 km, réparties par catégorie.
+4. **Secteur le plus achalandé** — top compteurs + note d'honnêteté (l'achalandage est mesuré par les compteurs, pas par les pistes).
+5. **Comparaison 2 arrondissements / 2 périodes** — ex. Ville-Marie (3 578 504) vs Verdun (167 537) en 2022.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- aucune modification
+
+---
+
+### 🧠 Justification
+
+- J'ai accepté les modifications car elles répondent au requis T6.3 : l'assistant couvre désormais les **5 familles** de questions alors que seulement 3 étaient exigées. L'IA a ajouté plus de contexte dans le RAG (Retrieval-Augmented Generation), qui consiste principalement à récupérer à partir de la question de l'utilisateur les données pertinentes dans la base et les ajouter au prompt du LLM comme contexte et enfin à laisser le LLM rédiger une réponse à la question de l'utilisateur.
+
+---
+
+## Tâche 46 — T6.4 : ancrage, honnêteté et signalement des mauvaises réponses {#tache-46}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-07-18
+
+### 💬 Prompt
+
+```
+Dans le but de s'assurer que les données sont correctes et précises et dans le
+but d'améliorer notre assistant il faut suivre ces requis : l'assistant ne doit
+pas inventer de chiffres. Si la donnée n'est pas disponible, il doit le dire
+explicitement. L'interface indique clairement que les réponses sont générées et
+permet à l'utilisateur de signaler une mauvaise réponse (un simple bouton qui
+consigne l'événement dans un journal serveur est suffisant).
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Opus 4.8 |
+| **Mode** | Ajout de fonctionnalité full-stack + vérification |
+
+---
+
+### 📦 Sortie obtenue
+
+Le requis T6.4 comporte quatre volets ; trois étaient déjà en place, le quatrième (signalement) a été ajouté.
+
+| Volet | Fichier | État / contenu |
+|-------|---------|----------------|
+| Ne pas inventer de chiffres | `backend/routes/assistant.js` | Déjà en place : prompt système « Fonde ta réponse UNIQUEMENT sur le CONTEXTE… n'invente aucun chiffre ». |
+| Dire si la donnée est absente | `backend/routes/assistant.js` + `lib/assistantContext.js` | Déjà en place : consigne du prompt système + note « aucun point d'intérêt recensé » du RAG. |
+| Indiquer que les réponses sont générées | `src/pages/Assistant.jsx` | Déjà en place : mention « Les messages sont générés par l'IA… » sous le champ. |
+| **Bouton « signaler » + journal serveur** | `backend/routes/assistant.js`, `backend/app.js`, `src/pages/Assistant.jsx` | **Ajouté** : route `POST /gti525/v1/assistant/signalement` qui consigne l'événement (horodatage, longueurs, question et réponse signalées) dans `backend/logs/signalements.log` (une ligne JSON par signalement) et en console. Côté frontale, un bouton discret « Signaler une mauvaise réponse » sous chaque réponse du bot, qui passe à « Réponse signalée — merci de votre retour » après envoi. |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- aucune modification
+
+---
+
+### 🧠 Justification
+
+- J'ai accepté les modifications car elles complètent le requis T6.4 : les trois premiers volets (pas d'invention de chiffres, refus explicite si donnée absente, mention que les réponses sont générées) étaient déjà satisfaits par les tâches précédentes, et il ne manquait que le bouton de signalement avec journalisation serveur. le signalement est écrit dans un fichier `logs/signalements.log` afin d'obtenir un vrai journal persistant et consultable en démonstration.
+
+---
+
+## Tâche 47 — Portage de l'assistant sur MariaDB (après merge de main) {#tache-47}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-07-14
+
+### 💬 Prompt
+
+```
+Nous avons changé notre configuration pour maintenant utiliser MariaDB mysql.
+Applique les changements du RAG et configuration nécessaire pour que notre
+assistant soit désormais fonctionnel sur la nouvelle DB. Et assure-toi qu'il
+n'y a pas de régression de fonctionnalité et que tout est encore fonctionnel.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Opus 4.8 |
+| **Mode** | Migration de code + vérification de non-régression |
+
+---
+
+### 📦 Sortie obtenue
+
+Le merge de `main` (Tâche 42) a migré la dorsale de **sql.js** (API synchrone) vers **MariaDB** (`mysql2/promise`, async). L'assistant, écrit pour sql.js, a dû être porté.
+
+| Fichier | Changement |
+|---------|-----------|
+| `backend/lib/assistantContext.js` | Réécrit en **async** : `all()`/`scalar()` utilisent `await pool.query(...)` ; toutes les fonctions du RAG et `buildContext(question)` deviennent `async`. **Dialecte MariaDB** : table `comptage_velo` → `passages`, `CAST(... AS TEXT)` → `CAST(... AS CHAR)` (jointure `id_compteur` BIGINT ↔ `compteurs.id` VARCHAR), `date(...)` → `DATE(...)`, `DATE_FORMAT` pour l'affichage des dates. |
+| `backend/routes/assistant.js` | `getDb` retiré ; `const contexte = await buildContext(question)`. |
+| `backend/tests/assistant.test.js` | Mocke désormais `pool` (comme les autres tests migrés) au lieu du `setDb` de sql.js. |
+| `backend/.env` | Ajout des variables `DB_*` (alignées sur `docker-compose.yml`). |
+| Dépendances | `npm install` pour installer `mysql2`. |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- aucune modification
+
+---
+
+### 🧠 Justification
+
+- J'ai accepté les modifications car elles rendent l'assistant à nouveau fonctionnel sur notre nouvelle base MariaDB. Le merge de `main` a remplacé le moteur sql.js par MariaDB, donc l'assistant qui utilisait l'ancienne API synchrone ne marchait plus. L'IA a porté le RAG sur l'API asynchrone de mysql2 (`await pool.query`) en suivant le même patron que nos autres routes déjà migrées comme `compteurs.js` et `pistes.js`, ce qui garde le code cohérent. J'ai vérifié qu'il n'y a pas de régression : les 48 tests passent et les 5 familles de questions donnent les mêmes chiffres qu'avant le merge (par exemple 18 212 754 passages en 2022).

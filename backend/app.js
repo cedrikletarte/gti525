@@ -14,6 +14,7 @@ const mounts = [
   { path: '/gti525/v1/pistes',         router: require('./routes/pistes') },
   { path: '/gti525/v1/territoires',    router: require('./routes/territoires') },
   { path: '/gti525/v1/pointsdinteret', router: require('./routes/pointsdinteret') },
+  { path: '/gti525/v1/assistant',      router: require('./routes/assistant') },
 ];
 
 app.get(DISCOVERY_PATH, (_req, res) => {
