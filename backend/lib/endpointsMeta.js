@@ -1,0 +1,73 @@
+'use strict';
+
+module.exports = {
+  'GET /gti525/v1/': {
+    description: 'Liste tous les points de terminaison disponibles',
+  },
+  'POST /gti525/v1/auth/inscription': {
+    description: 'Crée un compte utilisateur',
+    corps: { courriel: 'string', motDePasse: 'string' },
+  },
+  'POST /gti525/v1/auth/connexion': {
+    description: 'Authentifie et retourne un JWT valide 24h',
+    corps: { courriel: 'string', motDePasse: 'string' },
+  },
+  'GET /gti525/v1/compteurs': {
+    description: 'Liste paginée des compteurs',
+    parametres: {
+      nom: 'recherche textuelle',
+      statut: 'filtre exact',
+      arrondissement: 'filtre exact',
+      implantation: 'année minimale',
+      limite: 'entier (déf. 20)',
+      page: 'entier (déf. 1)',
+    },
+  },
+  'GET /gti525/v1/compteurs/:id': {
+    description: "Informations d'un compteur (sans passages)",
+  },
+  'GET /gti525/v1/compteurs/:id/passages': {
+    description: 'Passages agrégés pour un compteur',
+    parametres: { debut: 'YYYY-MM-DD', fin: 'YYYY-MM-DD', intervalle: 'jour|semaine|mois (déf. jour)' },
+  },
+  'GET /gti525/v1/pistes': {
+    description: 'Réseau cyclable (GeoJSON FeatureCollection)',
+    parametres: {
+      arrondissement: 'filtre par nom',
+      saisons4: 'Oui|Non',
+      categorie: 'rev|voiePartagee|voieProtegee|sentierPolyvalent',
+      populaireDebut: 'YYYY-MM-DD (avec populaireFin)',
+      populaireFin: 'YYYY-MM-DD (avec populaireDebut)',
+    },
+  },
+  'GET /gti525/v1/territoires': {
+    description: 'Limites des arrondissements (GeoJSON FeatureCollection)',
+  },
+  'GET /gti525/v1/pointsdinteret': {
+    description: "Liste paginée des points d'intérêt",
+    parametres: {
+      nom: 'recherche textuelle',
+      type: 'filtre exact',
+      arrondissement: 'filtre exact',
+      limite: 'entier (déf. 20)',
+      page: 'entier (déf. 1)',
+    },
+  },
+  'POST /gti525/v1/pointsdinteret': {
+    description: "Ajouter un point d'intérêt (authentification requise)",
+  },
+  'PUT /gti525/v1/pointsdinteret/:id': {
+    description: "Modifier un point d'intérêt (authentification requise)",
+  },
+  'DELETE /gti525/v1/pointsdinteret/:id': {
+    description: "Supprimer un point d'intérêt (authentification requise)",
+  },
+  'POST /gti525/v1/assistant': {
+    description: 'Assistant conversationnel : pose une question et reçoit une réponse basée sur les données du réseau',
+    corps: { question: 'string (max 1000 caractères)' },
+  },
+  'POST /gti525/v1/assistant/signalement': {
+    description: "Signaler une mauvaise réponse de l'assistant (consignée dans un journal serveur)",
+    corps: { question: 'string', reponse: 'string' },
+  },
+};

@@ -1,25 +1,14 @@
 'use strict';
 
-const request = require('supertest');
-const { app, setDb } = require('../server');
+jest.mock('../lib/db', () => ({
+  pool: { query: jest.fn() },
+}));
 
-// Each prepare() call consumes the next row-set from rowSets.
-function makeDb(rowSets) {
-  let callIdx = 0;
-  return {
-    prepare: jest.fn(() => {
-      const rows = rowSets[callIdx++] || [];
-      let i = 0;
-      return {
-        bind: jest.fn(),
-        step: jest.fn(() => i < rows.length),
-        getAsObject: jest.fn(() => rows[i++]),
-        free: jest.fn(),
-        reset: jest.fn(),
-      };
-    }),
-  };
-}
+const request = require('supertest');
+const { app }  = require('../server');
+const { pool } = require('../lib/db');
+
+beforeEach(() => pool.query.mockReset());
 
 const FEATURE_FIXTURE = {
   type: 'Feature',
@@ -31,7 +20,7 @@ const FEATURE_STR = JSON.stringify(FEATURE_FIXTURE);
 
 describe('Route GET /gti525/v1/pistes', () => {
   it('devrait retourner 200 avec Content-Type application/geo+json', async () => {
-    setDb(makeDb([[{ feature: FEATURE_STR }]]));
+    pool.query.mockResolvedValueOnce([[{ feature: FEATURE_STR }], []]);
 
     const res = await request(app).get('/gti525/v1/pistes');
 
@@ -40,7 +29,7 @@ describe('Route GET /gti525/v1/pistes', () => {
   });
 
   it('devrait retourner une FeatureCollection GeoJSON valide avec un tableau de features', async () => {
-    setDb(makeDb([[{ feature: FEATURE_STR }]]));
+    pool.query.mockResolvedValueOnce([[{ feature: FEATURE_STR }], []]);
 
     const res = await request(app).get('/gti525/v1/pistes');
 
@@ -50,7 +39,7 @@ describe('Route GET /gti525/v1/pistes', () => {
   });
 
   it('devrait retourner 200 avec ?categorie=voiePartagee', async () => {
-    setDb(makeDb([[{ feature: FEATURE_STR }]]));
+    pool.query.mockResolvedValueOnce([[{ feature: FEATURE_STR }], []]);
 
     const res = await request(app).get('/gti525/v1/pistes?categorie=voiePartagee');
 
@@ -66,8 +55,9 @@ describe('Route GET /gti525/v1/pistes', () => {
   });
 
   it('devrait retourner 200 avec pistes populaires quand populaireDebut et populaireFin sont fournis', async () => {
-    const popRow = { arrondissement: 'Rosemont - La Petite-Patrie', total_passages: 5000, n_compteurs: 2 };
-    setDb(makeDb([[popRow], [{ feature: FEATURE_STR }]]));
+    pool.query
+      .mockResolvedValueOnce([[{ arrondissement: 'Rosemont - La Petite-Patrie', total_passages: 5000, n_compteurs: 2 }], []])
+      .mockResolvedValueOnce([[{ feature: FEATURE_STR }], []]);
 
     const res = await request(app)
       .get('/gti525/v1/pistes?populaireDebut=2022-01-01&populaireFin=2022-12-31');
@@ -98,8 +88,8 @@ describe('Route GET /gti525/v1/pistes', () => {
     expect(res.body).toHaveProperty('erreur');
   });
 
-  it('devrait retourner 500 avec un message d\'erreur quand la base est inaccessible', async () => {
-    setDb({ prepare: () => { throw new Error('DB error'); } });
+  it("devrait retourner 500 avec un message d'erreur quand la base est inaccessible", async () => {
+    pool.query.mockRejectedValueOnce(new Error('DB error'));
 
     const res = await request(app).get('/gti525/v1/pistes');
 
