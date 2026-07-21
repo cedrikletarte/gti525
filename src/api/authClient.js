@@ -1,9 +1,15 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/gti525/v1';
 
-let jeton = null;
+let jeton = localStorage.getItem("jeton");
 
 export function definirJeton(nouveauJeton) {
     jeton = nouveauJeton;
+
+    if (nouveauJeton) {
+        localStorage.setItem("jeton", nouveauJeton);
+    } else {
+        localStorage.removeItem("jeton");
+    }
 }
 
 export function obtenirJeton() {
@@ -19,7 +25,23 @@ async function requeteApi(chemin, options = {}) {
             ...(options.headers || {}),
         },
     });
+
+    if (reponse.status === 401) {
+        // Le jeton n'est plus valide (expiré, révoqué, etc.) : on nettoie l'état local.
+        definirJeton(null);
+    }
+
     return reponse;
+}
+
+// Tente de parser le corps JSON d'une réponse; retourne null si le corps est
+// vide ou non-JSON (ex: 204 No Content, page d'erreur HTML d'un 500, etc.)
+async function parserJsonSecurise(reponse) {
+    try {
+        return await reponse.json();
+    } catch {
+        return null;
+    }
 }
 
 export async function inscrire(courriel, motDePasse) {
@@ -27,7 +49,7 @@ export async function inscrire(courriel, motDePasse) {
         method: 'POST',
         body: JSON.stringify({ courriel, motDePasse }),
     });
-    const donnees = await reponse.json();
+    const donnees = await parserJsonSecurise(reponse);
     return { ok: reponse.ok, statut: reponse.status, donnees };
 }
 
@@ -36,8 +58,8 @@ export async function connecter(courriel, motDePasse) {
         method: 'POST',
         body: JSON.stringify({ courriel, motDePasse }),
     });
-    const donnees = await reponse.json();
-    if (reponse.ok && donnees.jeton) {
+    const donnees = await parserJsonSecurise(reponse);
+    if (reponse.ok && donnees?.jeton) {
         definirJeton(donnees.jeton);
     }
     return { ok: reponse.ok, statut: reponse.status, donnees };
@@ -48,9 +70,55 @@ export function deconnecter() {
 }
 
 export async function obtenirUtilisateurCourant() {
-    if(!jeton()) return;
+    if (!jeton || jeton === "") return null;
     const reponse = await requeteApi('/auth/moi', { method: 'GET' });
     if (!reponse.ok) return null;
-    const donnees = await reponse.json();
-    return donnees.utilisateur;
+    const donnees = await parserJsonSecurise(reponse);
+    return donnees?.utilisateur ?? null;
+}
+
+export async function creerPointInteret(point) {
+    const reponse = await requeteApi("/pointsdinteret", {
+        method: "POST",
+        body: JSON.stringify(point),
+    });
+
+    const donnees = await parserJsonSecurise(reponse);
+
+    return {
+        ok: reponse.ok,
+        statut: reponse.status,
+        donnees,
+        erreur: !reponse.ok ? (donnees?.erreur ?? "Erreur lors de la création.") : undefined,
+    };
+}
+
+export async function modifierPointInteret(id, point) {
+    const reponse = await requeteApi(`/pointsdinteret/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(point),
+    });
+
+    const donnees = await parserJsonSecurise(reponse);
+
+    return {
+        ok: reponse.ok,
+        statut: reponse.status,
+        donnees,
+        erreur: !reponse.ok ? (donnees?.erreur ?? "Erreur lors de la modification.") : undefined,
+    };
+}
+
+export async function supprimerPointInteret(id) {
+    const reponse = await requeteApi(`/pointsdinteret/${id}`, {
+        method: "DELETE",
+    });
+
+    const donnees = await parserJsonSecurise(reponse);
+
+    return {
+        ok: reponse.ok,
+        statut: reponse.status,
+        erreur: !reponse.ok ? (donnees?.erreur ?? "Erreur lors de la suppression.") : undefined,
+    };
 }

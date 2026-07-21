@@ -45,7 +45,8 @@
 | [36](#tache-36) | PointInteret.jsx — Pagination serveur complète | 2026-07-07 |
 | [37](#tache-37) | Statistic.jsx — Pagination serveur pour /compteurs | 2026-07-07 |
 | [40](#tache-40) | Statistic.jsx — Filtre arrondissement côté serveur | 2026-07-07 |
-| [40](#tache-48) | Page de connexion et d'inscription + comportement de la navbar réactif à la connexion | 2026-07-14 |
+| [49](#tache-48) | Page de connexion et d'inscription + comportement de la navbar réactif à la connexion | 2026-07-14 |
+| [49](#tache-49) | PointInteret.jsx - Modale d'ajout, modification et supression d'un point d'interet       | 2026-07-21 |
 ### Dorsale
 
 | # | Tâche | Date |
@@ -4909,3 +4910,933 @@ Pour la deconnexion, je supprime le token.
 
 Pour obtenir l'utilisateur courant, je'ai ajouté une nouvelle route qui retourne
 un objet utilisteur avec un courriel comme propriété.
+
+---
+
+## Tâche 49 —PointInteret.jsx - Modale d'ajout, modification et supression d'un point d'interet {#tache-49}
+
+**Auteur** : Justin Maitland - 2026-07-21
+
+### 💬 Prompt
+
+```
+Voici ma page point d'interet. je voudrais un dialogue MUI d'ajout, 
+de modification et de suppression d'un point d'intérêt, avec un formulaire 
+dont les champs s'adaptent au type sélectionné. Seulement le type fontaine 
+existe présentement. Les champs restent pareille dans chaque type 
+d'arrondissement
+```
+#### Fichiers liés :
+- PointInteret.jsx
+- PointInteret.js
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ      | Valeur  |
+|------------|---------|
+| **Outil**  | ChatGPT |
+| **Modèle** | Gpt 5-5 |
+
+---
+
+
+---
+### 💬 Prompt
+
+---
+
+### 📦 Sortie obtenue
+À partir de ton code, je te proposerais une architecture qui va bien évoluer lorsque tu ajouteras d'autres types de points d'intérêt (station de réparation, support à vélo, etc.).
+
+## 1. Un seul Dialog réutilisable
+
+Au lieu de créer trois composants, je créerais :
+
+```
+components/
+    PointInteretDialog.jsx
+    PointInteretDeleteDialog.jsx
+    PointInteretForm.jsx
+```
+
+Le même `PointInteretDialog` sert pour :
+
+* Ajout
+* Modification
+
+Le `DeleteDialog` ne sert qu'à confirmer la suppression.
+
+---
+
+## 2. Modes du dialogue
+
+Le dialogue reçoit un mode.
+
+```jsx
+<PointInteretDialog
+    open={dialogOpen}
+    mode="create"      // create | edit
+    point={selectedPoi}
+    onClose={...}
+    onSave={...}
+/>
+```
+
+Le titre change automatiquement.
+
+```
+mode === "create"
+→ Ajouter un point d'intérêt
+
+mode === "edit"
+→ Modifier le point d'intérêt
+```
+
+---
+
+## 3. Formulaire dynamique
+
+Je ne coderais pas les champs directement.
+
+Je définirais plutôt une configuration.
+
+```jsx
+const POINT_TYPES = {
+    Fontaine: {
+        fields: [
+            "arrondissement",
+            "nom_parc_lieu",
+            "intersection",
+            "etat",
+            "date_installation",
+            "precision_localisation",
+            "latitude",
+            "longitude",
+            "x",
+            "y",
+            "remarque",
+        ]
+    }
+};
+```
+
+Puis le formulaire affiche les champs selon
+
+```jsx
+POINT_TYPES[type].fields
+```
+
+Lorsque tu ajouteras
+
+```
+Support à vélo
+```
+
+tu n'auras qu'à ajouter
+
+```jsx
+Support: {
+    fields: [
+       ...
+    ]
+}
+```
+
+sans modifier le formulaire.
+
+---
+
+## 4. Les champs communs
+
+Je séparerais les champs communs des champs spécifiques.
+
+```jsx
+const COMMON_FIELDS = [
+    "type",
+    "arrondissement",
+    "nom_parc_lieu",
+    "latitude",
+    "longitude",
+];
+```
+
+Puis
+
+```jsx
+const TYPE_FIELDS = {
+    Fontaine: [
+        "intersection",
+        "etat",
+        "date_installation",
+        "precision_localisation",
+        "x",
+        "y",
+        "remarque"
+    ]
+};
+```
+
+Le rendu devient
+
+```
+Type
+
+↓
+
+Nom
+
+↓
+
+Arrondissement
+
+↓
+
+Latitude
+
+Longitude
+
+↓
+
+(champs spécifiques)
+```
+
+C'est beaucoup plus simple à maintenir.
+
+---
+
+## 5. Le changement de type
+
+Le premier champ serait
+
+```jsx
+<Select
+    value={form.type}
+    onChange={...}
+>
+    <MenuItem value="Fontaine">
+        Fontaine
+    </MenuItem>
+</Select>
+```
+
+Puis
+
+```jsx
+const fields = TYPE_FIELDS[form.type];
+```
+
+Le formulaire se met à jour automatiquement.
+
+---
+
+## 6. Les champs MUI
+
+Pour Fontaine je garderais :
+
+| Champ                  | Composant                         |
+| ---------------------- | --------------------------------- |
+| Type                   | Select                            |
+| Arrondissement         | Select                            |
+| Nom                    | TextField                         |
+| Intersection           | TextField                         |
+| État                   | Select                            |
+| Date installation      | DatePicker ou TextField type=date |
+| Précision localisation | TextField                         |
+| Latitude               | TextField number                  |
+| Longitude              | TextField number                  |
+| X                      | TextField number                  |
+| Y                      | TextField number                  |
+| Remarque               | TextField multiline               |
+
+---
+
+## 7. Les actions dans le DataGrid
+
+J'ajouterais une vraie colonne Actions.
+
+```
+Carte
+
+Modifier
+
+Supprimer
+```
+
+Par exemple
+
+```jsx
+<Stack direction="row" spacing={1}>
+    <IconButton color="primary">
+        <EditIcon />
+    </IconButton>
+
+    <IconButton color="error">
+        <DeleteIcon />
+    </IconButton>
+
+    <Button>
+        Carte
+    </Button>
+</Stack>
+```
+
+---
+
+## 8. Confirmation de suppression
+
+Un petit dialogue suffit.
+
+```
+Supprimer le point d'intérêt ?
+
+Voulez-vous vraiment supprimer
+
+"Fontaine Parc Maisonneuve"
+
+[Annuler]     [Supprimer]
+```
+
+Le bouton Supprimer appelle
+
+```js
+DELETE /gti525/v1/pointsdinteret/:id
+```
+
+---
+
+## 9. Sauvegarde
+
+Le même composant peut décider automatiquement de la requête.
+
+```jsx
+if (mode === "create") {
+    POST /gti525/v1/pointsdinteret
+} else {
+    PUT /gti525/v1/pointsdinteret/:id
+}
+```
+
+---
+
+## 10. Structure finale
+
+Je viserais quelque chose comme :
+
+```
+PointInteret.jsx
+│
+├── DataGrid
+├── PointInteretDialog
+│       ├── PointInteretForm
+│       └── FormFields
+│
+├── DeleteDialog
+│
+└── InteractiveMapDialog
+```
+
+Cette approche est très évolutive : aujourd'hui seul le type **Fontaine** existe, mais lorsque tu ajouteras d'autres types, tu n'auras essentiellement qu'à enrichir la configuration des champs (`TYPE_FIELDS`) sans réécrire le formulaire. Les champs communs, comme l'arrondissement, resteront identiques pour tous les types, conformément à ton besoin.
+
+### 💬 Prompt 2
+```
+Génère moi le fichier PointInterets.jsx modifie et les nouveaux composants dialogues
+```
+
+---
+
+
+### 📦 Sortie obtenue 2
+
+J'ai généré les trois composants React demandés sous forme de fichiers prêts à être intégrés à votre projet.
+
+#### Fichiers générés
+
+📄 **PointInteretDialog.jsx**
+
+- Dialogue Material UI réutilisable pour l'ajout et la modification.
+- Gestion des modes `create` et `edit`.
+- Validation des champs obligatoires.
+- Appels aux API `POST` et `PUT`.
+- Gestion de l'état de chargement pendant la sauvegarde.
+
+⬇️ **Télécharger : PointInteretDialog.jsx**
+
+---
+
+📄 **PointInteretForm.jsx**
+
+- Formulaire Material UI complet.
+- Champs communs affichés pour tous les points d'intérêt.
+- Affichage dynamique des champs selon le type sélectionné.
+- Configuration prête à accueillir de nouveaux types de points d'intérêt.
+- Compatible avec le composant `PointInteretDialog`.
+
+⬇️ **Télécharger : PointInteretForm.jsx**
+
+---
+
+📄 **PointInteretDeleteDialog.jsx**
+
+- Dialogue de confirmation Material UI.
+- Confirmation avant suppression.
+- Appel de l'API `DELETE`.
+- Gestion de l'indicateur de chargement.
+- Retour d'information après suppression.
+
+⬇️ **Télécharger : PointInteretDeleteDialog.jsx**
+
+Ces trois composants ont été conçus pour fonctionner ensemble et s'intègrent directement dans votre page `PointInteret.jsx`. Leur architecture facilite l'ajout futur de nouveaux types de points d'intérêt sans nécessiter de modifications importantes du formulaire.
+
+---
+
+### Fichiers en sortie
+
+- PointInteretDialog.jsx
+```jsx
+import { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  CircularProgress,
+} from "@mui/material";
+
+import PointInteretForm from "./PointInteretForm";
+
+const defaultValues = {
+  type: "Fontaine",
+  arrondissement: "",
+  nom_parc_lieu: "",
+  intersection: "",
+  etat: "",
+  date_installation: "",
+  precision_localisation: "",
+  latitude: "",
+  longitude: "",
+  x: "",
+  y: "",
+  remarque: "",
+};
+
+export default function PointInteretDialog({
+  open,
+  mode = "create",
+  point = null,
+  arrondissements = [],
+  onClose,
+  onSaved,
+}) {
+  const [form, setForm] = useState(defaultValues);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    if (mode === "edit" && point) {
+      setForm({
+        type: point.Type ?? "Fontaine",
+        arrondissement: point.Arrondissement ?? "",
+        nom_parc_lieu: point.Nom_parc_lieu ?? point.Nom ?? "",
+        intersection: point.Intersection ?? point.Adresse ?? "",
+        etat: point.Etat ?? "",
+        date_installation: point.Date_installation ?? "",
+        precision_localisation: point.Precision_localisation ?? "",
+        latitude: point.Latitude ?? "",
+        longitude: point.Longitude ?? "",
+        x: point.X ?? "",
+        y: point.Y ?? "",
+        remarque: point.Remarque ?? "",
+      });
+    } else {
+      setForm(defaultValues);
+    }
+  }, [open, mode, point]);
+
+  function updateField(field, value) {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }
+
+  async function handleSave() {
+    if (!form.nom_parc_lieu.trim()) {
+      alert("Le nom est obligatoire.");
+      return;
+    }
+
+    if (form.latitude === "" || form.longitude === "") {
+      alert("La latitude et la longitude sont obligatoires.");
+      return;
+    }
+
+    setSaving(true);
+
+    const payload = {
+      ...form,
+      latitude: parseFloat(form.latitude),
+      longitude: parseFloat(form.longitude),
+      x: form.x === "" ? null : parseFloat(form.x),
+      y: form.y === "" ? null : parseFloat(form.y),
+    };
+
+    try {
+      const url =
+        mode === "create"
+          ? "/gti525/v1/pointsdinteret"
+          : `/gti525/v1/pointsdinteret/${point.ID}`;
+
+      const method = mode === "create" ? "POST" : "PUT";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.erreur || "Erreur.");
+      }
+
+      onSaved?.();
+      onClose();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onClose={saving ? undefined : onClose}
+      fullWidth
+      maxWidth="md"
+    >
+      <DialogTitle>
+        {mode === "create"
+          ? "Ajouter un point d'intérêt"
+          : "Modifier le point d'intérêt"}
+      </DialogTitle>
+
+      <DialogContent dividers>
+        <PointInteretForm
+          form={form}
+          onChange={updateField}
+          arrondissements={arrondissements}
+        />
+      </DialogContent>
+
+      <DialogActions>
+        <Button
+          onClick={onClose}
+          disabled={saving}
+        >
+          Annuler
+        </Button>
+
+        <Button
+          variant="contained"
+          onClick={handleSave}
+          disabled={saving}
+        >
+          {saving ? (
+            <CircularProgress size={20} color="inherit" />
+          ) : mode === "create" ? (
+            "Ajouter"
+          ) : (
+            "Enregistrer"
+          )}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+```
+
+- PointInteretForm.jsx
+```jsx
+import {
+  Grid,
+  TextField,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+} from "@mui/material";
+
+const TYPE_FIELDS = {
+  Fontaine: [
+    "intersection",
+    "etat",
+    "date_installation",
+    "precision_localisation",
+    "x",
+    "y",
+    "remarque",
+  ],
+};
+
+const ETATS = [
+  "Excellent",
+  "Bon",
+  "Moyen",
+  "Mauvais",
+  "Hors service",
+];
+
+export default function PointInteretForm({
+  form,
+  onChange,
+  arrondissements,
+}) {
+
+  const specificFields = TYPE_FIELDS[form.type] || [];
+
+  return (
+    <Grid container spacing={2} sx={{ mt: 0.5 }}>
+
+      {/* Type */}
+      <Grid item xs={12} md={6}>
+        <FormControl fullWidth>
+          <InputLabel>Type</InputLabel>
+
+          <Select
+            label="Type"
+            value={form.type}
+            onChange={(e) => onChange("type", e.target.value)}
+          >
+            <MenuItem value="Fontaine">
+              Fontaine
+            </MenuItem>
+          </Select>
+        </FormControl>
+      </Grid>
+
+      {/* Arrondissement */}
+      <Grid item xs={12} md={6}>
+        <FormControl fullWidth>
+          <InputLabel>Arrondissement</InputLabel>
+
+          <Select
+            label="Arrondissement"
+            value={form.arrondissement}
+            onChange={(e) =>
+              onChange("arrondissement", e.target.value)
+            }
+          >
+            {arrondissements.map((arr) => (
+              <MenuItem key={arr} value={arr}>
+                {arr}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
+
+      {/* Nom */}
+      <Grid item xs={12}>
+        <TextField
+          fullWidth
+          required
+          label="Nom"
+          value={form.nom_parc_lieu}
+          onChange={(e) =>
+            onChange("nom_parc_lieu", e.target.value)
+          }
+        />
+      </Grid>
+
+      {/* Latitude */}
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          required
+          type="number"
+          label="Latitude"
+          value={form.latitude}
+          onChange={(e) =>
+            onChange("latitude", e.target.value)
+          }
+        />
+      </Grid>
+
+      {/* Longitude */}
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          required
+          type="number"
+          label="Longitude"
+          value={form.longitude}
+          onChange={(e) =>
+            onChange("longitude", e.target.value)
+          }
+        />
+      </Grid>
+
+      {/* Champs spécifiques Fontaine */}
+      {specificFields.includes("intersection") && (
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Intersection"
+            value={form.intersection}
+            onChange={(e) =>
+              onChange("intersection", e.target.value)
+            }
+          />
+        </Grid>
+      )}
+
+      {specificFields.includes("etat") && (
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth>
+            <InputLabel>État</InputLabel>
+
+            <Select
+              label="État"
+              value={form.etat}
+              onChange={(e) =>
+                onChange("etat", e.target.value)
+              }
+            >
+              {ETATS.map((etat) => (
+                <MenuItem key={etat} value={etat}>
+                  {etat}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      )}
+
+      {specificFields.includes("date_installation") && (
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            type="date"
+            label="Date d'installation"
+            InputLabelProps={{
+              shrink: true,
+            }}
+            value={form.date_installation}
+            onChange={(e) =>
+              onChange(
+                "date_installation",
+                e.target.value
+              )
+            }
+          />
+        </Grid>
+      )}
+
+      {specificFields.includes("precision_localisation") && (
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Précision de localisation"
+            value={form.precision_localisation}
+            onChange={(e) =>
+              onChange(
+                "precision_localisation",
+                e.target.value
+              )
+            }
+          />
+        </Grid>
+      )}
+
+      {specificFields.includes("x") && (
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            type="number"
+            label="Coordonnée X"
+            value={form.x}
+            onChange={(e) =>
+              onChange("x", e.target.value)
+            }
+          />
+        </Grid>
+      )}
+
+      {specificFields.includes("y") && (
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            type="number"
+            label="Coordonnée Y"
+            value={form.y}
+            onChange={(e) =>
+              onChange("y", e.target.value)
+            }
+          />
+        </Grid>
+      )}
+
+      {specificFields.includes("remarque") && (
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label="Remarque"
+            value={form.remarque}
+            onChange={(e) =>
+              onChange("remarque", e.target.value)
+            }
+          />
+        </Grid>
+      )}
+
+    </Grid>
+  );
+}
+
+```
+
+- PointInteretDeleteDialog.jsx
+```jsx
+import { useState } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  CircularProgress,
+} from "@mui/material";
+
+export default function PointInteretDeleteDialog({
+  open,
+  point,
+  onClose,
+  onDeleted,
+}) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleDelete() {
+    if (!point) return;
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `/gti525/v1/pointsdinteret/${point.ID}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.erreur || "Erreur lors de la suppression.");
+      }
+
+      onDeleted?.();
+      onClose();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onClose={loading ? undefined : onClose}
+      maxWidth="xs"
+      fullWidth
+    >
+      <DialogTitle>
+        Supprimer le point d'intérêt
+      </DialogTitle>
+
+      <DialogContent>
+        <DialogContentText>
+          Êtes-vous certain de vouloir supprimer ce point d'intérêt&nbsp;?
+        </DialogContentText>
+
+        <DialogContentText
+          sx={{
+            mt: 2,
+            fontWeight: "bold",
+            color: "text.primary",
+          }}
+        >
+          {point?.Nom_parc_lieu ?? point?.Nom}
+        </DialogContentText>
+
+        <DialogContentText sx={{ mt: 1 }}>
+          Cette action est irréversible.
+        </DialogContentText>
+      </DialogContent>
+
+      <DialogActions>
+        <Button
+          onClick={onClose}
+          disabled={loading}
+        >
+          Annuler
+        </Button>
+
+        <Button
+          color="error"
+          variant="contained"
+          onClick={handleDelete}
+          disabled={loading}
+        >
+          {loading ? (
+            <CircularProgress
+              size={20}
+              color="inherit"
+            />
+          ) : (
+            "Supprimer"
+          )}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+```
+
+
+### ✏️ Modifications apportées par l'humain
+- Modifications des champs dans le formulaire
+- Utilisation des méthode de ma classe AuthClient pour faire les fetchs
+- Garder seulement intersection dans TYPE_FIELDS
+- ETATS dans la classe formulaire supprimé
+- UI modifié pour avoir les champs en colonne dans le formulaire
+
+---
+
+### 🧠 Justification
+J'ai du commencé par supprimés les champs inutiles dans le formulaire, car
+j'avais oublier de mentionner à l'IA les champs que je voulais. J'ai gardé la
+latitude et longitude pour placer le point d'intérèt  sur la carte. Pour les
+requête API, j'ai ajouté des méthodes dans ma classe authClient.js, car j'avais
+déjà une logique pour vérifier si l'utilisateur est connecté. J'ai enlevé
+les ETATS, car ce champs était probablement une hallucination de l'IA. J'ai aussi
+du modifier le UI pour le formulaire, car plusieurs champs n'étaient pas bien
+lisible et j'aimais pas qu'ils étaient adjacent sur la même colonne parfois.
+
+J'ai ensuite ajouté ces composants dans ma page PointInteret en fournissant
+les props nécessaire : un était pour cacher ou montrer la fenetre, un état
+pour choisir le mode, le point d'intérêt selectionné et les arrondissement
+pour le menu déroulant. J'ai aussi ajouter une méthode permettant de
+rafraichir le data grid a chaque modification pour voir les changements
+dans devoir changer le champs de recherche.
