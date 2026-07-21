@@ -78,6 +78,7 @@
 | [44](#tache-44) | T6.2 / T6.5 — Route POST /assistant : intégration LLM externe (RAG + garde-fous) | 2026-07-12 |
 | [45](#tache-45) | T6.3 — Enrichissement du RAG : couverture des 5 familles de questions | 2026-07-12 |
 | [46](#tache-46) | T6.4 — Ancrage/honnêteté : bouton « signaler » + journal serveur | 2026-07-12 |
+| [47](#tache-47) | Portage de l'assistant sur MariaDB (RAG async mysql2) après merge de main | 2026-07-14 |
 
   
 
@@ -4140,7 +4141,7 @@ Le message utilisateur envoyé au LLM est structuré ainsi :
 
 ### 🔁 Itération principale du RAG (avant / après)
 
-**Problème observé** en test réel avec la question « donne moi point interert anjou » : l'assistant répond « *Je ne dispose pas de données sur les points d'intérêt dans l'arrondissement d'Anjou* », alors que la base contient **26 points d'intérêt** pour Anjou. Le contexte envoyé au LLM ne contenait aucune fontaine → **refus inapproprié** (et non une hallucination : l'ancrage a bien empêché l'invention).
+**Problème observé** en test réel avec la question « donne moi point interert anjou » : l'assistant répond « *Je ne dispose pas de données sur les points d'intérêt dans l'arrondissement d'Anjou* », alors que la base contient **26 points d'intérêt** pour Anjou. Le contexte envoyé au LLM ne contenait aucune fontaine.
 
 
 **Avant :**
@@ -4281,3 +4282,54 @@ Le requis T6.4 comporte quatre volets ; trois étaient déjà en place, le quatr
 ### 🧠 Justification
 
 - J'ai accepté les modifications car elles complètent le requis T6.4 : les trois premiers volets (pas d'invention de chiffres, refus explicite si donnée absente, mention que les réponses sont générées) étaient déjà satisfaits par les tâches précédentes, et il ne manquait que le bouton de signalement avec journalisation serveur. le signalement est écrit dans un fichier `logs/signalements.log` afin d'obtenir un vrai journal persistant et consultable en démonstration.
+
+---
+
+## Tâche 47 — Portage de l'assistant sur MariaDB (après merge de main) {#tache-47}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-07-14
+
+### 💬 Prompt
+
+```
+Nous avons changé notre configuration pour maintenant utiliser MariaDB mysql.
+Applique les changements du RAG et configuration nécessaire pour que notre
+assistant soit désormais fonctionnel sur la nouvelle DB. Et assure-toi qu'il
+n'y a pas de régression de fonctionnalité et que tout est encore fonctionnel.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Opus 4.8 |
+| **Mode** | Migration de code + vérification de non-régression |
+
+---
+
+### 📦 Sortie obtenue
+
+Le merge de `main` (Tâche 42) a migré la dorsale de **sql.js** (API synchrone) vers **MariaDB** (`mysql2/promise`, async). L'assistant, écrit pour sql.js, a dû être porté.
+
+| Fichier | Changement |
+|---------|-----------|
+| `backend/lib/assistantContext.js` | Réécrit en **async** : `all()`/`scalar()` utilisent `await pool.query(...)` ; toutes les fonctions du RAG et `buildContext(question)` deviennent `async`. **Dialecte MariaDB** : table `comptage_velo` → `passages`, `CAST(... AS TEXT)` → `CAST(... AS CHAR)` (jointure `id_compteur` BIGINT ↔ `compteurs.id` VARCHAR), `date(...)` → `DATE(...)`, `DATE_FORMAT` pour l'affichage des dates. |
+| `backend/routes/assistant.js` | `getDb` retiré ; `const contexte = await buildContext(question)`. |
+| `backend/tests/assistant.test.js` | Mocke désormais `pool` (comme les autres tests migrés) au lieu du `setDb` de sql.js. |
+| `backend/.env` | Ajout des variables `DB_*` (alignées sur `docker-compose.yml`). |
+| Dépendances | `npm install` pour installer `mysql2`. |
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- aucune modification
+
+---
+
+### 🧠 Justification
+
+- J'ai accepté les modifications car elles rendent l'assistant à nouveau fonctionnel sur notre nouvelle base MariaDB. Le merge de `main` a remplacé le moteur sql.js par MariaDB, donc l'assistant qui utilisait l'ancienne API synchrone ne marchait plus. L'IA a porté le RAG sur l'API asynchrone de mysql2 (`await pool.query`) en suivant le même patron que nos autres routes déjà migrées comme `compteurs.js` et `pistes.js`, ce qui garde le code cohérent. J'ai vérifié qu'il n'y a pas de régression : les 48 tests passent et les 5 familles de questions donnent les mêmes chiffres qu'avant le merge (par exemple 18 212 754 passages en 2022).
