@@ -2,7 +2,6 @@
 const router = require('express').Router();
 const fs   = require('fs');
 const path = require('path');
-const { getDb } = require('../lib/db');
 const { callLlm, isConfigured } = require('../lib/llm');
 const { buildContext } = require('../lib/assistantContext');
 
@@ -86,7 +85,7 @@ router.post('/', async (req, res) => {
 
   // 4. RAG + appel LLM.
   try {
-    const contexte = buildContext(getDb(), question);
+    const contexte = await buildContext(question);
     const userPrompt = `CONTEXTE :\n${contexte}\n\nQUESTION :\n${question}`;
     const reponse = await callLlm({ system: SYSTEME, user: userPrompt });
 

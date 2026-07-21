@@ -1,24 +1,26 @@
 'use strict';
 
-// On isole la logique de la route : le LLM et le RAG sont simulés pour ne
-// dépendre ni d'une clé d'API ni de la base réelle.
+// On isole la logique de la route : le LLM, le RAG et la base sont simulés pour
+// ne dépendre ni d'une clé d'API ni d'un serveur MariaDB réel.
+jest.mock('../lib/db', () => ({
+  pool: { query: jest.fn() },
+}));
 jest.mock('../lib/llm', () => ({
   isConfigured: jest.fn(() => true),
   callLlm: jest.fn(async () => 'Réponse simulée du LLM.'),
 }));
 jest.mock('../lib/assistantContext', () => ({
-  buildContext: jest.fn(() => 'CONTEXTE simulé'),
+  buildContext: jest.fn(async () => 'CONTEXTE simulé'),
 }));
 
 const request = require('supertest');
-const { app, setDb } = require('../server');
+const { app } = require('../server');
 const { isConfigured, callLlm } = require('../lib/llm');
 
 beforeEach(() => {
   jest.clearAllMocks();
   isConfigured.mockReturnValue(true);
   callLlm.mockResolvedValue('Réponse simulée du LLM.');
-  setDb({ prepare: jest.fn() }); // buildContext est simulé, la DB n'est pas touchée
 });
 
 describe('Route POST /gti525/v1/assistant', () => {

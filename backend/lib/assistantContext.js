@@ -1,7 +1,7 @@
 'use strict';
 
 // RAG simple : à partir de la question, on rassemble un contexte factuel issu
-// de la base SQLite. Ce contexte est injecté dans le prompt du LLM pour qu'il
+// de la base MariaDB. Ce contexte est injecté dans le prompt du LLM pour qu'il
 // réponde à partir de données réelles plutôt que de son savoir général.
 //
 // Familles de questions couvertes (T6.3) :
@@ -11,6 +11,7 @@
 //   4. Identification de la piste/du secteur le plus achalandé
 //   5. Comparaison entre deux périodes ou deux arrondissements
 
+const { pool } = require('./db');
 const { normArr, CATEGORIE_SQL } = require('./geo');
 
 const MAX_CONTEXT_CHARS = 6000;
@@ -28,19 +29,15 @@ const MOIS = {
   décembre: 12, decembre: 12,
 };
 
-// ─── Petits utilitaires SQL ─────────────────────────────────────────────────
-function all(db, sql, params = []) {
-  const stmt = db.prepare(sql);
-  if (params.length) stmt.bind(params);
-  const rows = [];
-  while (stmt.step()) rows.push(stmt.getAsObject());
-  stmt.free();
+// ─── Petits utilitaires SQL (MariaDB / mysql2 promise) ──────────────────────
+async function all(sql, params = []) {
+  const [rows] = await pool.query(sql, params);
   return rows;
 }
 
 // Retourne la première valeur de la première ligne (pour les COUNT/SUM/MIN...).
-function scalar(db, sql, params = []) {
-  const rows = all(db, sql, params);
+async function scalar(sql, params = []) {
+  const rows = await all(sql, params);
   if (!rows.length) return null;
   return Object.values(rows[0])[0];
 }
@@ -52,8 +49,8 @@ function has(qn, ...mots) {
 // ─── Détection dans la question ─────────────────────────────────────────────
 
 // Tous les arrondissements mentionnés (NOM canonique du territoire), dédupliqués.
-function detectArrondissements(db, qn) {
-  const territoires = all(db, 'SELECT nom FROM territoires ORDER BY nom');
+async function detectArrondissements(qn) {
+  const territoires = await all('SELECT nom FROM territoires ORDER BY nom');
   const found = [];
   for (const t of territoires) {
     const n = normArr(t.nom);
@@ -101,36 +98,36 @@ function detectPeriodes(question) {
 // ─── Requêtes par famille ───────────────────────────────────────────────────
 
 // Somme de passages sur une période (réseau entier, ou un arrondissement donné).
-function passagesPeriode(db, periode, arrNom) {
+async function passagesPeriode(periode, arrNom) {
   if (arrNom) {
-    return scalar(db,
-      `SELECT SUM(cv.nb_passages) AS total FROM comptage_velo cv
-         JOIN compteurs c ON CAST(cv.id_compteur AS TEXT) = c.id
-        WHERE c.arrondissement = ? AND date(cv.date_heure) BETWEEN ? AND ?`,
-      [arrNom, periode.debut, periode.fin]) || 0;
+    return (await scalar(
+      `SELECT SUM(pa.nb_passages) AS total FROM passages pa
+         JOIN compteurs c ON CAST(pa.id_compteur AS CHAR) = c.id
+        WHERE c.arrondissement = ? AND DATE(pa.date_heure) BETWEEN ? AND ?`,
+      [arrNom, periode.debut, periode.fin])) || 0;
   }
-  return scalar(db,
-    `SELECT SUM(nb_passages) AS total FROM comptage_velo
-      WHERE date(date_heure) BETWEEN ? AND ?`,
-    [periode.debut, periode.fin]) || 0;
+  return (await scalar(
+    `SELECT SUM(nb_passages) AS total FROM passages
+      WHERE DATE(date_heure) BETWEEN ? AND ?`,
+    [periode.debut, periode.fin])) || 0;
 }
 
-function topCompteurs(db, periode) {
-  const where  = periode ? 'WHERE date(cv.date_heure) BETWEEN ? AND ?' : '';
+async function topCompteurs(periode) {
+  const where  = periode ? 'WHERE DATE(pa.date_heure) BETWEEN ? AND ?' : '';
   const params = periode ? [periode.debut, periode.fin] : [];
-  return all(db,
-    `SELECT c.nom AS nom, c.arrondissement AS arr, SUM(cv.nb_passages) AS total
-       FROM comptage_velo cv JOIN compteurs c ON CAST(cv.id_compteur AS TEXT) = c.id
+  return all(
+    `SELECT c.nom AS nom, c.arrondissement AS arr, SUM(pa.nb_passages) AS total
+       FROM passages pa JOIN compteurs c ON CAST(pa.id_compteur AS CHAR) = c.id
        ${where}
-      GROUP BY cv.id_compteur ORDER BY total DESC LIMIT 5`,
+      GROUP BY pa.id_compteur ORDER BY total DESC LIMIT 5`,
     params);
 }
 
 // Pistes d'un arrondissement : nombre, longueur totale (km) et répartition par
 // catégorie. LONGUEUR est en mètres dans les données → division par 1000.
-function pistesInfo(db, territoireNom) {
+async function pistesInfo(territoireNom) {
   const nn = normArr(territoireNom);
-  const rows = all(db, 'SELECT feature FROM pistes WHERE norm_arr = ?', [nn]);
+  const rows = await all('SELECT feature FROM pistes WHERE norm_arr = ?', [nn]);
   let metres = 0;
   for (const r of rows) {
     try {
@@ -140,31 +137,31 @@ function pistesInfo(db, territoireNom) {
   }
   const cats = {};
   for (const [key, cond] of Object.entries(CATEGORIE_SQL)) {
-    cats[key] = scalar(db, `SELECT COUNT(*) AS n FROM pistes WHERE norm_arr = ? AND ${cond}`, [nn]) || 0;
+    cats[key] = (await scalar(`SELECT COUNT(*) AS n FROM pistes WHERE norm_arr = ? AND ${cond}`, [nn])) || 0;
   }
   return { count: rows.length, km: metres / 1000, cats };
 }
 
 // Retrouve la valeur exacte d'arrondissement utilisée dans pointsdinteret
 // (orthographe différente des territoires) via comparaison normalisée.
-function resolvePoiArr(db, territoireNom) {
+async function resolvePoiArr(territoireNom) {
   const target = normArr(territoireNom);
-  const rows = all(db, 'SELECT DISTINCT arrondissement FROM pointsdinteret WHERE arrondissement IS NOT NULL');
+  const rows = await all('SELECT DISTINCT arrondissement FROM pointsdinteret WHERE arrondissement IS NOT NULL');
   const match = rows.find((r) => normArr(r.arrondissement) === target);
   return match ? match.arrondissement : null;
 }
 
 // ─── Construction du contexte ───────────────────────────────────────────────
-function buildContext(db, question) {
+async function buildContext(question) {
   const qn = normArr(question);
   const parts = [];
 
   // 1. Résumé global — toujours inclus.
-  const nbCompteurs = scalar(db, 'SELECT COUNT(*) AS n FROM compteurs') || 0;
-  const nbFontaines = scalar(db, 'SELECT COUNT(*) AS n FROM pointsdinteret') || 0;
-  const nbPistes    = scalar(db, 'SELECT COUNT(*) AS n FROM pistes') || 0;
-  const arrs  = all(db, 'SELECT nom FROM territoires ORDER BY nom').map((r) => r.nom);
-  const plage = all(db, 'SELECT MIN(date(date_heure)) AS min, MAX(date(date_heure)) AS max FROM comptage_velo')[0] || {};
+  const nbCompteurs = (await scalar('SELECT COUNT(*) AS n FROM compteurs')) || 0;
+  const nbFontaines = (await scalar('SELECT COUNT(*) AS n FROM pointsdinteret')) || 0;
+  const nbPistes    = (await scalar('SELECT COUNT(*) AS n FROM pistes')) || 0;
+  const arrs  = (await all('SELECT nom FROM territoires ORDER BY nom')).map((r) => r.nom);
+  const plage = (await all("SELECT DATE_FORMAT(MIN(date_heure), '%Y-%m-%d') AS min, DATE_FORMAT(MAX(date_heure), '%Y-%m-%d') AS max FROM passages"))[0] || {};
 
   parts.push(
     `RÉSUMÉ DU RÉSEAU :\n` +
@@ -175,15 +172,15 @@ function buildContext(db, question) {
     `- Arrondissements couverts (${arrs.length}) : ${arrs.join(', ')}`
   );
 
-  const arrsDetectes = detectArrondissements(db, qn);
+  const arrsDetectes = await detectArrondissements(qn);
   const periodes     = detectPeriodes(question);
 
   // 2. Infos par arrondissement (compteurs + pistes : longueur & catégories).
   //    Couvre les familles « pistes dans un arrondissement » et la comparaison
   //    entre deux arrondissements (jusqu'à 2 blocs).
   for (const arr of arrsDetectes.slice(0, 2)) {
-    const nbCptArr = scalar(db, 'SELECT COUNT(*) AS n FROM compteurs WHERE arrondissement = ?', [arr]) || 0;
-    const pi = pistesInfo(db, arr);
+    const nbCptArr = (await scalar('SELECT COUNT(*) AS n FROM compteurs WHERE arrondissement = ?', [arr])) || 0;
+    const pi = await pistesInfo(arr);
     const repartition = Object.entries(pi.cats)
       .map(([k, n]) => `${CATEGORIE_LABELS[k]} : ${n}`)
       .join(', ');
@@ -199,12 +196,12 @@ function buildContext(db, question) {
   //    Couvre « passages sur une période » et « comparaison de deux périodes ».
   if (periodes.length) {
     for (const p of periodes) {
-      const totalGlobal = passagesPeriode(db, p, null);
+      const totalGlobal = await passagesPeriode(p, null);
       let bloc = `PASSAGES (${p.label}) :\n- Total réseau : ${totalGlobal} passages`;
       for (const arr of arrsDetectes.slice(0, 2)) {
-        bloc += `\n- ${arr} : ${passagesPeriode(db, p, arr)} passages`;
+        bloc += `\n- ${arr} : ${await passagesPeriode(p, arr)} passages`;
       }
-      const top = topCompteurs(db, p);
+      const top = await topCompteurs(p);
       if (top.length && top[0].total != null) {
         bloc += '\n- Compteurs les plus fréquentés sur la période :\n' +
           top.map((r, i) => `  ${i + 1}. ${r.nom} (${r.arr || 'arr. inconnu'}) — ${r.total} passages`).join('\n');
@@ -216,7 +213,7 @@ function buildContext(db, question) {
   // 4. Piste/secteur le plus achalandé (tout l'historique) — si aucune période
   //    précise n'a déjà été traitée. L'achalandage se mesure via les compteurs.
   if (!periodes.length && has(qn, 'compteur', 'passage', 'populaire', 'frequent', 'achaland', 'trafic')) {
-    const top = topCompteurs(db, null);
+    const top = await topCompteurs(null);
     if (top.length && top[0].total != null) {
       parts.push(
         `SECTEURS LES PLUS ACHALANDÉS (total de passages, tout l'historique) :\n` +
@@ -229,10 +226,10 @@ function buildContext(db, question) {
   // 5. Points d'intérêt (fontaines) par arrondissement / proximité.
   if (has(qn, 'fontaine', 'eau', 'boire', 'point', 'interet', 'parc', 'lieu')) {
     const arr = arrsDetectes[0];
-    const poiArr = arr ? resolvePoiArr(db, arr) : null;
+    const poiArr = arr ? await resolvePoiArr(arr) : null;
     const rows = poiArr
-      ? all(db, 'SELECT nom_parc_lieu, arrondissement, intersection FROM pointsdinteret WHERE arrondissement = ? LIMIT 10', [poiArr])
-      : all(db, 'SELECT nom_parc_lieu, arrondissement, intersection FROM pointsdinteret WHERE nom_parc_lieu IS NOT NULL LIMIT 8');
+      ? await all('SELECT nom_parc_lieu, arrondissement, intersection FROM pointsdinteret WHERE arrondissement = ? LIMIT 10', [poiArr])
+      : await all('SELECT nom_parc_lieu, arrondissement, intersection FROM pointsdinteret WHERE nom_parc_lieu IS NOT NULL LIMIT 8');
 
     if (rows.length) {
       const titre = poiArr ? `POINTS D'INTÉRÊT DANS « ${arr} »` : `POINTS D'INTÉRÊT (échantillon)`;
