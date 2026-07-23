@@ -45,4 +45,10 @@ router.post('/connexion', async (req, res) => {
   }
 });
 
+const requireAuth = require('../middleware/auth');
+
+router.get('/moi', requireAuth, (req, res) => {
+  return res.status(200).json({ utilisateur: { courriel: req.user.courriel } });
+});
+
 module.exports = router;

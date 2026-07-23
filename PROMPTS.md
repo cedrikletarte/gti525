@@ -13,8 +13,8 @@
 
 ### Frontale
 
-| # | Tâche | Date |
-|---|-------|-------|
+| #               | Tâche | Date       |
+|-----------------|-------|------------|
 | [01](#tache-01) | Scaffold UI — Navbar, HomePage, thème MUI | 2026-05-14 |
 | [02](#tache-02) | Navbar color — Change theme color | 2026-05-14 |
 | [03](#tache-03) | Statistic.jsx — Page compteurs vélo avec DataGrid | 2026-05-17 |
@@ -45,7 +45,8 @@
 | [36](#tache-36) | PointInteret.jsx — Pagination serveur complète | 2026-07-07 |
 | [37](#tache-37) | Statistic.jsx — Pagination serveur pour /compteurs | 2026-07-07 |
 | [40](#tache-40) | Statistic.jsx — Filtre arrondissement côté serveur | 2026-07-07 |
-
+| [49](#tache-48) | Page de connexion et d'inscription + comportement de la navbar réactif à la connexion | 2026-07-14 |
+| [49](#tache-49) | PointInteret.jsx - Modale d'ajout, modification et supression d'un point d'interet       | 2026-07-21 |
 ### Dorsale
 
 | # | Tâche | Date |
@@ -4333,3 +4334,1509 @@ Le merge de `main` (Tâche 42) a migré la dorsale de **sql.js** (API synchrone)
 ### 🧠 Justification
 
 - J'ai accepté les modifications car elles rendent l'assistant à nouveau fonctionnel sur notre nouvelle base MariaDB. Le merge de `main` a remplacé le moteur sql.js par MariaDB, donc l'assistant qui utilisait l'ancienne API synchrone ne marchait plus. L'IA a porté le RAG sur l'API asynchrone de mysql2 (`await pool.query`) en suivant le même patron que nos autres routes déjà migrées comme `compteurs.js` et `pistes.js`, ce qui garde le code cohérent. J'ai vérifié qu'il n'y a pas de régression : les 48 tests passent et les 5 familles de questions donnent les mêmes chiffres qu'avant le merge (par exemple 18 212 754 passages en 2022).
+
+---
+
+
+## Tâche 48 — Page de connexion et d'inscription + comportement de la navbar réactif à la connexion {#tache-48}
+
+**Auteur** : Justin Maitland - 2026-07-14
+
+### 💬 Prompt
+
+```
+# Contexte du projet
+
+Tu es un ingénieur logiciel senior. Tu dois implémenter les pages d'inscription et de
+connexion pour une application web, avec authentification locale (email/mot de passe).
+
+## Stack technique
+- Frontend : React + Vite
+- Backend : Express (Node.js)
+- Base de données : SQLite
+- Toutes les routes API sont préfixées par `/GTI525/v1`
+
+## Base de données existante
+Table `utilisateurs` déjà créée :
+
+db.run(`CREATE TABLE IF NOT EXISTS utilisateurs (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  courriel TEXT    NOT NULL UNIQUE,
+  mdp_hash TEXT    NOT NULL,
+  cree_le  TEXT    NOT NULL DEFAULT (datetime('now'))
+)`);
+
+
+Ne modifie pas ce schéma. Si un mécanisme nécessite une colonne ou une table
+supplémentaire (ex. stockage des refresh tokens pour invalidation), propose une
+migration explicite et demande confirmation avant de l'appliquer.
+
+
+# Spécifications de sécurité (obligatoires)
+
+## Hachage des mots de passe
+- Algorithme : bcrypt
+- Facteur de coût (salt rounds) : minimum 10 (12 recommandé)
+- Le hash est stocké dans la colonne `mdp_hash`
+- Aucun mot de passe en clair ne doit jamais apparaître : ni en base de données, ni
+  dans les logs serveur, ni dans les réponses HTTP (succès ou erreur)
+
+## JWT
+- Secret stocké dans `.env` sous la variable `JWT_SECRET` (minimum 32 caractères) —
+  valider l'existence et la longueur au démarrage du serveur, échouer explicitement
+  sinon (ne pas démarrer le serveur avec un secret invalide)
+- Le payload du JWT doit contenir `id` et `courriel` (pas le hash du mot de passe)
+- **Token d'accès : durée de vie de 24h**
+- Transmis au client via un **cookie httpOnly**, avec les attributs :
+    - `Secure` (HTTPS uniquement en production)
+    - `SameSite=Strict` ou `Lax` (à justifier selon le besoin cross-origin)
+    - `Max-Age` cohérent avec la durée de vie du token
+    - Ne jamais exposer le token dans le corps de la réponse JSON
+
+## Refresh token / déconnexion
+- Refresh token séparé, durée de vie plus longue (proposition : 7 jours — à confirmer
+  ou aligner sur 24h si tu préfères une session unique sans renouvellement)
+- Stocké dans un cookie httpOnly distinct du token d'accès
+- Stratégie d'invalidation à la déconnexion : proposer soit (a) une table
+  `refresh_tokens` en base pour permettre la révocation, soit (b) une rotation de
+  token — implémenter l'option (a) par défaut pour rester cohérent avec SQLite, sauf
+  indication contraire
+- `POST /auth/deconnexion` : invalide le refresh token courant (suppression en base)
+  et efface les cookies
+- `POST /auth/rafraichir` : vérifie le refresh token, émet un nouveau token d'accès
+  (et idéalement un nouveau refresh token — rotation)
+
+## Validation des entrées
+- Email : format valide, unicité vérifiée avant insertion (contrainte UNIQUE déjà en
+  place au niveau DB — gérer proprement l'erreur SQLite de contrainte violée), message
+  d'erreur générique à l'inscription pour éviter l'énumération de comptes
+- Mot de passe : longueur minimale 8-12 caractères, exiger un mélange de
+  majuscules/minuscules/chiffres/caractères spéciaux (précise si tu as des règles
+  plus strictes)
+- Toutes les entrées validées et sanitisées côté serveur (ne pas se fier uniquement
+  à la validation frontend)
+
+# Gestion des erreurs et réponses HTTP
+- Codes de statut appropriés (201 création, 200 succès, 400 validation, 401 non
+  autorisé, 409 email déjà utilisé, 500 erreur serveur)
+- Format de réponse JSON cohérent et documenté
+- Aucune divulgation d'information sensible dans les messages d'erreur (existence
+  d'un compte, détails d'implémentation, stack traces en production)
+
+# Frontend (React + Vite)
+- Formulaire d'inscription : email, mot de passe, confirmation, validation en temps
+  réel (format email, force du mot de passe)
+- Formulaire de connexion : email, mot de passe
+- Gestion des états : chargement, erreur, succès
+- Redirection après connexion/inscription réussie
+- Jamais de stockage du JWT en localStorage/sessionStorage — géré via cookie httpOnly
+- Requêtes API avec `credentials: 'include'`, CORS backend configuré en conséquence
+- Gérer le renouvellement automatique du token d'accès via `/auth/rafraichir`
+  (ex. intercepteur sur réponse 401)
+
+# Contraintes transversales
+- Configuration CORS explicite (origines autorisées, `credentials: true`)
+- Variables sensibles uniquement dans `.env` (jamais committées — vérifier `.gitignore`)
+- Logs serveur : logger les tentatives de connexion (succès/échec) sans jamais logger
+  le mot de passe ni le token
+
+# Livrables attendus
+1. Code backend (routes, middleware d'authentification, logique de hachage/JWT/refresh)
+2. Migration SQL si une table `refresh_tokens` est ajoutée (avec confirmation préalable)
+3. Code frontend (composants de formulaire, appels API, gestion du refresh)
+4. Fichier `.env.example` avec les variables requises (sans valeurs réelles)
+5. Brève documentation des routes (requête/réponse attendue pour chacune)
+
+# Questions à me poser avant de commencer (si applicable)
+- Si un détail de règle de validation ou de comportement n'est pas spécifié
+  ci-dessus, pose la question plutôt que de supposer.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ      | Valeur            |
+|------------|-------------------|
+| **Outil**  | Claude            |
+| **Modèle** | Claude Sonnet 4.6 |
+| **Effort** | Medium            |
+
+---
+
+### 📦 Sortie obtenue
+Je vais implémenter ce système d'authentification complet. Avant de me lancer, deux décisions de sécurité méritent d'être explicitées (je vais choisir une option par défaut raisonnable et vous pourrez me demander de changer si besoin) :
+
+1. **SameSite** : je pars sur `Strict` (pas de besoin cross-origin identifié dans vos specs — front et back semblent être sur le même site, juste des ports différents en dev, ce qui n'affecte pas SameSite).
+2. **Refresh token** : j'implémente l'option (a) — table `refresh_tokens` en base, avec rotation à chaque rafraîchissement, comme vous l'avez suggéré par défaut. Je stocke un **hash SHA-256** du refresh token (pas bcrypt, inutile pour un secret déjà à haute entropie, et plus rapide à vérifier).
+3. **Mot de passe** : minimum 12 caractères, exige majuscule + minuscule + chiffre + caractère spécial.
+4. **Message d'inscription** : je garde le code 409 (comme demandé dans la liste des codes HTTP) mais avec un message générique en corps de réponse — je documenterai ce compromis (le code HTTP révèle techniquement l'existence du compte même avec un message neutre ; si vous voulez une protection totale contre l'énumération, il faudra basculer vers un 400 générique).
+
+Je construis le projet maintenant.Maintenant les routes, cœur du système :Maintenant le frontend React :Un petit exemple d'intégration (routing + redirection) pour montrer comment tout s'assemble :Documentation des routes :Ajoutons un `.gitignore` et un `README` rapide, puis on vérifie que le backend démarre correctement :Testons que le serveur démarre bien et que les endpoints fonctionnent réellement (inscription → connexion → refresh → déconnexion) :Le serveur démarre bien. Testons le flux complet :Tout le flux fonctionne comme prévu. Nettoyage et test de sécurité du démarrage (secret invalide) :Le serveur refuse bien de démarrer sans secret valide. Je nettoie `node_modules` avant de packager (l'utilisateur relancera `npm install`), puis je crée l'archive finale :J'ai testé le flux complet (inscription, doublon, mot de passe faible, route protégée, rafraîchissement avec rotation, déconnexion, refus de démarrage sans `JWT_SECRET` valide) — tout fonctionne comme spécifié.
+
+**Ce qui est dans l'archive :**
+- `backend/` — Express + SQLite, migration `refresh_tokens` appliquée par défaut, bcrypt (coût 12), JWT (payload `id`+`courriel`, 24h), cookies `httpOnly`/`Secure`(prod)/`SameSite=Strict`
+- `frontend/` — formulaires d'inscription/connexion avec validation temps réel, client API avec intercepteur de rafraîchissement automatique sur 401
+- `docs/API.md` — doc complète des routes + décisions de sécurité justifiées
+- `.env.example`, `.gitignore`
+
+**Points où j'ai tranché sans vous redemander** (documentés dans `docs/API.md`) :
+- `SameSite=Strict` (pas de besoin cross-origin identifié)
+- Mot de passe : 12 caractères min + complexité complète
+- Refresh token : hash SHA-256 en base (pas bcrypt, inutile pour un secret à haute entropie) + rotation à chaque `/auth/rafraichir`
+- Le 409 à l'inscription reste tel que demandé dans vos specs, mais je note explicitement que ça révèle partiellement l'existence d'un compte malgré le message générique — à vous de me dire si vous préférez un 400 générique à la place pour une protection totale.
+
+Pour lancer : `cd backend && npm install`, copier `.env.example` en `.env` avec un vrai secret, puis `npm start`.
+
+---
+### 💬 Prompt 2
+Non je tiens a garder bcrypt. Je l'ai deja implementer. Je veux absolument l'utiliser pour avoir un salt
+
+---
+
+### 📦 Sortie obtenue 2
+Bien sûr — c'est votre choix, et il y a une bonne façon de faire ça proprement. Petite précision technique importante d'abord :
+
+Le souci avec bcrypt sur un refresh token, c'est que bcrypt génère un salt **aléatoire à chaque hash**. Du coup, impossible de faire `WHERE token_hash = ?` en base pour retrouver la ligne (le même token donnerait un hash différent à chaque fois). Il faut donc utiliser le pattern standard **sélecteur + vérificateur** :
+
+- Le token envoyé au client = `selecteur.verificateur` (deux parties aléatoires)
+- En base, on stocke le `selecteur` en clair (indexé, pour la recherche) + le hash **bcrypt** du `verificateur`
+- Au moment de vérifier : on cherche la ligne par `selecteur` (rapide), puis on fait `bcrypt.compare(verificateur, hash_stocké)` — c'est là que le salt de bcrypt s'applique, exactement comme pour les mots de passe.
+
+Je mets à jour le code avec cette approche.Maintenant `tokens.js` :Maintenant les routes qui utilisent ces fonctions :Et la fonction `emettreSession`, qui appelle maintenant `genererRefreshToken()` de façon asynchrone :Vérifions maintenant qu'il ne reste aucune référence à l'ancien schéma, puis on relance les tests :Tout fonctionne : le hash en base est bien un `$2b$10$...` (bcrypt avec salt), la rotation révoque l'ancien token, et la vérification par `bcrypt.compare` passe correctement. Je nettoie et je mets à jour la doc, puis je repackage l'archive.**Ce qui a changé :**
+
+- Le refresh token est désormais au format `selecteur.verificateur` (ex. `2e673bdc...74a8d7e.8e429166...4827ec7`)
+- En base : `selecteur` en clair (indexé), `token_hash` = **bcrypt** du vérificateur, coût 10, avec salt (vérifié — les hashes en base commencent bien par `$2b$10$...`)
+- `/auth/rafraichir` et `/auth/deconnexion` cherchent par sélecteur puis vérifient via `bcrypt.compare()`
+
+J'ai retesté tout le flux (inscription → refresh avec rotation → réutilisation de l'ancien token refusée → déconnexion → session invalidée) : ça fonctionne comme avant, juste avec bcrypt sous le capot maintenant.
+
+Un détail que je vous signale par transparence : j'ai mis le coût bcrypt du refresh token à **10** plutôt que 12 (comme pour les mots de passe), pour limiter la latence ajoutée à chaque appel de `/auth/rafraichir` — cet endpoint peut être appelé fréquemment par l'intercepteur frontend. Dites-moi si vous préférez aligner sur 12 partout pour la cohérence.
+
+---
+
+### 💬 Prompt 3
+Utilise la librairie MUI pour le frontend
+
+---
+
+### 📦 Sortie obtenue 3
+Maintenant je réécris les formulaires avec les composants MUI :Et l'intégration dans `App.jsx` :Vérifions que ça compile réellement (installation + build Vite) :Le build passe sans erreur. Je nettoie et je repackage l'archive :**Ce qui a été ajouté/changé :**
+
+- `@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled` dans `frontend/package.json`
+- `theme.js` — thème MUI sobre (accent bleu ardoise, coins légèrement arrondis) adapté à un écran de connexion
+- `main.jsx` — `ThemeProvider` + `CssBaseline`
+- `RegisterForm.jsx` / `LoginForm.jsx` — réécrits avec `TextField`, `Button`, `Alert`, `Stack` ; la checklist de force du mot de passe utilise maintenant des icônes MUI (`CheckCircleIcon` / `RadioButtonUncheckedIcon`) au lieu de puces texte
+- `App.jsx` — `Container`/`Paper`/`CircularProgress` pour l'écran de chargement et le conteneur global
+- `index.html` + `vite.config.js` ajoutés (manquants jusqu'ici, nécessaires pour que le projet Vite tourne réellement)
+
+J'ai testé `npm install` + `npm run build` : ça compile sans erreur.
+
+Pour lancer le frontend : `cd frontend && npm install && npm run dev`.
+
+---
+
+### Fichiers en sortie après la discussion
+L'IA à générer un projet complet, mais voici les fichiers qui ont été utilisés :
+
+- client.js (rennomé authClient.js) :
+```js
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/GTI525/v1';
+
+let rafraichissementEnCours = null;
+
+/**
+ * Effectue une requête vers l'API en incluant toujours les cookies (credentials).
+ * Si la réponse est 401 (token d'accès expiré) et que ce n'est pas déjà une requête
+ * de rafraîchissement, tente automatiquement /auth/rafraichir puis rejoue la requête
+ * une seule fois.
+ */
+async function requeteApi(chemin, options = {}, dejaTentee = false) {
+    const reponse = await fetch(`${BASE_URL}${chemin}`, {
+        ...options,
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(options.headers || {}),
+        },
+    });
+
+    if (reponse.status === 401 && !dejaTentee && chemin !== '/auth/rafraichir') {
+        const rafraichi = await tenterRafraichissement();
+        if (rafraichi) {
+            return requeteApi(chemin, options, true);
+        }
+    }
+
+    return reponse;
+}
+
+function tenterRafraichissement() {
+    // Évite les rafraîchissements concurrents si plusieurs requêtes échouent en même temps
+    if (!rafraichissementEnCours) {
+        rafraichissementEnCours = fetch(`${BASE_URL}/auth/rafraichir`, {
+            method: 'POST',
+            credentials: 'include',
+        })
+            .then((res) => res.ok)
+            .catch(() => false)
+            .finally(() => {
+                rafraichissementEnCours = null;
+            });
+    }
+    return rafraichissementEnCours;
+}
+
+export async function inscrire(courriel, motDePasse, confirmationMotDePasse) {
+    const reponse = await requeteApi('/auth/inscription', {
+        method: 'POST',
+        body: JSON.stringify({ courriel, motDePasse, confirmationMotDePasse }),
+    });
+    const donnees = await reponse.json();
+    return { ok: reponse.ok, statut: reponse.status, donnees };
+}
+
+export async function connecter(courriel, motDePasse) {
+    const reponse = await requeteApi('/auth/connexion', {
+        method: 'POST',
+        body: JSON.stringify({ courriel, motDePasse }),
+    });
+    const donnees = await reponse.json();
+    return { ok: reponse.ok, statut: reponse.status, donnees };
+}
+
+export async function deconnecter() {
+    const reponse = await requeteApi('/auth/deconnexion', { method: 'POST' });
+    return reponse.ok;
+}
+
+export async function obtenirUtilisateurCourant() {
+    const reponse = await requeteApi('/auth/moi', { method: 'GET' });
+    if (!reponse.ok) return null;
+    const donnees = await reponse.json();
+    return donnees.utilisateur;
+}
+
+```
+
+- LoginForm.jsx :
+```jsx
+import { useState } from 'react';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
+import CircularProgress from '@mui/material/CircularProgress';
+
+import { connecter } from '../api/client';
+import { estEmailValide } from '../hooks/useValidationMotDePasse';
+
+export default function LoginForm({ onSuccesConnexion }) {
+  const [courriel, setCourriel] = useState('');
+  const [motDePasse, setMotDePasse] = useState('');
+  const [etat, setEtat] = useState('inactif'); // inactif | chargement | erreur | succes
+  const [messageErreur, setMessageErreur] = useState('');
+
+  const formulaireValide = estEmailValide(courriel) && motDePasse.length > 0;
+
+  async function gererEnvoi(e) {
+    e.preventDefault();
+    if (!formulaireValide) return;
+
+    setEtat('chargement');
+    setMessageErreur('');
+
+    const { ok, donnees } = await connecter(courriel, motDePasse);
+
+    if (ok) {
+      setEtat('succes');
+      onSuccesConnexion && onSuccesConnexion(donnees.utilisateur);
+    } else {
+      setEtat('erreur');
+      // Message générique renvoyé par le backend, jamais "email inconnu" vs "mdp incorrect"
+      setMessageErreur(donnees.message || 'Une erreur est survenue.');
+    }
+  }
+
+  return (
+    <Box component="form" onSubmit={gererEnvoi} noValidate>
+      <Typography variant="h5" gutterBottom>
+        Se connecter
+      </Typography>
+
+      <Stack spacing={2} sx={{ mt: 1 }}>
+        <TextField
+          id="courriel-connexion"
+          label="Courriel"
+          type="email"
+          value={courriel}
+          onChange={(e) => setCourriel(e.target.value)}
+          autoComplete="email"
+          required
+          fullWidth
+        />
+
+        <TextField
+          id="mdp-connexion"
+          label="Mot de passe"
+          type="password"
+          value={motDePasse}
+          onChange={(e) => setMotDePasse(e.target.value)}
+          autoComplete="current-password"
+          required
+          fullWidth
+        />
+
+        {etat === 'erreur' && <Alert severity="error">{messageErreur}</Alert>}
+
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={!formulaireValide || etat === 'chargement'}
+          startIcon={etat === 'chargement' ? <CircularProgress size={18} color="inherit" /> : null}
+        >
+          {etat === 'chargement' ? 'Connexion en cours…' : 'Se connecter'}
+        </Button>
+      </Stack>
+    </Box>
+  );
+}
+
+```
+- RegisterForm.jsx :
+```jsx
+import { useState } from 'react';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import CircularProgress from '@mui/material/CircularProgress';
+
+import { inscrire } from '../api/client';
+import { useValidationMotDePasse, estEmailValide } from '../hooks/useValidationMotDePasse';
+
+export default function RegisterForm({ onSuccesInscription }) {
+  const [courriel, setCourriel] = useState('');
+  const [motDePasse, setMotDePasse] = useState('');
+  const [confirmation, setConfirmation] = useState('');
+  const [etat, setEtat] = useState('inactif'); // inactif | chargement | erreur | succes
+  const [messageErreur, setMessageErreur] = useState('');
+
+  const { regles, toutesValides } = useValidationMotDePasse(motDePasse);
+  const emailTouche = courriel.length > 0;
+  const emailValide = estEmailValide(courriel);
+  const confirmationTouchee = confirmation.length > 0;
+  const motsDePasseCorrespondent = motDePasse === confirmation;
+
+  const formulaireValide = emailValide && toutesValides && motsDePasseCorrespondent && confirmationTouchee;
+
+  async function gererEnvoi(e) {
+    e.preventDefault();
+    if (!formulaireValide) return;
+
+    setEtat('chargement');
+    setMessageErreur('');
+
+    const { ok, donnees } = await inscrire(courriel, motDePasse, confirmation);
+
+    if (ok) {
+      setEtat('succes');
+      onSuccesInscription && onSuccesInscription(donnees.utilisateur);
+    } else {
+      setEtat('erreur');
+      setMessageErreur(donnees.message || 'Une erreur est survenue.');
+    }
+  }
+
+  return (
+    <Box component="form" onSubmit={gererEnvoi} noValidate>
+      <Typography variant="h5" gutterBottom>
+        Créer un compte
+      </Typography>
+
+      <Stack spacing={2} sx={{ mt: 1 }}>
+        <TextField
+          id="courriel-inscription"
+          label="Courriel"
+          type="email"
+          value={courriel}
+          onChange={(e) => setCourriel(e.target.value)}
+          autoComplete="email"
+          required
+          fullWidth
+          error={emailTouche && !emailValide}
+          helperText={emailTouche && !emailValide ? 'Format de courriel invalide.' : ' '}
+        />
+
+        <TextField
+          id="mdp-inscription"
+          label="Mot de passe"
+          type="password"
+          value={motDePasse}
+          onChange={(e) => setMotDePasse(e.target.value)}
+          autoComplete="new-password"
+          required
+          fullWidth
+        />
+
+        <List dense disablePadding sx={{ mt: -1.5 }}>
+          {regles.map((regle) => (
+            <ListItem key={regle.cle} disableGutters sx={{ py: 0.25 }}>
+              <ListItemIcon sx={{ minWidth: 28 }}>
+                {regle.valide ? (
+                  <CheckCircleIcon fontSize="small" color="success" />
+                ) : (
+                  <RadioButtonUncheckedIcon fontSize="small" color="disabled" />
+                )}
+              </ListItemIcon>
+              <ListItemText
+                primaryTypographyProps={{
+                  variant: 'body2',
+                  color: regle.valide ? 'text.primary' : 'text.secondary',
+                }}
+                primary={regle.label}
+              />
+            </ListItem>
+          ))}
+        </List>
+
+        <TextField
+          id="confirmation-inscription"
+          label="Confirmer le mot de passe"
+          type="password"
+          value={confirmation}
+          onChange={(e) => setConfirmation(e.target.value)}
+          autoComplete="new-password"
+          required
+          fullWidth
+          error={confirmationTouchee && !motsDePasseCorrespondent}
+          helperText={
+            confirmationTouchee && !motsDePasseCorrespondent
+              ? 'Les mots de passe ne correspondent pas.'
+              : ' '
+          }
+        />
+
+        {etat === 'erreur' && <Alert severity="error">{messageErreur}</Alert>}
+        {etat === 'succes' && <Alert severity="success">Compte créé avec succès.</Alert>}
+
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={!formulaireValide || etat === 'chargement'}
+          startIcon={etat === 'chargement' ? <CircularProgress size={18} color="inherit" /> : null}
+        >
+          {etat === 'chargement' ? 'Création en cours…' : "S'inscrire"}
+        </Button>
+      </Stack>
+    </Box>
+  );
+}
+
+```
+- useValidationMoteDePasse.js :
+```js
+import { useMemo } from 'react';
+
+// Doit rester cohérent avec backend/src/utils/validators.js
+const LONGUEUR_MIN = 12;
+
+export function useValidationMotDePasse(motDePasse) {
+  return useMemo(() => {
+    const regles = [
+      { cle: 'longueur', label: `Au moins ${LONGUEUR_MIN} caractères`, valide: motDePasse.length >= LONGUEUR_MIN },
+      { cle: 'majuscule', label: 'Une majuscule', valide: /[A-Z]/.test(motDePasse) },
+      { cle: 'minuscule', label: 'Une minuscule', valide: /[a-z]/.test(motDePasse) },
+      { cle: 'chiffre', label: 'Un chiffre', valide: /[0-9]/.test(motDePasse) },
+      { cle: 'special', label: 'Un caractère spécial', valide: /[^A-Za-z0-9]/.test(motDePasse) },
+    ];
+    const toutesValides = regles.every((r) => r.valide);
+    return { regles, toutesValides };
+  }, [motDePasse]);
+}
+
+export function estEmailValide(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
+```
+
+---
+### ✏️ Modifications apportées par l'humain
+
+- fichier client.js renonné pour auth.js
+- logique de rafraichissement dans client.js supprimé
+- paramettre pour confirmation de mot de passe dans la fonction inscrire de client.js supprimé
+- utilisation d'un bearer token de dans client.js
+- ajustement du port dans client.js
+- utilisation de useNavigate dans LoginForm et RegisterForm
+- modifications des chemins de fichier dans les impoorts
+- ajutement mineur de visuel des nouveaux composants (ajutement marge par exemple)
+---
+
+### 🧠 Justification
+
+Pour commencer, j'ai ajouté 2 pages pour la connexion et l'inscription qui sont accessible
+via leur bouton respectif dams la barre de navigation. Dans ces pages, j'ai ajouté
+les 2 composants de l'IA qui fonctionnait très bien mise à part les chemins
+de fichier à modifier. Le hook fonctionnait très bien aussi donc je l'ai gardé ainsi.
+
+Les problèmes se trouvait principalement dans client.js, car l'IA ne connaissait
+pas mon backend. Pour commencer, le port n'était pas le bon, car j'avais oublié
+de mentionner à l'IA le port a utilisé. Par la suite, j'avais des erreurs CORS
+et je suis tombé sur ce middleware Node.js provenant pour Express de npm :
+
+https://www.npmjs.com/package/cors
+
+Je l'ai donc utilisé pour faire la gestion des response headers CORS.
+
+Un autre problème était que client.js utilisaot des cookies de connexion alors que
+notre backend utilisait un bearer token. J'ai donc du faire quelques ajutements afin
+d'utilisé un bearer token dans le frontend également. Puisque je n'avais plus de
+cookie, je n'avais plus rien a rafraichir. J'ai donc enlever la logique de refresh.
+Pour la deconnexion, je supprime le token.
+
+Pour obtenir l'utilisateur courant, je'ai ajouté une nouvelle route qui retourne
+un objet utilisteur avec un courriel comme propriété.
+
+---
+
+## Tâche 49 —PointInteret.jsx - Modale d'ajout, modification et supression d'un point d'interet {#tache-49}
+
+**Auteur** : Justin Maitland - 2026-07-21
+
+### 💬 Prompt
+
+```
+Voici ma page point d'interet. je voudrais un dialogue MUI d'ajout, 
+de modification et de suppression d'un point d'intérêt, avec un formulaire 
+dont les champs s'adaptent au type sélectionné. Seulement le type fontaine 
+existe présentement. Les champs restent pareille dans chaque type 
+d'arrondissement
+```
+#### Fichiers liés :
+- PointInteret.jsx
+- PointInteret.js
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ      | Valeur  |
+|------------|---------|
+| **Outil**  | ChatGPT |
+| **Modèle** | Gpt 5-5 |
+
+---
+
+
+---
+### 💬 Prompt
+
+---
+
+### 📦 Sortie obtenue
+À partir de ton code, je te proposerais une architecture qui va bien évoluer lorsque tu ajouteras d'autres types de points d'intérêt (station de réparation, support à vélo, etc.).
+
+## 1. Un seul Dialog réutilisable
+
+Au lieu de créer trois composants, je créerais :
+
+```
+components/
+    PointInteretDialog.jsx
+    PointInteretDeleteDialog.jsx
+    PointInteretForm.jsx
+```
+
+Le même `PointInteretDialog` sert pour :
+
+* Ajout
+* Modification
+
+Le `DeleteDialog` ne sert qu'à confirmer la suppression.
+
+---
+
+## 2. Modes du dialogue
+
+Le dialogue reçoit un mode.
+
+```jsx
+<PointInteretDialog
+    open={dialogOpen}
+    mode="create"      // create | edit
+    point={selectedPoi}
+    onClose={...}
+    onSave={...}
+/>
+```
+
+Le titre change automatiquement.
+
+```
+mode === "create"
+→ Ajouter un point d'intérêt
+
+mode === "edit"
+→ Modifier le point d'intérêt
+```
+
+---
+
+## 3. Formulaire dynamique
+
+Je ne coderais pas les champs directement.
+
+Je définirais plutôt une configuration.
+
+```jsx
+const POINT_TYPES = {
+    Fontaine: {
+        fields: [
+            "arrondissement",
+            "nom_parc_lieu",
+            "intersection",
+            "etat",
+            "date_installation",
+            "precision_localisation",
+            "latitude",
+            "longitude",
+            "x",
+            "y",
+            "remarque",
+        ]
+    }
+};
+```
+
+Puis le formulaire affiche les champs selon
+
+```jsx
+POINT_TYPES[type].fields
+```
+
+Lorsque tu ajouteras
+
+```
+Support à vélo
+```
+
+tu n'auras qu'à ajouter
+
+```jsx
+Support: {
+    fields: [
+       ...
+    ]
+}
+```
+
+sans modifier le formulaire.
+
+---
+
+## 4. Les champs communs
+
+Je séparerais les champs communs des champs spécifiques.
+
+```jsx
+const COMMON_FIELDS = [
+    "type",
+    "arrondissement",
+    "nom_parc_lieu",
+    "latitude",
+    "longitude",
+];
+```
+
+Puis
+
+```jsx
+const TYPE_FIELDS = {
+    Fontaine: [
+        "intersection",
+        "etat",
+        "date_installation",
+        "precision_localisation",
+        "x",
+        "y",
+        "remarque"
+    ]
+};
+```
+
+Le rendu devient
+
+```
+Type
+
+↓
+
+Nom
+
+↓
+
+Arrondissement
+
+↓
+
+Latitude
+
+Longitude
+
+↓
+
+(champs spécifiques)
+```
+
+C'est beaucoup plus simple à maintenir.
+
+---
+
+## 5. Le changement de type
+
+Le premier champ serait
+
+```jsx
+<Select
+    value={form.type}
+    onChange={...}
+>
+    <MenuItem value="Fontaine">
+        Fontaine
+    </MenuItem>
+</Select>
+```
+
+Puis
+
+```jsx
+const fields = TYPE_FIELDS[form.type];
+```
+
+Le formulaire se met à jour automatiquement.
+
+---
+
+## 6. Les champs MUI
+
+Pour Fontaine je garderais :
+
+| Champ                  | Composant                         |
+| ---------------------- | --------------------------------- |
+| Type                   | Select                            |
+| Arrondissement         | Select                            |
+| Nom                    | TextField                         |
+| Intersection           | TextField                         |
+| État                   | Select                            |
+| Date installation      | DatePicker ou TextField type=date |
+| Précision localisation | TextField                         |
+| Latitude               | TextField number                  |
+| Longitude              | TextField number                  |
+| X                      | TextField number                  |
+| Y                      | TextField number                  |
+| Remarque               | TextField multiline               |
+
+---
+
+## 7. Les actions dans le DataGrid
+
+J'ajouterais une vraie colonne Actions.
+
+```
+Carte
+
+Modifier
+
+Supprimer
+```
+
+Par exemple
+
+```jsx
+<Stack direction="row" spacing={1}>
+    <IconButton color="primary">
+        <EditIcon />
+    </IconButton>
+
+    <IconButton color="error">
+        <DeleteIcon />
+    </IconButton>
+
+    <Button>
+        Carte
+    </Button>
+</Stack>
+```
+
+---
+
+## 8. Confirmation de suppression
+
+Un petit dialogue suffit.
+
+```
+Supprimer le point d'intérêt ?
+
+Voulez-vous vraiment supprimer
+
+"Fontaine Parc Maisonneuve"
+
+[Annuler]     [Supprimer]
+```
+
+Le bouton Supprimer appelle
+
+```js
+DELETE /gti525/v1/pointsdinteret/:id
+```
+
+---
+
+## 9. Sauvegarde
+
+Le même composant peut décider automatiquement de la requête.
+
+```jsx
+if (mode === "create") {
+    POST /gti525/v1/pointsdinteret
+} else {
+    PUT /gti525/v1/pointsdinteret/:id
+}
+```
+
+---
+
+## 10. Structure finale
+
+Je viserais quelque chose comme :
+
+```
+PointInteret.jsx
+│
+├── DataGrid
+├── PointInteretDialog
+│       ├── PointInteretForm
+│       └── FormFields
+│
+├── DeleteDialog
+│
+└── InteractiveMapDialog
+```
+
+Cette approche est très évolutive : aujourd'hui seul le type **Fontaine** existe, mais lorsque tu ajouteras d'autres types, tu n'auras essentiellement qu'à enrichir la configuration des champs (`TYPE_FIELDS`) sans réécrire le formulaire. Les champs communs, comme l'arrondissement, resteront identiques pour tous les types, conformément à ton besoin.
+
+### 💬 Prompt 2
+```
+Génère moi le fichier PointInterets.jsx modifie et les nouveaux composants dialogues
+```
+
+---
+
+
+### 📦 Sortie obtenue 2
+
+J'ai généré les trois composants React demandés sous forme de fichiers prêts à être intégrés à votre projet.
+
+#### Fichiers générés
+
+📄 **PointInteretDialog.jsx**
+
+- Dialogue Material UI réutilisable pour l'ajout et la modification.
+- Gestion des modes `create` et `edit`.
+- Validation des champs obligatoires.
+- Appels aux API `POST` et `PUT`.
+- Gestion de l'état de chargement pendant la sauvegarde.
+
+⬇️ **Télécharger : PointInteretDialog.jsx**
+
+---
+
+📄 **PointInteretForm.jsx**
+
+- Formulaire Material UI complet.
+- Champs communs affichés pour tous les points d'intérêt.
+- Affichage dynamique des champs selon le type sélectionné.
+- Configuration prête à accueillir de nouveaux types de points d'intérêt.
+- Compatible avec le composant `PointInteretDialog`.
+
+⬇️ **Télécharger : PointInteretForm.jsx**
+
+---
+
+📄 **PointInteretDeleteDialog.jsx**
+
+- Dialogue de confirmation Material UI.
+- Confirmation avant suppression.
+- Appel de l'API `DELETE`.
+- Gestion de l'indicateur de chargement.
+- Retour d'information après suppression.
+
+⬇️ **Télécharger : PointInteretDeleteDialog.jsx**
+
+Ces trois composants ont été conçus pour fonctionner ensemble et s'intègrent directement dans votre page `PointInteret.jsx`. Leur architecture facilite l'ajout futur de nouveaux types de points d'intérêt sans nécessiter de modifications importantes du formulaire.
+
+---
+
+### Fichiers en sortie
+
+- PointInteretDialog.jsx
+```jsx
+import { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  CircularProgress,
+} from "@mui/material";
+
+import PointInteretForm from "./PointInteretForm";
+
+const defaultValues = {
+  type: "Fontaine",
+  arrondissement: "",
+  nom_parc_lieu: "",
+  intersection: "",
+  etat: "",
+  date_installation: "",
+  precision_localisation: "",
+  latitude: "",
+  longitude: "",
+  x: "",
+  y: "",
+  remarque: "",
+};
+
+export default function PointInteretDialog({
+  open,
+  mode = "create",
+  point = null,
+  arrondissements = [],
+  onClose,
+  onSaved,
+}) {
+  const [form, setForm] = useState(defaultValues);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    if (mode === "edit" && point) {
+      setForm({
+        type: point.Type ?? "Fontaine",
+        arrondissement: point.Arrondissement ?? "",
+        nom_parc_lieu: point.Nom_parc_lieu ?? point.Nom ?? "",
+        intersection: point.Intersection ?? point.Adresse ?? "",
+        etat: point.Etat ?? "",
+        date_installation: point.Date_installation ?? "",
+        precision_localisation: point.Precision_localisation ?? "",
+        latitude: point.Latitude ?? "",
+        longitude: point.Longitude ?? "",
+        x: point.X ?? "",
+        y: point.Y ?? "",
+        remarque: point.Remarque ?? "",
+      });
+    } else {
+      setForm(defaultValues);
+    }
+  }, [open, mode, point]);
+
+  function updateField(field, value) {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }
+
+  async function handleSave() {
+    if (!form.nom_parc_lieu.trim()) {
+      alert("Le nom est obligatoire.");
+      return;
+    }
+
+    if (form.latitude === "" || form.longitude === "") {
+      alert("La latitude et la longitude sont obligatoires.");
+      return;
+    }
+
+    setSaving(true);
+
+    const payload = {
+      ...form,
+      latitude: parseFloat(form.latitude),
+      longitude: parseFloat(form.longitude),
+      x: form.x === "" ? null : parseFloat(form.x),
+      y: form.y === "" ? null : parseFloat(form.y),
+    };
+
+    try {
+      const url =
+        mode === "create"
+          ? "/gti525/v1/pointsdinteret"
+          : `/gti525/v1/pointsdinteret/${point.ID}`;
+
+      const method = mode === "create" ? "POST" : "PUT";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.erreur || "Erreur.");
+      }
+
+      onSaved?.();
+      onClose();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onClose={saving ? undefined : onClose}
+      fullWidth
+      maxWidth="md"
+    >
+      <DialogTitle>
+        {mode === "create"
+          ? "Ajouter un point d'intérêt"
+          : "Modifier le point d'intérêt"}
+      </DialogTitle>
+
+      <DialogContent dividers>
+        <PointInteretForm
+          form={form}
+          onChange={updateField}
+          arrondissements={arrondissements}
+        />
+      </DialogContent>
+
+      <DialogActions>
+        <Button
+          onClick={onClose}
+          disabled={saving}
+        >
+          Annuler
+        </Button>
+
+        <Button
+          variant="contained"
+          onClick={handleSave}
+          disabled={saving}
+        >
+          {saving ? (
+            <CircularProgress size={20} color="inherit" />
+          ) : mode === "create" ? (
+            "Ajouter"
+          ) : (
+            "Enregistrer"
+          )}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+```
+
+- PointInteretForm.jsx
+```jsx
+import {
+  Grid,
+  TextField,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+} from "@mui/material";
+
+const TYPE_FIELDS = {
+  Fontaine: [
+    "intersection",
+    "etat",
+    "date_installation",
+    "precision_localisation",
+    "x",
+    "y",
+    "remarque",
+  ],
+};
+
+const ETATS = [
+  "Excellent",
+  "Bon",
+  "Moyen",
+  "Mauvais",
+  "Hors service",
+];
+
+export default function PointInteretForm({
+  form,
+  onChange,
+  arrondissements,
+}) {
+
+  const specificFields = TYPE_FIELDS[form.type] || [];
+
+  return (
+    <Grid container spacing={2} sx={{ mt: 0.5 }}>
+
+      {/* Type */}
+      <Grid item xs={12} md={6}>
+        <FormControl fullWidth>
+          <InputLabel>Type</InputLabel>
+
+          <Select
+            label="Type"
+            value={form.type}
+            onChange={(e) => onChange("type", e.target.value)}
+          >
+            <MenuItem value="Fontaine">
+              Fontaine
+            </MenuItem>
+          </Select>
+        </FormControl>
+      </Grid>
+
+      {/* Arrondissement */}
+      <Grid item xs={12} md={6}>
+        <FormControl fullWidth>
+          <InputLabel>Arrondissement</InputLabel>
+
+          <Select
+            label="Arrondissement"
+            value={form.arrondissement}
+            onChange={(e) =>
+              onChange("arrondissement", e.target.value)
+            }
+          >
+            {arrondissements.map((arr) => (
+              <MenuItem key={arr} value={arr}>
+                {arr}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
+
+      {/* Nom */}
+      <Grid item xs={12}>
+        <TextField
+          fullWidth
+          required
+          label="Nom"
+          value={form.nom_parc_lieu}
+          onChange={(e) =>
+            onChange("nom_parc_lieu", e.target.value)
+          }
+        />
+      </Grid>
+
+      {/* Latitude */}
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          required
+          type="number"
+          label="Latitude"
+          value={form.latitude}
+          onChange={(e) =>
+            onChange("latitude", e.target.value)
+          }
+        />
+      </Grid>
+
+      {/* Longitude */}
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          required
+          type="number"
+          label="Longitude"
+          value={form.longitude}
+          onChange={(e) =>
+            onChange("longitude", e.target.value)
+          }
+        />
+      </Grid>
+
+      {/* Champs spécifiques Fontaine */}
+      {specificFields.includes("intersection") && (
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Intersection"
+            value={form.intersection}
+            onChange={(e) =>
+              onChange("intersection", e.target.value)
+            }
+          />
+        </Grid>
+      )}
+
+      {specificFields.includes("etat") && (
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth>
+            <InputLabel>État</InputLabel>
+
+            <Select
+              label="État"
+              value={form.etat}
+              onChange={(e) =>
+                onChange("etat", e.target.value)
+              }
+            >
+              {ETATS.map((etat) => (
+                <MenuItem key={etat} value={etat}>
+                  {etat}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      )}
+
+      {specificFields.includes("date_installation") && (
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            type="date"
+            label="Date d'installation"
+            InputLabelProps={{
+              shrink: true,
+            }}
+            value={form.date_installation}
+            onChange={(e) =>
+              onChange(
+                "date_installation",
+                e.target.value
+              )
+            }
+          />
+        </Grid>
+      )}
+
+      {specificFields.includes("precision_localisation") && (
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Précision de localisation"
+            value={form.precision_localisation}
+            onChange={(e) =>
+              onChange(
+                "precision_localisation",
+                e.target.value
+              )
+            }
+          />
+        </Grid>
+      )}
+
+      {specificFields.includes("x") && (
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            type="number"
+            label="Coordonnée X"
+            value={form.x}
+            onChange={(e) =>
+              onChange("x", e.target.value)
+            }
+          />
+        </Grid>
+      )}
+
+      {specificFields.includes("y") && (
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            type="number"
+            label="Coordonnée Y"
+            value={form.y}
+            onChange={(e) =>
+              onChange("y", e.target.value)
+            }
+          />
+        </Grid>
+      )}
+
+      {specificFields.includes("remarque") && (
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label="Remarque"
+            value={form.remarque}
+            onChange={(e) =>
+              onChange("remarque", e.target.value)
+            }
+          />
+        </Grid>
+      )}
+
+    </Grid>
+  );
+}
+
+```
+
+- PointInteretDeleteDialog.jsx
+```jsx
+import { useState } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  CircularProgress,
+} from "@mui/material";
+
+export default function PointInteretDeleteDialog({
+  open,
+  point,
+  onClose,
+  onDeleted,
+}) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleDelete() {
+    if (!point) return;
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `/gti525/v1/pointsdinteret/${point.ID}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.erreur || "Erreur lors de la suppression.");
+      }
+
+      onDeleted?.();
+      onClose();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onClose={loading ? undefined : onClose}
+      maxWidth="xs"
+      fullWidth
+    >
+      <DialogTitle>
+        Supprimer le point d'intérêt
+      </DialogTitle>
+
+      <DialogContent>
+        <DialogContentText>
+          Êtes-vous certain de vouloir supprimer ce point d'intérêt&nbsp;?
+        </DialogContentText>
+
+        <DialogContentText
+          sx={{
+            mt: 2,
+            fontWeight: "bold",
+            color: "text.primary",
+          }}
+        >
+          {point?.Nom_parc_lieu ?? point?.Nom}
+        </DialogContentText>
+
+        <DialogContentText sx={{ mt: 1 }}>
+          Cette action est irréversible.
+        </DialogContentText>
+      </DialogContent>
+
+      <DialogActions>
+        <Button
+          onClick={onClose}
+          disabled={loading}
+        >
+          Annuler
+        </Button>
+
+        <Button
+          color="error"
+          variant="contained"
+          onClick={handleDelete}
+          disabled={loading}
+        >
+          {loading ? (
+            <CircularProgress
+              size={20}
+              color="inherit"
+            />
+          ) : (
+            "Supprimer"
+          )}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+```
+
+
+### ✏️ Modifications apportées par l'humain
+- Modifications des champs dans le formulaire
+- Utilisation des méthode de ma classe AuthClient pour faire les fetchs
+- Garder seulement intersection dans TYPE_FIELDS
+- ETATS dans la classe formulaire supprimé
+- UI modifié pour avoir les champs en colonne dans le formulaire
+
+---
+
+### 🧠 Justification
+J'ai du commencé par supprimés les champs inutiles dans le formulaire, car
+j'avais oublier de mentionner à l'IA les champs que je voulais. J'ai gardé la
+latitude et longitude pour placer le point d'intérèt  sur la carte. Pour les
+requête API, j'ai ajouté des méthodes dans ma classe authClient.js, car j'avais
+déjà une logique pour vérifier si l'utilisateur est connecté. J'ai enlevé
+les ETATS, car ce champs était probablement une hallucination de l'IA. J'ai aussi
+du modifier le UI pour le formulaire, car plusieurs champs n'étaient pas bien
+lisible et j'aimais pas qu'ils étaient adjacent sur la même colonne parfois.
+
+J'ai ensuite ajouté ces composants dans ma page PointInteret en fournissant
+les props nécessaire : un était pour cacher ou montrer la fenetre, un état
+pour choisir le mode, le point d'intérêt selectionné et les arrondissement
+pour le menu déroulant. J'ai aussi ajouter une méthode permettant de
+rafraichir le data grid a chaque modification pour voir les changements
+dans devoir changer le champs de recherche.

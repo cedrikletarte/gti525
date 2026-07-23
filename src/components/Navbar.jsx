@@ -1,20 +1,22 @@
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
 import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Box,
-  Divider,
+    AppBar,
+    Toolbar,
+    Typography,
+    Button,
+    IconButton,
+    Drawer,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemText,
+    Box,
+    Divider
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link } from 'react-router-dom';
+import { deconnecter, obtenirUtilisateurCourant } from '../api/client.js';
+import {useNavigate} from 'react-router-dom'
 
 const NAV_LINKS = [
   { label: 'Accueil', path: '/' },
@@ -27,6 +29,19 @@ const NAV_LINKS = [
 
 export default function Navbar({ activePage }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [utilisateur, setUtilisateur] = useState(null);
+  const navigate = useNavigate()
+
+  useEffect(() => {
+      obtenirUtilisateurCourant()
+          .then(setUtilisateur)
+      }, [])
+
+  function gererDeconnexion() {
+      deconnecter();
+      setUtilisateur(null);
+      navigate("/")
+  }
 
   const linkSx = (label) => ({
     color: activePage === label ? 'primary.main' : 'text.muted',
@@ -72,14 +87,23 @@ export default function Navbar({ activePage }) {
         ))}
       </List>
       <Divider />
+        {utilisateur ? (
+                <Box sx={{display: "flex", gap: 2, flexDirection: 'column'}}>
+                    <Typography  sx={{pt: "12px", pl: "12px", fontSize: 12}}>{utilisateur.courriel}</Typography>
+                    <Button variant="outlined" onClick={gererDeconnexion}>
+                        Se déconnecter
+                    </Button>
+                </Box>
+            ) :(
       <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Button variant="outlined" color="primary" fullWidth>
+        <Button component={Link} to={"/connexion"}  variant="outlined" color="primary" fullWidth>
           Connexion
         </Button>
-        <Button variant="contained" color="primary" fullWidth>
+        <Button component={Link} to={"/inscription"}  variant="contained" color="primary" fullWidth>
           Inscription
         </Button>
       </Box>
+            )}
     </Box>
   );
 
@@ -112,12 +136,24 @@ export default function Navbar({ activePage }) {
 
         {/* Desktop auth buttons */}
         <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
-          <Button variant="outlined" color="primary">
-            Connexion
-          </Button>
-          <Button variant="contained" color="primary">
-            Inscription
-          </Button>
+            {utilisateur ? (
+                    <Box sx={{display: "flex", gap : 2, alignItems: 'center', flexDirection: 'row'}}>
+                    <Typography sx={{color : 'text.muted', textAlign: "center", fontSize: 12}}>{utilisateur.courriel}</Typography>
+                    <Button variant="outlined" onClick={gererDeconnexion} >
+                        Déconnexion
+                    </Button>
+                    </Box>
+            ) :(
+                <Box sx={{display: "flex", gap: 2}}>
+                    <Button component={Link} to={"/connexion"}  variant="outlined" color="primary">
+                        Connexion
+                    </Button>
+                        <Button component={Link} to={"/inscription"} variant="contained" color="primary">
+                    Inscription
+                    </Button>
+                </Box>
+          )}
+
         </Box>
 
         {/* Mobile hamburger */}

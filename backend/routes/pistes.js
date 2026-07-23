@@ -45,15 +45,18 @@ router.get('/', async (req, res) => {
         WHERE  DATE(p.date_heure) BETWEEN ? AND ?
         AND    c.arrondissement IS NOT NULL
         GROUP  BY c.arrondissement
-        ORDER  BY CAST(total_passages AS DECIMAL) / n_compteurs DESC
+        ORDER BY SUM(p.nb_passages) / COUNT(DISTINCT p.id_compteur) DESC
         LIMIT  3
       `, [debutPop, finPop]);
 
       const top3 = popRows.map(r => normArr(r.arrondissement));
-      if (top3.length) {
+      if (!top3.length) {
+          res.setHeader('Content-Type', 'application/geo+json');
+          return res.json({ type: 'FeatureCollection', features: [] });
+      }
+
         conditions.push(`norm_arr IN (${top3.map(() => '?').join(',')})`);
         params.push(...top3);
-      }
     }
 
     let sql = 'SELECT feature FROM pistes';
