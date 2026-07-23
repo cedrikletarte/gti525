@@ -138,10 +138,10 @@ export default function Statistic() {
     if (selectedArr !== ALL) params.append('arrondissement', selectedArr);
 
     fetch(`/gti525/v1/compteurs?${params}`)
-      .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
-      .then(data => {
-        setCompteurs(data.donnees ?? []);
-        setRowCount(data.total ?? 0);
+      .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.message)))
+      .then(body => {
+        setCompteurs(body.data.donnees ?? []);
+        setRowCount(body.data.total ?? 0);
         setLoading(false);
       })
       .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load counters.'); setLoading(false); });
@@ -190,8 +190,8 @@ export default function Statistic() {
     setSelectedCompteur(params);
 
     await fetch(`/gti525/v1/compteurs/${params.ID}/passages`)
-        .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
-        .then(data => { setPassages(data); setDialogLoading(false); })
+        .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.message)))
+        .then(body => { setPassages(body.data); setDialogLoading(false); })
         .catch(err => setError(typeof err === 'string' ? err : 'Failed to load passages.'));
 
 
@@ -207,8 +207,8 @@ export default function Statistic() {
     setChartError(null);
     if(dateDebut && dateFin){
       await fetch(`/gti525/v1/compteurs/${selectedCompteur.ID}/passages?debut=${formdattedDateDebut}&fin=${formdattedDateFin}`)
-          .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
-          .then(data => { setPassages(data); setDialogLoading(false)})
+          .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.message)))
+          .then(body => { setPassages(body.data); setDialogLoading(false)})
           .catch(err => {setChartError(typeof err === 'string' ? err : 'Failed to load passages.'); setPassages([]); setDialogLoading(false); });
     }
   }

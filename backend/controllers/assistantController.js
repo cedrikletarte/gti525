@@ -1,9 +1,11 @@
-'use strict';
-const router = require('express').Router();
-const fs   = require('fs');
-const path = require('path');
-const { callLlm, isConfigured } = require('../lib/llm');
-const { buildContext } = require('../lib/assistantContext');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { callLlm, isConfigured } from '../lib/llm.js';
+import { buildContext } from '../lib/assistantContext.js';
+import { Reponse } from './util.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const MAX_QUESTION_LEN = 1000;
 const MAX_REPONSE_LEN  = 4000;
@@ -56,31 +58,31 @@ const SYSTEME = [
   "N'invente aucun chiffre ni aucun nom. N'utilise pas de mise en forme Markdown.",
 ].join(' ');
 
-router.post('/', async (req, res) => {
+export async function poserQuestion(req, res) {
   const debut = self_now();
   const ip = req.ip || req.socket?.remoteAddress || 'inconnue';
 
   // 1. Limitation de débit.
   if (rateLimited(ip)) {
     logAppel({ questionLen: 0, dureeMs: self_now() - debut, erreur: true });
-    return res.status(429).json({ erreur: 'Trop de requêtes. Réessayez dans un instant.' });
+    return res.status(429).json(Reponse.erreur(429, 'Trop de requêtes. Réessayez dans un instant.'));
   }
 
   // 2. Validation de la question.
   const question = (req.body ?? {}).question;
   if (typeof question !== 'string' || question.trim().length === 0) {
     logAppel({ questionLen: 0, dureeMs: self_now() - debut, erreur: true });
-    return res.status(400).json({ erreur: 'Le champ « question » est requis.' });
+    return res.status(400).json(Reponse.erreur(400, 'Le champ « question » est requis.'));
   }
   if (question.length > MAX_QUESTION_LEN) {
     logAppel({ questionLen: question.length, dureeMs: self_now() - debut, erreur: true });
-    return res.status(400).json({ erreur: `La question dépasse la limite de ${MAX_QUESTION_LEN} caractères.` });
+    return res.status(400).json(Reponse.erreur(400, `La question dépasse la limite de ${MAX_QUESTION_LEN} caractères.`));
   }
 
   // 3. Service configuré ?
   if (!isConfigured()) {
     logAppel({ questionLen: question.length, dureeMs: self_now() - debut, erreur: true });
-    return res.status(503).json({ erreur: "L'assistant n'est pas configuré sur le serveur (clé d'API manquante)." });
+    return res.status(503).json(Reponse.erreur(503, "L'assistant n'est pas configuré sur le serveur (clé d'API manquante)."));
   }
 
   // 4. RAG + appel LLM.
@@ -90,21 +92,21 @@ router.post('/', async (req, res) => {
     const reponse = await callLlm({ system: SYSTEME, user: userPrompt });
 
     logAppel({ questionLen: question.length, dureeMs: self_now() - debut, erreur: false });
-    return res.json({ reponse });
+    return res.json(Reponse.ok({ reponse }));
   } catch (err) {
     logAppel({ questionLen: question.length, dureeMs: self_now() - debut, erreur: true });
     console.error('[assistant] échec LLM :', err.message); // diagnostic serveur (pas de données personnelles)
-    return res.status(502).json({ erreur: "L'assistant est momentanément indisponible. Réessayez plus tard." });
+    return res.status(502).json(Reponse.erreur(502, "L'assistant est momentanément indisponible. Réessayez plus tard."));
   }
-});
+}
 
 // ─── Signalement d'une mauvaise réponse (T6.4) ──────────────────────────────
 // L'utilisateur clique sur « Signaler » ; l'événement (question + réponse
 // signalée) est consigné dans le journal serveur pour révision par l'équipe.
-router.post('/signalement', (req, res) => {
+export function signalerReponse(req, res) {
   const ip = req.ip || req.socket?.remoteAddress || 'inconnue';
   if (rateLimited(ip)) {
-    return res.status(429).json({ erreur: 'Trop de requêtes. Réessayez dans un instant.' });
+    return res.status(429).json(Reponse.erreur(429, 'Trop de requêtes. Réessayez dans un instant.'));
   }
 
   const body = req.body ?? {};
@@ -112,11 +114,9 @@ router.post('/signalement', (req, res) => {
   const reponse  = typeof body.reponse  === 'string' ? body.reponse.slice(0, MAX_REPONSE_LEN)   : '';
 
   if (!reponse) {
-    return res.status(400).json({ erreur: 'La réponse signalée est requise.' });
+    return res.status(400).json(Reponse.erreur(400, 'La réponse signalée est requise.'));
   }
 
   logSignalement({ questionLen: question.length, reponseLen: reponse.length, question, reponse });
-  return res.status(201).json({ message: 'Signalement enregistré. Merci de votre retour.' });
-});
-
-module.exports = router;
+  return res.status(201).json(Reponse.ok({ message: 'Signalement enregistré. Merci de votre retour.' }));
+}

@@ -9,7 +9,7 @@ export default function useTerritoires() {
     let active = true;
     fetch('/gti525/v1/territoires')
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('territoires'))))
-      .then((data) => { if (active) setTerritoires(data); })
+      .then((body) => { if (active) setTerritoires(body.data); })
       .catch(() => { if (active) setTerritoires(null); });
     return () => { active = false; };
   }, []);

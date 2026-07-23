@@ -36,8 +36,8 @@ export default function Reseau() {
 
   useEffect(() => {
     fetch('/gti525/v1/pistes')
-      .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
-      .then(data => { setPistes(data); setLoading(false); })
+      .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.message)))
+      .then(body => { setPistes(body.data); setLoading(false); })
       .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load bike network.'); setLoading(false); });
   }, []);
 
@@ -78,7 +78,7 @@ export default function Reseau() {
                 throw new Error(response.donnees?.erreur || response.erreur || "Erreur.");
             }
 
-            setPistes(response.donnees);
+            setPistes(response.donnees.data);
         } catch (e) {
             alert(e.message);
         }
@@ -97,8 +97,8 @@ export default function Reseau() {
       setDateDebut(null);
       setDateFin(null);
       await fetch('/gti525/v1/pistes')
-          .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
-          .then(data => { setPistes(data); setLoading(false); })
+          .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.message)))
+          .then(body => { setPistes(body.data); setLoading(false); })
           .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load bike network.'); setLoading(false); });
 
   }

@@ -1,5 +1,3 @@
-'use strict';
-
 // Appel à un LLM externe, côté serveur uniquement.
 // La clé d'API provient de process.env et n'est JAMAIS renvoyée à la frontale.
 //
@@ -31,7 +29,7 @@ function getConfig() {
 }
 
 // Indique si le service est configuré (clé + fournisseur connu).
-function isConfigured() {
+export function isConfigured() {
   const { provider, apiKey } = getConfig();
   return Boolean(apiKey) && (provider in OPENAI_COMPATIBLE);
 }
@@ -72,7 +70,7 @@ async function callOpenAiCompatible(url, { apiKey, model, system, user }) {
 
 // Compose l'appel au fournisseur configuré. Lève une erreur si non configuré
 // ou en cas d'échec réseau/API.
-async function callLlm({ system, user }) {
+export async function callLlm({ system, user }) {
   const { provider, apiKey, model } = getConfig();
   if (!apiKey) throw new Error('LLM_API_KEY manquant');
 
@@ -81,5 +79,3 @@ async function callLlm({ system, user }) {
   }
   throw new Error(`Fournisseur LLM inconnu : ${provider}`);
 }
-
-module.exports = { callLlm, isConfigured };

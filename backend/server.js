@@ -1,15 +1,12 @@
-'use strict';
-require('dotenv').config();
-
-const { app }        = require('./app');
-const { pool }       = require('./lib/db');
-const { seedIfEmpty } = require('./scripts/seed');
+import 'dotenv/config';
+import { pathToFileURL } from 'url';
+import { app } from './app.js';
+import { pool } from './lib/db.js';
+import { seedIfEmpty } from './scripts/seed.js';
 
 const PORT = 8080;
 
-module.exports = { app, setDb: () => {} };
-
-if (require.main === module) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const REQUIRED_ENV = ['JWT_SECRET', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
   const missing = REQUIRED_ENV.filter(k => !process.env[k]);
   if (missing.length) {
@@ -29,3 +26,5 @@ if (require.main === module) {
       process.exit(1);
     });
 }
+
+export { app };

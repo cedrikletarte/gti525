@@ -1,5 +1,3 @@
-'use strict';
-
 // RAG simple : à partir de la question, on rassemble un contexte factuel issu
 // de la base MariaDB. Ce contexte est injecté dans le prompt du LLM pour qu'il
 // réponde à partir de données réelles plutôt que de son savoir général.
@@ -11,8 +9,8 @@
 //   4. Identification de la piste/du secteur le plus achalandé
 //   5. Comparaison entre deux périodes ou deux arrondissements
 
-const { pool } = require('./db');
-const { normArr, CATEGORIE_SQL } = require('./geo');
+import { pool } from './db.js';
+import { normArr, CATEGORIE_SQL } from './geo.js';
 
 const MAX_CONTEXT_CHARS = 6000;
 
@@ -152,7 +150,7 @@ async function resolvePoiArr(territoireNom) {
 }
 
 // ─── Construction du contexte ───────────────────────────────────────────────
-async function buildContext(question) {
+export async function buildContext(question) {
   const qn = normArr(question);
   const parts = [];
 
@@ -245,5 +243,3 @@ async function buildContext(question) {
   const context = parts.join('\n\n');
   return context.length > MAX_CONTEXT_CHARS ? context.slice(0, MAX_CONTEXT_CHARS) : context;
 }
-
-module.exports = { buildContext };
