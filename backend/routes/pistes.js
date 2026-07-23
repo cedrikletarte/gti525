@@ -50,10 +50,13 @@ router.get('/', async (req, res) => {
       `, [debutPop, finPop]);
 
       const top3 = popRows.map(r => normArr(r.arrondissement));
-      if (top3.length) {
+      if (!top3.length) {
+          res.setHeader('Content-Type', 'application/geo+json');
+          return res.json({ type: 'FeatureCollection', features: [] });
+      }
+
         conditions.push(`norm_arr IN (${top3.map(() => '?').join(',')})`);
         params.push(...top3);
-      }
     }
 
     let sql = 'SELECT feature FROM pistes';

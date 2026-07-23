@@ -16,7 +16,7 @@ export function obtenirJeton() {
     return jeton;
 }
 
-async function requeteApi(chemin, options = {}) {
+async function requeteApiSecure(chemin, options = {}) {
     const reponse = await fetch(`${BASE_URL}${chemin}`, {
         ...options,
         headers: {
@@ -34,6 +34,18 @@ async function requeteApi(chemin, options = {}) {
     return reponse;
 }
 
+async function requeteApi(chemin, options = {}) {
+    const reponse = await fetch(`${BASE_URL}${chemin}`, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(options.headers || {}),
+        },
+    });
+
+    return reponse;
+}
+
 // Tente de parser le corps JSON d'une réponse; retourne null si le corps est
 // vide ou non-JSON (ex: 204 No Content, page d'erreur HTML d'un 500, etc.)
 async function parserJsonSecurise(reponse) {
@@ -45,7 +57,7 @@ async function parserJsonSecurise(reponse) {
 }
 
 export async function inscrire(courriel, motDePasse) {
-    const reponse = await requeteApi('/auth/inscription', {
+    const reponse = await requeteApiSecure('/auth/inscription', {
         method: 'POST',
         body: JSON.stringify({ courriel, motDePasse }),
     });
@@ -54,7 +66,7 @@ export async function inscrire(courriel, motDePasse) {
 }
 
 export async function connecter(courriel, motDePasse) {
-    const reponse = await requeteApi('/auth/connexion', {
+    const reponse = await requeteApiSecure('/auth/connexion', {
         method: 'POST',
         body: JSON.stringify({ courriel, motDePasse }),
     });
@@ -71,14 +83,14 @@ export function deconnecter() {
 
 export async function obtenirUtilisateurCourant() {
     if (!jeton || jeton === "") return null;
-    const reponse = await requeteApi('/auth/moi', { method: 'GET' });
+    const reponse = await requeteApiSecure('/auth/moi', { method: 'GET' });
     if (!reponse.ok) return null;
     const donnees = await parserJsonSecurise(reponse);
     return donnees?.utilisateur ?? null;
 }
 
 export async function creerPointInteret(point) {
-    const reponse = await requeteApi("/pointsdinteret", {
+    const reponse = await requeteApiSecure("/pointsdinteret", {
         method: "POST",
         body: JSON.stringify(point),
     });
@@ -94,7 +106,7 @@ export async function creerPointInteret(point) {
 }
 
 export async function modifierPointInteret(id, point) {
-    const reponse = await requeteApi(`/pointsdinteret/${id}`, {
+    const reponse = await requeteApiSecure(`/pointsdinteret/${id}`, {
         method: "PUT",
         body: JSON.stringify(point),
     });
@@ -110,7 +122,7 @@ export async function modifierPointInteret(id, point) {
 }
 
 export async function supprimerPointInteret(id) {
-    const reponse = await requeteApi(`/pointsdinteret/${id}`, {
+    const reponse = await requeteApiSecure(`/pointsdinteret/${id}`, {
         method: "DELETE",
     });
 
@@ -121,4 +133,19 @@ export async function supprimerPointInteret(id) {
         statut: reponse.status,
         erreur: !reponse.ok ? (donnees?.erreur ?? "Erreur lors de la suppression.") : undefined,
     };
+}
+
+export async function obtenirPistesPopulaires(payload) {
+    const reponse = await requeteApi(`/pistes?populaireDebut=${payload.populaireDebut}&populaireFin=${payload.populaireFin}`, {
+        method: "GET",
+    });
+
+    const donnees = await parserJsonSecurise(reponse);
+
+    return {
+        ok: reponse.ok,
+        statut: reponse.status,
+        erreur: !reponse.ok ? (donnees?.erreur ?? "Erreur lors de la requête.") : undefined,
+        donnees: donnees
+    }
 }

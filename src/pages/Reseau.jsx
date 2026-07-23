@@ -16,6 +16,7 @@ import ArrondissementMapDialog from '../components/ArrondissementMapDialog';
 import useTerritoires from '../lib/useTerritoires';
 import { normArr, arrOptionsFrom, ALL } from '../lib/arrondissement';
 import InteractiveMap, { getCategory, MAP_CATEGORIES } from '../components/InteractiveMap';
+import {obtenirPistesPopulaires} from "../api/authClient.js";
 
 export default function Reseau() {
   const [pistes, setPistes]         = useState(null);
@@ -29,6 +30,9 @@ export default function Reseau() {
   const [checked, setChecked]       = useState({
     rev: true, voiePartagee: true, voieProtegee: true, sentierPolyvalent: true,
   });
+  const [dateDebut, setDateDebut]         = useState(null);
+  const [dateFin, setDateFin]         = useState(null);
+
 
   useEffect(() => {
     fetch('/gti525/v1/pistes')
@@ -60,6 +64,44 @@ export default function Reseau() {
   }, [arrondissement, territoires]);
 
   const toggleCategory = (key) => setChecked(prev => ({ ...prev, [key]: !prev[key] }));
+
+    async function highlightMostPopular() {
+        const payload = {
+            populaireDebut: changeDateFormat(dateDebut),
+            populaireFin: changeDateFormat(dateFin),
+        };
+
+        try {
+            const response = await obtenirPistesPopulaires(payload);
+
+            if (!response.ok) {
+                throw new Error(response.donnees?.erreur || response.erreur || "Erreur.");
+            }
+
+            setPistes(response.donnees);
+        } catch (e) {
+            alert(e.message);
+        }
+    }
+
+  function changeDateFormat(input){
+        const date = new Date(input);
+
+        const yyyy = date.getUTCFullYear();
+        const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const dd = String(date.getUTCDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+  }
+
+  async function reinitialiserPistePopulaire(){
+      setDateDebut(null);
+      setDateFin(null);
+      await fetch('/gti525/v1/pistes')
+          .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
+          .then(data => { setPistes(data); setLoading(false); })
+          .catch(err => { setError(typeof err === 'string' ? err : 'Failed to load bike network.'); setLoading(false); });
+
+  }
 
   const filterMenu = (
     <FormGroup sx={{ width: '100%', mb: '1rem' }}>
@@ -117,14 +159,14 @@ export default function Reseau() {
         <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#919191', textAlign: 'left' }}>PISTES POPULAIRES</Typography>
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <DatePicker label="De" format="DD-MM-YYYY" sx={{ backgroundColor: '#ffffff', mt: 1, mb: 1, width: '100%' }} slotProps={{ textField: { size: 'small' } }} />
+            <DatePicker value={dateDebut} onChange={(newValue) => setDateDebut(newValue)} label="De" format="DD-MM-YYYY" sx={{ backgroundColor: '#ffffff', mt: 1, mb: 1, width: '100%' }} slotProps={{ textField: { size: 'small' } }} />
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <DatePicker label="À"  format="DD-MM-YYYY" sx={{ backgroundColor: '#ffffff', mt: 1, mb: 1, width: '100%' }} slotProps={{ textField: { size: 'small' } }} />
+            <DatePicker value={dateFin}  onChange={(newValue) => {setDateFin(newValue)}} label="À"  format="DD-MM-YYYY" sx={{ backgroundColor: '#ffffff', mt: 1, mb: 1, width: '100%' }} slotProps={{ textField: { size: 'small' } }} />
           </Box>
         </LocalizationProvider>
-        <Button variant="contained" size="small" sx={{ width: '100%', justifyContent: 'flex-start', mb: 1, mt: 1 }}>Mettre en surbrillance</Button>
-        <Button variant="outlined"  size="small" sx={{ width: '100%', justifyContent: 'flex-start', mb: 1, backgroundColor: '#ffffff', borderWidth: 2 }}>Réinitialiser</Button>
+        <Button disabled={!dateDebut || !dateFin} onClick={() => highlightMostPopular()} variant="contained" size="small" sx={{ width: '100%', justifyContent: 'flex-start', mb: 1, mt: 1 }}>Mettre en surbrillance</Button>
+        <Button onClick={() => {reinitialiserPistePopulaire()}} variant="outlined"  size="small" sx={{ width: '100%', justifyContent: 'flex-start', mb: 1, backgroundColor: '#ffffff', borderWidth: 2 }}>Réinitialiser</Button>
       </Box>
     </FormGroup>
   );
