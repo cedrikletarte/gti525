@@ -89,7 +89,7 @@ export default function Navbar({ activePage }) {
       <Divider />
         {utilisateur ? (
                 <Box sx={{display: "flex", gap: 2, flexDirection: 'column'}}>
-                    <Typography  sx={{pt: "12px", pl: "12px"}}>Bonjour {utilisateur.courriel}</Typography>
+                    <Typography  sx={{pt: "12px", pl: "12px", fontSize: 12}}>{utilisateur.courriel}</Typography>
                     <Button variant="outlined" onClick={gererDeconnexion}>
                         Se déconnecter
                     </Button>
@@ -138,7 +138,7 @@ export default function Navbar({ activePage }) {
         <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
             {utilisateur ? (
                     <Box sx={{display: "flex", gap : 2, alignItems: 'center', flexDirection: 'row'}}>
-                    <Typography sx={{color : 'text.muted', textAlign: "center"}}>Bonjour {utilisateur.courriel}</Typography>
+                    <Typography sx={{color : 'text.muted', textAlign: "center", fontSize: 12}}>{utilisateur.courriel}</Typography>
                     <Button variant="outlined" onClick={gererDeconnexion} >
                         Déconnexion
                     </Button>
