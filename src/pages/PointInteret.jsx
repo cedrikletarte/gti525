@@ -67,10 +67,10 @@ export default function PointInteret() {
     if (selectedType !== 'Tous')        params.append('type',           selectedType);
 
     fetch(`/gti525/v1/pointsdinteret?${params}`)
-        .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.erreur)))
-        .then(json => {
-          setPois(json.donnees ?? []);
-          setRowCount(json.total ?? 0);
+        .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e.message)))
+        .then(body => {
+          setPois(body.data.donnees ?? []);
+          setRowCount(body.data.total ?? 0);
           setLoading(false);
         })
         .catch(err => {

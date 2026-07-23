@@ -71,8 +71,8 @@ export async function connecter(courriel, motDePasse) {
         body: JSON.stringify({ courriel, motDePasse }),
     });
     const donnees = await parserJsonSecurise(reponse);
-    if (reponse.ok && donnees?.jeton) {
-        definirJeton(donnees.jeton);
+    if (reponse.ok && donnees?.data?.jeton) {
+        definirJeton(donnees.data.jeton);
     }
     return { ok: reponse.ok, statut: reponse.status, donnees };
 }
@@ -86,7 +86,7 @@ export async function obtenirUtilisateurCourant() {
     const reponse = await requeteApiSecure('/auth/moi', { method: 'GET' });
     if (!reponse.ok) return null;
     const donnees = await parserJsonSecurise(reponse);
-    return donnees?.utilisateur ?? null;
+    return donnees?.data?.utilisateur ?? null;
 }
 
 export async function creerPointInteret(point) {
@@ -101,7 +101,7 @@ export async function creerPointInteret(point) {
         ok: reponse.ok,
         statut: reponse.status,
         donnees,
-        erreur: !reponse.ok ? (donnees?.erreur ?? "Erreur lors de la création.") : undefined,
+        erreur: !reponse.ok ? (donnees?.message ?? "Erreur lors de la création.") : undefined,
     };
 }
 
@@ -117,7 +117,7 @@ export async function modifierPointInteret(id, point) {
         ok: reponse.ok,
         statut: reponse.status,
         donnees,
-        erreur: !reponse.ok ? (donnees?.erreur ?? "Erreur lors de la modification.") : undefined,
+        erreur: !reponse.ok ? (donnees?.message ?? "Erreur lors de la modification.") : undefined,
     };
 }
 
@@ -131,7 +131,7 @@ export async function supprimerPointInteret(id) {
     return {
         ok: reponse.ok,
         statut: reponse.status,
-        erreur: !reponse.ok ? (donnees?.erreur ?? "Erreur lors de la suppression.") : undefined,
+        erreur: !reponse.ok ? (donnees?.message ?? "Erreur lors de la suppression.") : undefined,
     };
 }
 
@@ -145,7 +145,7 @@ export async function obtenirPistesPopulaires(payload) {
     return {
         ok: reponse.ok,
         statut: reponse.status,
-        erreur: !reponse.ok ? (donnees?.erreur ?? "Erreur lors de la requête.") : undefined,
+        erreur: !reponse.ok ? (donnees?.message ?? "Erreur lors de la requête.") : undefined,
         donnees: donnees
     }
 }

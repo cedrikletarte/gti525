@@ -1,12 +1,12 @@
-'use strict';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath, pathToFileURL } from 'url';
+import mysql from 'mysql2/promise';
+import initSqlJs from 'sql.js';
+import { parseCsv } from '../lib/utils.js';
+import { normArr, pointInFeature } from '../lib/geo.js';
 
-const path      = require('path');
-const fs        = require('fs');
-const mysql     = require('mysql2/promise');
-const initSqlJs = require('sql.js');
-const { parseCsv }                    = require('../lib/utils');
-const { normArr, pointInFeature }     = require('../lib/geo');
-
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, '../data');
 
 const SCHEMA_STATEMENTS = [
@@ -173,7 +173,7 @@ async function runSeed(conn) {
   console.log(`  ${total} passages insérés.`);
 }
 
-async function seedIfEmpty() {
+export async function seedIfEmpty() {
   const conn = await makeConn();
   try {
     for (const sql of SCHEMA_STATEMENTS) await conn.query(sql);
@@ -193,9 +193,8 @@ async function seedIfEmpty() {
   }
 }
 
-module.exports = { seedIfEmpty };
-
-if (require.main === module) {
-  require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const { default: dotenv } = await import('dotenv');
+  dotenv.config({ path: path.join(__dirname, '../.env') });
   seedIfEmpty().catch(err => { console.error('Erreur seed :', err.message); process.exit(1); });
 }

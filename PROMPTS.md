@@ -60,6 +60,7 @@
 | [39](#tache-39) | Refactorisation du backend en modules | 2026-07-07 |
 | [41](#tache-41) | Auto-génération de la route de découverte depuis les routes réelles | 2026-07-12 |
 | [42](#tache-42) | Migration sql.js → MariaDB (mysql2/promise) | 2026-07-14 |
+| [50](#tache-50) | Refactorisation en architecture models/controllers/routers + migration ESM | 2026-07-23 |
 
 > Tâche 28 touche également les pages frontales (`src/pages/`) pour le câblage du menu déroulant et de la carte des territoires.
 
@@ -5840,3 +5841,69 @@ pour choisir le mode, le point d'intérêt selectionné et les arrondissement
 pour le menu déroulant. J'ai aussi ajouter une méthode permettant de
 rafraichir le data grid a chaque modification pour voir les changements
 dans devoir changer le champs de recherche.
+
+---
+
+## Tâche 50 — Refactorisation en architecture models/controllers/routers + migration ESM {#tache-50}
+
+**Auteur** : Cédrik Letarte - 2026-07-23
+
+### 💬 Prompt
+
+```
+modifie le backend pour respecter une architecture REST API EXPRESS comme
+mentionner dans le cours. il faut délimiter les modèles, les
+controlleurs et les routeurs
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) — VS Code |
+| **Modèle** | Claude Sonnet 5 |
+| **Mode** | Plan mode (exploration + plan détaillé approuvé avant exécution), puis migration architecturale multi-fichiers |
+
+---
+
+### 📦 Sortie obtenue
+
+`backend/routes/*.js` (logique métier + SQL brut mélangés dans les handlers) remplacé par un trio `models/` / `controllers/` / `routers/` par ressource, et tout le backend migré en modules ES :
+
+| Fichier / dossier | Contenu |
+|---|---|
+| `backend/controllers/util.js` (nouveau) | Classe `Reponse` (`{code, message, data}`, `Reponse.ok`/`Reponse.erreur`) + schéma Zod de pagination partagé |
+| `backend/models/*.js` (nouveau : Utilisateurs, Compteurs, Pistes, Territoires, PointsInteret) | Classes sans dépendance Express, instanciées en singleton autour du pool `mysql2/promise` partagé |
+| `backend/controllers/*.js` (nouveau : auth, compteurs, pistes, territoires, pointsInteret, assistant) | Validation Zod, appel aux modèles, mise en forme via `Reponse` — même logique/messages/codes de statut qu'avant |
+| `backend/routers/*.js` (nouveau, remplace `routes/`) | `Router().route(path).get(...).post(...)` — pure plomberie déclarative |
+| `backend/app.js`, `backend/server.js` | Montage des nouveaux routeurs ; 404 et route de découverte via `Reponse` ; conversion ESM (`import.meta.url` remplace `require.main`) |
+| `backend/lib/*.js`, `backend/middleware/auth.js`, `backend/scripts/seed.js` | Convertis en ESM (`import`/`export`, extensions `.js` explicites) ; `assistant` garde `lib/assistantContext.js` + `lib/llm.js` comme services (pas de modèle forcé, ce n'est pas une ressource CRUD) |
+| `backend/package.json` | `"type": "module"`, ajout `zod` + `cross-env` (devDependency), script `test` sous `NODE_OPTIONS=--experimental-vm-modules` |
+| `backend/tests/*.test.js` (6 fichiers) | Convertis en ESM avec `jest.unstable_mockModule` + `await import()` dynamique ; assertions adaptées à l'enveloppe (`res.body.data...`, `res.body.message`) |
+| `src/api/client.js`, `src/lib/useTerritoires.js`, `src/pages/{Reseau,PointInteret,Statistique,Assistant}.jsx` | Correctifs ciblés (fallout, pas l'objectif) pour lire `.data` et `.message` au lieu des formes brutes/`.erreur` |
+
+**Vérification** : suite de tests backend 47/47 passants ; serveur démarré réellement contre MariaDB et testé de bout en bout via `curl` (découverte, compteurs, territoires, pistes, inscription/connexion/moi, création de POI authentifiée) ; `npm run build` du frontend sans erreur ; round-trip validé à travers le proxy Vite.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- Aucune modification post-génération — deux décisions d'architecture ont été tranchées par l'humain *avant* l'implémentation, via question directe de l'IA (voir Justification) : adoption de l'enveloppe `{code,message,data}` + Zod, et migration complète vers les modules ES.
+
+---
+
+### 🧠 Justification
+
+- **Enveloppe `{code, message, data}` + Zod, malgré la casse des tests/frontend** : le document enseigne explicitement ce format comme convention à suivre pour tout le reste du trimestre. Plutôt que de garder les formes de réponse actuelles (`{donnees,total}`, `{erreur}`) pour éviter de casser les 69 assertions de tests existantes et les appels `fetch` du frontend, j'ai choisi l'alignement complet avec le document — l'IA a proposé les deux options et j'ai tranché pour la fidélité au cours plutôt que le chemin le moins risqué.
+
+- **Migration ES modules** : le document utilise `"type":"module"` partout, alors que le backend était en CommonJS. Plutôt que de mélanger les deux systèmes de modules (ce qui aurait été fragile et illisible), j'ai accepté de convertir l'ensemble du backend — `lib/`, `middleware/`, `scripts/seed.js`, `app.js`, `server.js` et les 6 fichiers de tests — en une seule passe cohérente.
+
+- **`jest.unstable_mockModule` + import dynamique pour les tests** : `jest.mock()` (CommonJS) ne fonctionne pas sous ESM natif. L'IA a validé l'approche sur `compteurs.test.js` en premier (jalon go/no-go) avant de la propager aux 5 autres fichiers — évite de découvrir un problème de fond après avoir converti tous les fichiers.
+
+- **Pas de `models/AssistantModel.js`** : l'assistant (RAG multi-tables + appel LLM) ne correspond à aucune ressource CRUD unique ; forcer un modèle aurait été une abstraction artificielle. `lib/assistantContext.js` et `lib/llm.js` restent des services, appelés directement par le contrôleur — cohérent avec l'esprit du document sans le suivre à la lettre là où ça ne fait pas sens.
+
+- **Retrait du header `Content-Type: application/geo+json`** : une fois le GeoJSON encapsulé sous `.data`, le corps de la réponse n'est plus un document GeoJSON valide à la racine. Garder ce header aurait été trompeur — décision de l'IA acceptée telle quelle.
+
+- **Frontend : correctifs minimaux plutôt que centralisation** : le prompt demandait un refactor du *backend* ; le frontend n'est touché que pour ne pas casser l'app suite au changement d'enveloppe. J'ai accepté la recommandation de l'IA de faire des correctifs ciblés en place (ajout d'un niveau `.data`, `erreur`→`message`) plutôt que de réécrire `src/api/client.js` pour centraliser tous les appels `fetch` — un chantier plus large que ce qui était demandé.

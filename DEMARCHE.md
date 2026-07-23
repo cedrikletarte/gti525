@@ -23,6 +23,8 @@
 | [07](#decision-07) | Obtenir la liste d'arrondissement pour le menu dans la page réseau            | 2026-05-26 |
 | [08](#decision-08) | Gestion des noms de propriétés différentes entre pois et compteurs            | 2026-06-25 |
 | [09](#decision-09) | Ouverture d'un graphique quand on appuie sur passage, avec un filtre par date | 2026-06-28 |
+| [10](#decision-10) | Authentification locale vs OAuth | 2026-07-07 |
+| [11](#decision-11) | Stratégie de calcul des pistes populaires (SQL vs applicatif) | 2026-07-07 |
 
 ---
 
@@ -394,3 +396,63 @@ parce ce que sinon l'erreur aurait été afficher sous le graphique.
 Une alternative pour les passage aurait été de faire une seul fetch et d'ensuite
 filtrer selon les dates, mais puisqu'on avait une route avec des paramettres pour
 ça, j'ai procédé comme cela. De plus ça accélère la chargement  initial de la page.
+
+---
+
+## Décision 10 - Authentification locale (courriel/mot de passe + JWT) plutôt qu'OAuth {#decision-10}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+**Problème** : quel mécanisme d'authentification mettre en place pour protéger les routes d'écriture (POST, PUT, DELETE) sur `/pointsdinteret` : une authentification locale (courriel + mot de passe gérés par notre propre base) ou une délégation à un fournisseur OAuth (Google, GitHub, etc.) ?
+
+**Sources consultées** :
+- jsonwebtoken (npm), documentation officielle - signature et vérification de jetons JWT en Node.js.
+- bcryptjs (npm), documentation officielle - hachage de mots de passe sans dépendance native.
+- Auth0, *OAuth 2.0 and OpenID Connect Overview* - fonctionnement d'un flux OAuth (redirection, callback, jeton d'accès émis par un tiers).
+
+**Alternatives envisagées** :
+
+| Option | Avantages | Inconvénients pour notre contexte |
+|---|---|---|
+| OAuth (Google, GitHub, etc.) | Aucune gestion de mot de passe de notre côté, sécurité déléguée à un fournisseur de confiance, expérience "Se connecter avec..." familière | Nécessite l'enregistrement d'une application cliente chez le fournisseur, gestion de callback URLs et de secrets supplémentaires, complexité disproportionnée pour protéger une seule ressource (CRUD des points d'intérêt) |
+| Authentification locale + session serveur | Simple à comprendre, pas de bibliothèque de signature de jeton nécessaire | Nécessite de garder un état de session côté serveur (mémoire ou store partagé), ce qui va à l'encontre du style sans état déjà utilisé pour le reste de notre API REST |
+| Authentification locale + JWT | Sans état (le serveur ne stocke rien après l'émission), standard largement utilisé pour sécuriser des API REST, contrôle total sur le schéma `utilisateurs` | Un jeton émis ne peut pas être révoqué avant son expiration sans mettre en place une liste noire supplémentaire |
+
+**Choix retenu** : authentification locale, avec une table `utilisateurs` (courriel unique, mot de passe haché) et émission d'un jeton JWT signé à la connexion, vérifié par un middleware (`requireAuth`) sur les routes protégées.
+
+**Justification** :
+
+- Le livrable ne demandait de protéger qu'une seule ressource (les mutations sur `/pointsdinteret`). Mettre en place OAuth aurait ajouté une dépendance externe complète (inscription de l'application chez un fournisseur, gestion de callback URLs, secrets supplémentaires) pour un besoin en réalité très limité.
+- Le JWT est sans état, ce qui est cohérent avec le reste de notre API REST : chaque requête protégée porte sa propre preuve d'authentification dans l'en-tête `Authorization: Bearer ...`, sans qu'on ait besoin de maintenir une session côté serveur.
+- J'ai choisi bcryptjs plutôt qu'argon2 parce qu'il est écrit en JavaScript pur, sans dépendance native à compiler. Cela simplifie le déploiement sur différentes plateformes (Windows en développement, conteneur Linux potentiellement en production) sans avoir à se soucier de la compatibilité des binaires. Le nombre de rounds a été fixé à 10, ce qui est la valeur recommandée pour un bon compromis sécurité/performance.
+- La durée de vie du jeton a été fixée à 24h, un compromis entre la sécurité (limiter la fenêtre d'exploitation d'un jeton volé) et l'expérience utilisateur (éviter une reconnexion trop fréquente), tel que suggéré par l'énoncé du livrable.
+- Le secret utilisé pour signer les jetons (`JWT_SECRET`) est chargé depuis une variable d'environnement (`.env`, exclu du dépôt via `.gitignore`) plutôt que codé en dur dans le code, afin qu'aucun secret ne se retrouve dans l'historique Git.
+
+---
+
+## Décision 11 - Stratégie de calcul des pistes populaires : agrégation SQL plutôt que calcul applicatif {#decision-11}
+
+**Auteur** : Cédrik Letarte - 2026-07-07
+
+**Problème** : comment déterminer, pour une période donnée, les trois arrondissements les plus achalandés (ratio Σ passages / N compteurs) et ne retourner que les pistes cyclables qui les traversent, sans violer la contrainte du livrable exigeant que le filtrage et la pagination soient délégués à la base plutôt qu'appliqués sur des collections complètes chargées en mémoire ?
+
+**Sources consultées** :
+- MariaDB, documentation officielle - clauses `GROUP BY`, `JOIN` et fonctions d'agrégation (`SUM`, `COUNT(DISTINCT ...)`).
+- mysql2 (npm), documentation - requêtes paramétrées avec un nombre variable de valeurs (`IN (?, ?, ...)`).
+
+**Alternatives envisagées** :
+
+| Option | Avantages | Inconvénients pour notre contexte |
+|---|---|---|
+| Charger tous les compteurs, passages et pistes puis calculer le ratio et filtrer en mémoire côté serveur | Logique simple à écrire, aucun SQL complexe à maintenir | Viole directement la contrainte du livrable interdisant le filtrage applicatif sur des collections complètes chargées en mémoire ; ne passe pas à l'échelle avec des dizaines de milliers de lignes de passages |
+| Deux requêtes SQL séquentielles : (1) agrégation du ratio passages/compteurs par arrondissement pour obtenir le top 3, (2) sélection des pistes dont l'arrondissement normalisé fait partie de ce top 3 | Chaque requête reste simple et lisible individuellement ; le filtrage et l'agrégation restent entièrement délégués à la base ; réutilise la fonction `normArr()` déjà existante pour réconcilier les noms d'arrondissement entre les tables | Deux allers-retours à la base au lieu d'un seul ; couplage implicite entre les deux requêtes (le résultat de la première alimente le `WHERE ... IN (?)` de la seconde) |
+| Une seule requête SQL combinant l'agrégation et la sélection des pistes (sous-requête ou CTE à trois tables) | Un seul aller-retour à la base | Requête beaucoup plus complexe à lire et à maintenir ; jointure entre trois tables (`passages`, `compteurs`, `pistes`) avec normalisation de texte (accents, tirets, articles) difficile à exprimer proprement en SQL pur |
+
+**Choix retenu** : deux requêtes SQL séquentielles - une agrégation (`JOIN passages/compteurs`, `GROUP BY arrondissement`, tri par ratio décroissant, `LIMIT 3`), suivie d'une sélection des pistes (`WHERE norm_arr IN (?, ?, ?)`).
+
+**Justification** :
+
+- La contrainte du livrable est respectée : les deux requêtes délèguent entièrement le filtrage et l'agrégation à MariaDB. Aucune collection complète n'est chargée en mémoire côté Node.js.
+- Séparer le calcul en deux requêtes plutôt qu'une seule requête complexe garde chaque étape testable et lisible indépendamment. Cela m'a aussi permis de réutiliser directement la fonction `normArr()` déjà écrite pour normaliser les noms d'arrondissement (accents, tirets, articles), nécessaire puisque la table `compteurs` et la table `pistes` n'utilisent pas exactement la même orthographe pour désigner un même secteur.
+- J'ai géré explicitement un cas limite : si aucun arrondissement n'a de passages enregistrés sur la période demandée, la première requête retourne un résultat vide et je retourne immédiatement une `FeatureCollection` GeoJSON vide, plutôt que de laisser la seconde requête s'exécuter avec une clause `IN ()` vide, ce qui aurait pu produire une erreur SQL ou un comportement ambigu selon le moteur.
+- Une requête combinée unique aurait réduit le nombre d'allers-retours à la base, mais j'ai jugé que la lisibilité et la facilité de test de deux requêtes simples valaient mieux qu'un gain de performance marginal pour ce volume de données, surtout pour une fonctionnalité qui n'est pas appelée à haute fréquence.

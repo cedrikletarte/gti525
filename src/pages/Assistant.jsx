@@ -34,9 +34,9 @@ async function fetchReply(question) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.erreur || "L'assistant est momentanément indisponible.");
+    throw new Error(data.message || "L'assistant est momentanément indisponible.");
   }
-  return data.reponse;
+  return data.data.reponse;
 }
 
 let nextId = 1;

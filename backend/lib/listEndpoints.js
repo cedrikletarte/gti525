@@ -1,12 +1,10 @@
-'use strict';
-
 function joinPath(mountPath, routePath) {
   if (routePath === '/') return mountPath || '/';
   const base = mountPath.endsWith('/') ? mountPath.slice(0, -1) : mountPath;
   return `${base}${routePath}`;
 }
 
-function listEndpoints(router, mountPath) {
+export default function listEndpoints(router, mountPath) {
   const endpoints = [];
   for (const layer of router.stack) {
     if (!layer.route) continue;
@@ -17,5 +15,3 @@ function listEndpoints(router, mountPath) {
   }
   return endpoints;
 }
-
-module.exports = listEndpoints;

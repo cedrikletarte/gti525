@@ -1,6 +1,4 @@
-'use strict';
-
-module.exports = {
+export default {
   'GET /gti525/v1/': {
     description: 'Liste tous les points de terminaison disponibles',
   },
@@ -11,6 +9,9 @@ module.exports = {
   'POST /gti525/v1/auth/connexion': {
     description: 'Authentifie et retourne un JWT valide 24h',
     corps: { courriel: 'string', motDePasse: 'string' },
+  },
+  'GET /gti525/v1/auth/moi': {
+    description: "Retourne l'utilisateur courant (authentification requise)",
   },
   'GET /gti525/v1/compteurs': {
     description: 'Liste paginée des compteurs',
