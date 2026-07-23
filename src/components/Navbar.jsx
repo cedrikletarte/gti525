@@ -16,6 +16,7 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link } from 'react-router-dom';
 import { deconnecter, obtenirUtilisateurCourant } from '../api/client.js';
+import {useNavigate} from 'react-router-dom'
 
 const NAV_LINKS = [
   { label: 'Accueil', path: '/' },
@@ -29,6 +30,7 @@ const NAV_LINKS = [
 export default function Navbar({ activePage }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [utilisateur, setUtilisateur] = useState(null);
+  const navigate = useNavigate()
 
   useEffect(() => {
       obtenirUtilisateurCourant()
@@ -38,6 +40,7 @@ export default function Navbar({ activePage }) {
   function gererDeconnexion() {
       deconnecter();
       setUtilisateur(null);
+      navigate("/")
   }
 
   const linkSx = (label) => ({
@@ -136,7 +139,7 @@ export default function Navbar({ activePage }) {
             {utilisateur ? (
                     <Box sx={{display: "flex", gap : 2, alignItems: 'center', flexDirection: 'row'}}>
                     <Typography sx={{color : 'text.muted', textAlign: "center"}}>Bonjour {utilisateur.courriel}</Typography>
-                    <Button variant="outlined" onClick={gererDeconnexion}>
+                    <Button variant="outlined" onClick={gererDeconnexion} >
                         Déconnexion
                     </Button>
                     </Box>

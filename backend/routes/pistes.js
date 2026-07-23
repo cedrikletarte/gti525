@@ -45,7 +45,7 @@ router.get('/', async (req, res) => {
         WHERE  DATE(p.date_heure) BETWEEN ? AND ?
         AND    c.arrondissement IS NOT NULL
         GROUP  BY c.arrondissement
-        ORDER  BY CAST(total_passages AS DECIMAL) / n_compteurs DESC
+        ORDER BY SUM(p.nb_passages) / COUNT(DISTINCT p.id_compteur) DESC
         LIMIT  3
       `, [debutPop, finPop]);
 
