@@ -8,7 +8,7 @@ import {
   Button,
   CircularProgress,
 } from "@mui/material";
-import {supprimerPointInteret} from "../api/authClient.js";
+import {supprimerPointInteret} from "../api/client.js";
 
 export default function PointInteretDeleteDialog({
   open,

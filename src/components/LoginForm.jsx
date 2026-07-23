@@ -9,7 +9,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import {useNavigate} from 'react-router-dom'
 
 
-import { connecter } from '../api/authClient.js';
+import { connecter } from '../api/client.js';
 import { estEmailValide } from '../hooks/useValidationMotDePasse';
 
 export default function LoginForm({ onSuccesConnexion }) {
@@ -38,7 +38,7 @@ export default function LoginForm({ onSuccesConnexion }) {
         } else {
             setEtat('erreur');
             // Message générique renvoyé par le backend, jamais "email inconnu" vs "mdp incorrect"
-            setMessageErreur(donnees.message || 'Une erreur est survenue.');
+            setMessageErreur(donnees.message || 'Courriel ou mot de passe invalide');
         }
     }
 

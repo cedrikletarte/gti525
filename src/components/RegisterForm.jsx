@@ -14,7 +14,7 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import CircularProgress from '@mui/material/CircularProgress';
 import {useNavigate} from 'react-router-dom'
 
-import { inscrire } from '../api/authClient.js';
+import { inscrire } from '../api/client.js';
 import { useValidationMotDePasse, estEmailValide } from '../hooks/useValidationMotDePasse';
 
 export default function RegisterForm({ onSuccesInscription }) {
@@ -46,7 +46,7 @@ export default function RegisterForm({ onSuccesInscription }) {
         if (ok) {
             setEtat('succes');
             onSuccesInscription && onSuccesInscription(donnees.utilisateur);
-            navigate('/')
+            navigate('/connexion')
 
         } else {
             setEtat('erreur');

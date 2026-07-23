@@ -10,7 +10,7 @@ import {
 import {
     creerPointInteret,
     modifierPointInteret,
-} from "../api/authClient.js";
+} from "../api/client.js";
 
 import PointInteretForm from "./PointInteretForm.jsx";
 

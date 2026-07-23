@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link } from 'react-router-dom';
-import { deconnecter, obtenirUtilisateurCourant } from '../api/authClient.js';
+import { deconnecter, obtenirUtilisateurCourant } from '../api/client.js';
 
 const NAV_LINKS = [
   { label: 'Accueil', path: '/' },

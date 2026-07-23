@@ -16,7 +16,7 @@ import ArrondissementMapDialog from '../components/ArrondissementMapDialog';
 import useTerritoires from '../lib/useTerritoires';
 import { normArr, arrOptionsFrom, ALL } from '../lib/arrondissement';
 import InteractiveMap, { getCategory, MAP_CATEGORIES } from '../components/InteractiveMap';
-import {obtenirPistesPopulaires} from "../api/authClient.js";
+import {obtenirPistesPopulaires} from "../api/client.js";
 
 export default function Reseau() {
   const [pistes, setPistes]         = useState(null);

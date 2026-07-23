@@ -29,6 +29,7 @@ import InteractiveMap from "../components/InteractiveMap.jsx";
 import PointInteretDialog from "../components/PointInteretDialog.jsx";
 import PointInteretDeleteDialog from "../components/PointInteretDeleteDialog.jsx";
 import CloseIcon from '@mui/icons-material/Close';
+import {obtenirJeton} from '../api/client.js'
 
 export default function PointInteret() {
   const [pois, setPois] = useState([]);
@@ -123,6 +124,12 @@ export default function PointInteret() {
     setArrDelFormOpen(true);
   }
 
+  function handleNewPoiClick(){
+    setSelectedPoi(null);
+    setArrAddFormOpen(true);
+    setMode("create");
+  }
+
   function ActionsCell({ params }) {
     if (!params.row?.Latitude || !params.row?.Longitude) return null;
     return (
@@ -134,14 +141,23 @@ export default function PointInteret() {
           >
             <MapIcon/>
           </IconButton>
+          {
+            obtenirJeton() ?
+                <>
+                  <IconButton color="primary" size="small" onClick={() => handleEditClick(params.row)}>
+                    <EditIcon />
+                  </IconButton>
 
-          <IconButton color="primary" size="small" onClick={() => handleEditClick(params.row)}>
-            <EditIcon />
-          </IconButton>
+                  <IconButton color="error" size="small" onClick={() => handleDeleteClick(params.row)}>
+                    <DeleteIcon/>
+                  </IconButton>
+                </>
 
-          <IconButton color="error" size="small" onClick={() => handleDeleteClick(params.row)}>
-            <DeleteIcon/>
-          </IconButton>
+            :
+                  null
+
+          }
+
         </Stack>
     );
   }
@@ -174,8 +190,14 @@ export default function PointInteret() {
             <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
               Points d'intérêt cyclable
             </Typography>
-            <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() =>
-            {setSelectedPoi(null); setArrAddFormOpen(true); setMode("create")}}>Nouveau point d'intérêt</Button>
+            {
+              obtenirJeton() ?
+                    <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() =>
+                    {handleNewPoiClick()}}>Nouveau point d'intérêt</Button>
+                  :
+                    null
+            }
+
           </Box>
 
           {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
