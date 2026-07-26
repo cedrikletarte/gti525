@@ -25,6 +25,8 @@
 | [09](#decision-09) | Ouverture d'un graphique quand on appuie sur passage, avec un filtre par date | 2026-06-28 |
 | [10](#decision-10) | Authentification locale vs OAuth | 2026-07-07 |
 | [11](#decision-11) | Stratégie de calcul des pistes populaires (SQL vs applicatif) | 2026-07-07 |
+| [12](#decision-12) | Choix du fournisseur LLM | 2026-07-14 |
+| [13](#decision-13) | Stratégie d'ancrage des réponses de l'assistant : RAG simple | 2026-07-14 |
 
 ---
 
@@ -456,3 +458,77 @@ filtrer selon les dates, mais puisqu'on avait une route avec des paramettres pou
 - Séparer le calcul en deux requêtes plutôt qu'une seule requête complexe garde chaque étape testable et lisible indépendamment. Cela m'a aussi permis de réutiliser directement la fonction `normArr()` déjà écrite pour normaliser les noms d'arrondissement (accents, tirets, articles), nécessaire puisque la table `compteurs` et la table `pistes` n'utilisent pas exactement la même orthographe pour désigner un même secteur.
 - J'ai géré explicitement un cas limite : si aucun arrondissement n'a de passages enregistrés sur la période demandée, la première requête retourne un résultat vide et je retourne immédiatement une `FeatureCollection` GeoJSON vide, plutôt que de laisser la seconde requête s'exécuter avec une clause `IN ()` vide, ce qui aurait pu produire une erreur SQL ou un comportement ambigu selon le moteur.
 - Une requête combinée unique aurait réduit le nombre d'allers-retours à la base, mais j'ai jugé que la lisibilité et la facilité de test de deux requêtes simples valaient mieux qu'un gain de performance marginal pour ce volume de données, surtout pour une fonctionnalité qui n'est pas appelée à haute fréquence.
+
+---
+
+## Décision 12 - Choix du fournisseur LLM : Groq {#decision-12}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-07-14
+
+**Problème** : le parcours « avec IA » ayant été déclaré, quel fournisseur de LLM externe utiliser pour le Vélobot ? Nos contraintes : un appel **simple** à réaliser, un **palier gratuit** (projet étudiant, aucun budget) et un modèle **suffisant pour nos besoins**, qui ne sont pas complexes (reformuler en français un contexte factuel déjà fourni par la base).
+
+**Sources consultées** :
+- Groq, documentation de l'API (format « chat completions » compatible OpenAI, modèles au palier gratuit).
+- Google AI Studio (Gemini) et Mistral, pages des clés d'API et des paliers gratuits.
+
+**Alternatives envisagées** :
+
+| Option | Avantages | Inconvénients pour notre contexte |
+|---|---|---|
+| Google Gemini | Palier gratuit sans carte | Format d'API **différent** (non compatible OpenAI) à coder à part ; quota gratuit vite atteint (nous avons obtenu un HTTP 429 dès les tests) |
+| OpenAI / Anthropic | Modèles très puissants | **Payant**, aucun palier gratuit adéquat — disproportionné pour nos besoins |
+| Mistral | Palier gratuit, API compatible OpenAI | Aucun avantage décisif sur Groq ; un fournisseur de plus à documenter |
+
+**Choix retenu** : **Groq** avec le modèle `llama-3.1-8b-instant`, appelé **uniquement côté serveur**.
+
+**Justification et conséquences techniques** :
+
+- **Simple à appeler** : l'API de Groq est compatible avec le format « chat completions » d'OpenAI, donc un seul `fetch` standard suffit dans `lib/llm.js`, sans SDK propriétaire à installer.
+- **Gratuit** : le palier gratuit ne demande pas de carte bancaire, ce qui convient à un projet étudiant sans budget.
+- **Adapté à nos besoins** : nos demandes ne sont pas complexes — le LLM ne fait que reformuler en français un contexte factuel déjà rassemblé par la base. Un petit modèle rapide comme `llama-3.1-8b-instant` est donc largement suffisant, inutile de payer pour un gros modèle.
+- La clé d'API vit dans `.env` (exclu du dépôt via `.gitignore`) et n'est **jamais** exposée à la frontale : celle-ci n'envoie que la question à `POST /gti525/v1/assistant`, et c'est le serveur qui appelle Groq
+- Conséquence assumée : le recours à un LLM introduit un risque d'hallucination. 
+
+---
+
+## Décision 13 - Stratégie d'ancrage des réponses de l'assistant : RAG simple {#decision-13}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-07-14
+
+**Problème** : un LLM répond de mémoire et peut inventer des chiffres. Comment garantir que le Vélobot reste **factuel et ancré sur les données de la base**, sans inventer de valeurs, conformément à T6.4 ?
+
+**Sources consultées** :
+- Concept de RAG (*Retrieval-Augmented Generation*) : récupérer des données pertinentes et les injecter dans le prompt pour ancrer la réponse.
+- Documentation Groq (support éventuel du *tool-calling*).
+
+**Alternatives envisagées** :
+
+| Option | Avantages | Inconvénients pour notre contexte |
+|---|---|---|
+| Tool-calling (le LLM appelle lui-même des fonctions) | Le modèle décide quelles données chercher | Plus complexe à encadrer, comportement moins prévisible, garde-fous plus difficiles à garantir |
+
+**Choix retenu** : **RAG simple** — le serveur détecte l'intention de la question, exécute des requêtes SQL **paramétrées** sur MariaDB pour rassembler un contexte factuel, puis l'injecte dans le prompt du LLM avec une consigne système stricte de n'utiliser que ce contexte.
+
+**Justification et conséquences techniques** :
+
+- Le prompt système impose de répondre **uniquement** à partir du CONTEXTE et de refuser explicitement si la donnée est absente, ce qui limite fortement les hallucinations.
+- Séparation nette des responsabilités : `lib/assistantContext.js` récupère les faits (SQL paramétré), `controllers/assistantController.js` orchestre et applique les garde-fous (validation 1000 caractères, limitation de débit par IP, journalisation sans données personnelles), `lib/llm.js` appelle le modèle.
+- Nos données étant structurées, le RAG « simple » (SQL) est plus adapté et plus prévisible qu'un RAG vectoriel ou le tool-calling, tout en gardant un contrôle total sur ce qui est fourni au modèle.
+
+### Design de l'assistant (T7.3)
+
+**Intentions reconnues.** À partir de la question normalisée (accents/tirets/casse), le serveur détecte l'intention et couvre **cinq familles** de questions :
+1. statistiques de passages sur une période ; 2. recherche d'un point d'intérêt par arrondissement ; 3. informations sur les pistes (nombre, longueur, catégorie) dans un arrondissement ; 4. secteur/compteur le plus achalandé ; 5. comparaison entre deux arrondissements ou deux périodes. La détection combine des **mots-clés** (`fontaine`, `passage`, `piste`, `achaland`…), la reconnaissance des **noms d'arrondissement** (comparés à la table `territoires`) et des **périodes** (dates ISO, « mois année », années seules).
+
+**Format de réponse.** Le LLM rédige une réponse **en français, concise et factuelle**, fondée exclusivement sur le bloc CONTEXTE (résumé du réseau + blocs pertinents selon l'intention). Côté API, la réponse est encapsulée dans l'enveloppe uniforme `{ code, message, data: { reponse } }`. L'interface affiche que les réponses sont générées par l'IA et offre un bouton **« Signaler une mauvaise réponse »** (journalisé côté serveur).
+
+**Gestion des cas non reconnus.** Plusieurs niveaux de repli : question vide ou > 1000 caractères → `400` ; trop de requêtes → `429` ; service non configuré → `503` ; échec du LLM → `502`. Quand aucune famille n'est reconnue, seul le résumé global est fourni et le prompt système impose au modèle de dire explicitement qu'il ne dispose pas de la donnée plutôt que d'inventer.
+
+**Exemples de questions-réponses.**
+
+| Question | Traitement | Résultat |
+|---|---|---|
+| « Combien de passages en 2022 ? » | Correct | « 18 212 754 passages » (chiffre réel issu de la base) |
+| « Compare les passages entre Ville-Marie et Verdun en 2022 » |  Correct | Ville-Marie 3 578 504 vs Verdun 167 537 |
+| « Quelles sont les pistes dans Rosemont–La Petite-Patrie ? » |  Correct | 607 segments, 84,5 km, réparties par catégorie |
+| « donne moi les points d'intérêt proche d'Anjou » | Incorrect|  Le bot répondait « je ne dispose pas de cette donnée » alors qu'Anjou compte 26 points d'intérêt.
