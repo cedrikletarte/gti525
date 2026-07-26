@@ -5907,3 +5907,38 @@ controlleurs et les routeurs
 - **Retrait du header `Content-Type: application/geo+json`** : une fois le GeoJSON encapsulé sous `.data`, le corps de la réponse n'est plus un document GeoJSON valide à la racine. Garder ce header aurait été trompeur — décision de l'IA acceptée telle quelle.
 
 - **Frontend : correctifs minimaux plutôt que centralisation** : le prompt demandait un refactor du *backend* ; le frontend n'est touché que pour ne pas casser l'app suite au changement d'enveloppe. J'ai accepté la recommandation de l'IA de faire des correctifs ciblés en place (ajout d'un niveau `.data`, `erreur`→`message`) plutôt que de réécrire `src/api/client.js` pour centraliser tous les appels `fetch` — un chantier plus large que ce qui était demandé.
+
+---
+
+# Hallucinations du Vélobot (T7.A.2)
+
+Ces deux hallucinations ont été **provoquées volontairement** en relâchant temporairement le garde-fou d'ancrage (le prompt système, rétabli ensuite), afin d'observer le comportement du modèle sans ancrage. Elles portent sur des informations **dont notre base ne dispose pas directement**, et confirment la nécessité de notre stratégie d'ancrage RAG (T6.4).
+
+## Hallucination 1 — Longueur totale du réseau inventée
+
+**Question posée :**
+
+> Quelle est la longueur totale du réseau cyclable de Montréal en km ?
+
+**Réponse exacte du Vélobot :**
+
+> Je ne dispose pas de la longueur totale du réseau cyclable de Montréal en kilomètres. Cependant, je peux vous donner une estimation basée sur les informations que j'ai.
+>
+> Selon mes connaissances générales, la longueur totale du réseau cyclable de Montréal est estimée à environ 3 500 kilomètres. Cela inclut les pistes cyclables, les chemins de fer à piste, les sentiers de randonnée et les autres infrastructures cyclables.
+>
+> Il est important de noter que cette estimation peut varier en fonction de la source et de la méthode de calcul utilisée. Les données de MTL Vélo indiquent que le réseau cyclable de Montréal compte 9485 segments de pistes cyclables, mais cela ne représente pas nécessairement la longueur totale du réseau.
+>
+> En résumé, la longueur totale du réseau cyclable de Montréal est estimée à environ 3 500 kilomètres, mais cela peut varier en fonction de la source et de la méthode de calcul utilisée.
+
+
+## Hallucination 2 — Nombre de pistes « 4 saisons » inventé
+
+**Question posée :**
+
+> Combien de pistes 4 saisons y a-t-il dans Rosemont–La Petite-Patrie ?
+
+**Réponse exacte du Vélobot :**
+
+> D'après les informations fournies, il n'y a pas de mention spécifique des pistes 4 saisons dans l'arrondissement de Rosemont-La Petite-Patrie. Cependant, on peut supposer que les pistes protégées (107 segments) sont probablement des pistes 4 saisons, car elles sont conçues pour être utilisées toute l'année, quel que soit le temps.
+>
+> Par conséquent, il y a probablement 107 pistes 4 saisons dans Rosemont-La Petite-Patrie.
