@@ -12,7 +12,9 @@
 import { pool } from './db.js';
 import { normArr, CATEGORIE_SQL } from './geo.js';
 
-const MAX_CONTEXT_CHARS = 6000;
+// Plafond de sécurité du contexte. Dimensionné pour tenir la liste complète des
+// lieux de l'arrondissement le plus fourni (63 lieux) en plus des autres blocs.
+const MAX_CONTEXT_CHARS = 12000;
 
 const CATEGORIE_LABELS = {
   rev:               'REV (Réseau Express Vélo)',
@@ -222,21 +224,42 @@ export async function buildContext(question) {
   }
 
   // 5. Points d'intérêt (fontaines) par arrondissement / proximité.
+  //    Quand un arrondissement est ciblé, on fournit le total exact ET la liste
+  //    complète des lieux. Les fontaines sont regroupées par parc (plusieurs
+  //    fontaines partagent souvent un même lieu), ce qui garde la liste
+  //    exhaustive sans faire exploser la taille du contexte.
   if (has(qn, 'fontaine', 'eau', 'boire', 'point', 'interet', 'parc', 'lieu')) {
     const arr = arrsDetectes[0];
     const poiArr = arr ? await resolvePoiArr(arr) : null;
-    const rows = poiArr
-      ? await all('SELECT nom_parc_lieu, arrondissement, intersection FROM pointsdinteret WHERE arrondissement = ? LIMIT 10', [poiArr])
-      : await all('SELECT nom_parc_lieu, arrondissement, intersection FROM pointsdinteret WHERE nom_parc_lieu IS NOT NULL LIMIT 8');
 
-    if (rows.length) {
-      const titre = poiArr ? `POINTS D'INTÉRÊT DANS « ${arr} »` : `POINTS D'INTÉRÊT (échantillon)`;
+    if (poiArr) {
+      const total = (await scalar('SELECT COUNT(*) AS n FROM pointsdinteret WHERE arrondissement = ?', [poiArr])) || 0;
+      const lieux = await all(
+        `SELECT nom_parc_lieu AS nom, COUNT(*) AS n, MIN(intersection) AS intersection
+           FROM pointsdinteret WHERE arrondissement = ?
+          GROUP BY nom_parc_lieu ORDER BY nom_parc_lieu`,
+        [poiArr]
+      );
       parts.push(
-        `${titre} :\n` +
-        rows.map((r) => `- ${r.nom_parc_lieu || 'Sans nom'} — ${r.arrondissement || 'arr. inconnu'}${r.intersection ? ` (${r.intersection})` : ''}`).join('\n')
+        `POINTS D'INTÉRÊT DANS « ${arr} » :\n` +
+        `- Nombre total de fontaines : ${total}\n` +
+        `- Répartis sur ${lieux.length} lieux (liste complète ci-dessous) :\n` +
+        lieux.map((l) =>
+          `  • ${l.nom || 'Sans nom'}${l.n > 1 ? ` (${l.n} fontaines)` : ''}${l.intersection ? ` — ${l.intersection}` : ''}`
+        ).join('\n')
       );
     } else if (arr) {
       parts.push(`POINTS D'INTÉRÊT DANS « ${arr} » : aucun point d'intérêt recensé dans les données pour cet arrondissement.`);
+    } else {
+      const rows = await all('SELECT nom_parc_lieu, arrondissement, intersection FROM pointsdinteret WHERE nom_parc_lieu IS NOT NULL LIMIT ?', [8]);
+      if (rows.length) {
+        parts.push(
+          `POINTS D'INTÉRÊT (tout le réseau) :\n` +
+          `- Nombre total de fontaines : ${nbFontaines}\n` +
+          `- Exemples (${rows.length} sur ${nbFontaines}, liste non exhaustive) :\n` +
+          rows.map((r) => `  • ${r.nom_parc_lieu || 'Sans nom'} — ${r.arrondissement || 'arr. inconnu'}${r.intersection ? ` (${r.intersection})` : ''}`).join('\n')
+        );
+      }
     }
   }
 

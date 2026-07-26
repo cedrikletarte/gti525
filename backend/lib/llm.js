@@ -48,7 +48,9 @@ async function callOpenAiCompatible(url, { apiKey, model, system, user }) {
       body: JSON.stringify({
         model,
         temperature: 0.3,
-        max_tokens: 500,
+        // Assez large pour permettre l'énumération complète des lieux d'un
+        // arrondissement (jusqu'à ~63) sans que la réponse soit tronquée.
+        max_tokens: 1500,
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: user },
