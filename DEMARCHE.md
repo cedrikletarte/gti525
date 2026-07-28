@@ -456,3 +456,61 @@ filtrer selon les dates, mais puisqu'on avait une route avec des paramettres pou
 - Séparer le calcul en deux requêtes plutôt qu'une seule requête complexe garde chaque étape testable et lisible indépendamment. Cela m'a aussi permis de réutiliser directement la fonction `normArr()` déjà écrite pour normaliser les noms d'arrondissement (accents, tirets, articles), nécessaire puisque la table `compteurs` et la table `pistes` n'utilisent pas exactement la même orthographe pour désigner un même secteur.
 - J'ai géré explicitement un cas limite : si aucun arrondissement n'a de passages enregistrés sur la période demandée, la première requête retourne un résultat vide et je retourne immédiatement une `FeatureCollection` GeoJSON vide, plutôt que de laisser la seconde requête s'exécuter avec une clause `IN ()` vide, ce qui aurait pu produire une erreur SQL ou un comportement ambigu selon le moteur.
 - Une requête combinée unique aurait réduit le nombre d'allers-retours à la base, mais j'ai jugé que la lisibilité et la facilité de test de deux requêtes simples valaient mieux qu'un gain de performance marginal pour ce volume de données, surtout pour une fonctionnalité qui n'est pas appelée à haute fréquence.
+
+
+## Décision 12 - Centralisation des appels API via un module client unique {#decision-12}
+
+**Auteur** : Justin Maitland - 2026-07-28
+
+**Problème** : Le code pour les appels API se répétait partout (URL de base, en-têtes, gestion du jeton), et la gestion des routes nécessitant une authentification (ajout du header `Authorization`, nettoyage du jeton sur un 401) devenait difficile à maintenir de façon cohérente à travers les composants.
+
+**Sources consultées** :
+- MDN Web Docs — Using Fetch (https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch)
+- Documentation Axios — Interceptors (https://axios-http.com/docs/interceptors)
+- Documentation de React Query(https://tanstack.com/query/latest)
+
+**Alternatives envisagées** :
+
+| Option | Avantages | Inconvénients pour notre contexte |
+|---|---|---|
+| Appels `fetch` directement dans chaque composant | Simple à écrire, aucune dépendance, aucune couche d'abstraction à apprendre | Duplication massive du code (URL de base, headers), logique du jeton dispersée partout, risque élevé d'incohérence (ex. oublier d'ajouter le jeton ou de gérer un 401) |
+| Axios avec intercepteurs globaux | Intercepteurs natifs pour injecter le jeton et gérer les erreurs 401 de façon centralisée, syntaxe concise | Ajoute une dépendance externe et du poids au bundle alors que `fetch` natif suffit amplement pour nos besoins |
+| Librairie de data-fetching (React Query ) | Cache automatique, revalidation, gestion d'état de chargement intégrée | Complexité et courbe d'apprentissage disproportionnées pour la taille du projet; ne résout pas directement le problème d'authentification, doit être combinée avec un autre mécanisme |
+| Module `client.js` centralisé avec deux wrappers `fetch` (retenu) | Un seul endroit pour gérer le jeton et les en-têtes, aucune dépendance externe, distinction claire entre routes publiques et protégées | Nécessite de gérer soi-même certains cas limites (parsing JSON sécurisé, formats de réponse) |
+
+**Choix retenu** : Un module `client.js` centralisé exposant deux fonctions internes — `requeteApi` (routes publiques) et `requeteApiSecure` (routes authentifiées) — ainsi que des fonctions dédiées par ressource (`creerPointInteret`, `connecter`, `obtenirPistesPopulaires`, etc.) qui encapsulent la logique réseau et normalisent le format des réponses.
+
+**Justification** :
+- Centralise la gestion du jeton (ajout automatique de l'en-tête `Authorization`, nettoyage automatique via `definirJeton(null)` en cas de réponse 401) à un seul endroit, évitant que chaque appel réimplémente cette logique.
+- Sépare clairement les routes publiques des routes protégées (`requeteApi` vs `requeteApiSecure`) sans devoir passer un paramètre "authentifié" à chaque appel.
+- Les fonctions par ressource retournent un format uniforme (`{ ok, statut, donnees, erreur }`), ce qui simplifie le traitement des réponses côté composants et réduit le code répétitif de gestion d'erreurs.
+- Le `parserJsonSecurise` protège contre les corps de réponse vides ou non-JSON (204, pages d'erreur HTML), évitant des exceptions non gérées.
+- Aucune dépendance externe ajoutée : on reste sur `fetch` natif, ce qui garde le bundle léger et évite d'introduire une nouvelle librairie pour un besoin déjà bien couvert.
+
+## Décision 13 - Composant d'ajout et de modification d'un point d'intérêt très similaire {#decision-13}
+
+**Auteur** : Justin Maitland - 2026-07-28
+
+**Problème** : Le code pour le formulaire d'ajout et de modification pour les points d'intérêt étaient très similaire
+
+**Sources consultées** :
+- Documentation React — Conditional Rendering (https://react.dev/learn/conditional-rendering)
+- Documentation MUI — Dialog component (https://mui.com/material-ui/react-dialog/)
+- Article "Compound Components and Mode Props in React" (patterns de composants polymorphes via une prop de mode)
+
+**Alternatives envisagées** :
+
+| Option | Avantages | Inconvénients pour notre contexte |
+|---|---|---|
+| Deux composants séparés (`AjoutDialog` / `ModifierDialog`) | Séparation claire des responsabilités, chaque composant reste simple à lire individuellement | Duplication du JSX du formulaire et de la logique de validation; tout changement de champ ou de règle de validation doit être répliqué à deux endroits, source d'incohérences |
+| Un seul composant avec une prop `mode` (retenu) | Un seul point de vérité pour le formulaire et la validation, logique de sauvegarde centralisée dans `handleSave`, ajout futur de champs ne nécessite qu'une seule modification | Le composant doit gérer une légère complexité conditionnelle (`mode === "create"` vs `"edit"`) dans le titre, l'initialisation du formulaire et l'appel API |
+| Formulaire générique séparé du dialogue, avec deux wrappers minces | Séparation entre présentation (`PointInteretForm`) et logique de sauvegarde par mode | Réintroduit deux composants à maintenir pour la logique de sauvegarde, sans gain réel puisque cette logique est déjà mince |
+
+**Choix retenu** : Un seul composant `PointInteretDialog` accepte une prop `mode` (`"create"` ou `"edit"`) ainsi qu'un objet `point` optionnel. Le composant réutilise le même sous-composant `PointInteretForm` pour l'affichage des champs, et adapte dynamiquement le titre du dialogue, l'initialisation des valeurs par défaut (via `useEffect`) et l'appel API (`creerPointInteret` vs `modifierPointInteret`) selon le mode.
+
+**Justification** :
+- Le `useEffect` déclenché sur `[open, mode, point]` initialise le formulaire soit avec les valeurs existantes du point (mode `edit`), soit avec `defaultValues` (mode `create`), évitant deux composants avec une logique d'initialisation dupliquée.
+- La validation des champs obligatoires (nom, latitude, longitude) dans `handleSave` s'applique identiquement aux deux modes, garantissant une cohérence des règles sans duplication.
+- Le choix de la fonction API à appeler (`creerPointInteret` ou `modifierPointInteret`) est isolé dans une seule branche conditionnelle de `handleSave`, ce qui limite la complexité ajoutée par la prop `mode` à un seul endroit clairement identifiable.
+- Le sous-composant `PointInteretForm` reste totalement agnostique du mode (il ne reçoit que `form`, `onChange`, `arrondissements`), ce qui garde la présentation réutilisable et découplée de la logique de sauvegarde.
+- Réduit la surface de maintenance : un futur changement de champ ou de règle de validation ne nécessite qu'une seule modification, plutôt que deux composants à garder synchronisés.
