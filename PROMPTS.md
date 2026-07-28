@@ -81,6 +81,7 @@
 | [45](#tache-45) | T6.3 — Enrichissement du RAG : couverture des 5 familles de questions | 2026-07-12 |
 | [46](#tache-46) | T6.4 — Ancrage/honnêteté : bouton « signaler » + journal serveur | 2026-07-12 |
 | [47](#tache-47) | Portage de l'assistant sur MariaDB (RAG async mysql2) après merge de main | 2026-07-14 |
+| [51](#tache-51) | Correction du décompte des fontaines : total exact + liste complète | 2026-07-26 |
 
   
 
@@ -5907,6 +5908,59 @@ controlleurs et les routeurs
 - **Retrait du header `Content-Type: application/geo+json`** : une fois le GeoJSON encapsulé sous `.data`, le corps de la réponse n'est plus un document GeoJSON valide à la racine. Garder ce header aurait été trompeur — décision de l'IA acceptée telle quelle.
 
 - **Frontend : correctifs minimaux plutôt que centralisation** : le prompt demandait un refactor du *backend* ; le frontend n'est touché que pour ne pas casser l'app suite au changement d'enveloppe. J'ai accepté la recommandation de l'IA de faire des correctifs ciblés en place (ajout d'un niveau `.data`, `erreur`→`message`) plutôt que de réécrire `src/api/client.js` pour centraliser tous les appels `fetch` — un chantier plus large que ce qui était demandé.
+
+---
+
+## Tâche 51 — Correction du décompte des fontaines : total exact et liste complète {#tache-51}
+
+**Auteur** : Youcef Mekki Daouadji - 2026-07-26
+
+### 💬 Prompt
+
+```
+Le nombre de fontaines n'est pas correct pour la question sur Anjou : l'assistant
+répond 9 alors qu'il y en a 26. Je veux pouvoir répondre à toutes les questions
+que l'utilisateur demande, donc s'il demande les points d'intérêt dans un
+arrondissement, pouvoir répondre au complet. Ajoute plus de contexte et plus de
+tokens, et enlève la limite.
+```
+
+---
+
+### 🛠 Outil & modèle
+
+| Champ | Valeur |
+|-------|--------|
+| **Outil** | Claude Code (CLI) |
+| **Modèle** | Claude Opus 5 |
+| **Mode** | Correction de bug + vérification des données |
+
+---
+
+### 📦 Sortie obtenue
+
+**Le problème.** À la question « combien de fontaines à Anjou », l'assistant répondait **9** au lieu de **26**. Le RAG n'envoyait au modèle qu'un **échantillon de 10 lignes** (`LIMIT 10`) sans jamais fournir le total : le modèle comptait donc les lignes qu'il avait sous les yeux, et se trompait même dans ce décompte à cause des noms de parcs répétés. Ce n'était pas une invention pure, mais une **déduction erronée à partir d'un contexte incomplet**. Le bug a été repéré grâce au **bouton « Signaler une mauvaise réponse »**, qui l'a consigné dans `logs/signalements.log`.
+
+| Fichier | Changement |
+|---------|-----------|
+| `backend/lib/assistantContext.js` | Quand un arrondissement est ciblé : ajout du **total exact** (`COUNT(*)`) et remplacement de l'échantillon par la **liste complète des lieux**, regroupée par parc (`GROUP BY nom_parc_lieu` avec le nombre de fontaines par lieu). L'ancien `LIMIT 10` est supprimé pour ce cas. |
+| `backend/lib/assistantContext.js` | `MAX_CONTEXT_CHARS` porté de **6000 à 12000** pour loger la liste complète du pire cas. |
+| `backend/lib/llm.js` | `max_tokens` porté de **500 à 1500**, sinon la réponse du modèle serait tronquée en pleine énumération. |
+
+**Vérification des volumes avant de choisir la solution** : l'arrondissement le plus fourni est Saint-Laurent (88 fontaines) mais réparties sur seulement 44 lieux ; le plus de lieux distincts est Rivière-des-Prairies–Pointe-aux-Trembles (63 lieux, ~3500 caractères). Le regroupement par lieu garde donc la liste **exhaustive** tout en tenant largement dans le nouveau plafond.
+
+---
+
+### ✏️ Modifications apportées par l'humain
+
+- aucune modification
+
+---
+
+### 🧠 Justification
+
+- J'ai accepté les modifications car elles corrigent une vraie mauvaise réponse que j'avais moi-même repérée en testant l'assistant. Le principe retenu est le bon : pour une question « combien ? », le modèle ne doit jamais avoir à compter lui-même, on lui donne directement le total calculé par la base avec un `COUNT(*)`, et la liste d'exemples ne sert plus qu'à répondre à « lesquels ? ». J'ai aussi demandé que la liste soit complète et non tronquée, parce que je veux pouvoir répondre à toutes les questions de l'utilisateur sur un arrondissement. Le regroupement par lieu proposé par l'IA est un bon compromis : la liste reste exhaustive mais deux fois plus courte, ce qui évite de saturer le contexte. Il fallait aussi augmenter `max_tokens`, sinon la réponse aurait été coupée au milieu de l'énumération — un détail que je n'avais pas anticipé dans mon prompt.
+- Ce correctif montre concrètement l'utilité du bouton de signalement exigé par T6.4 : c'est lui qui a permis de retrouver la question fautive et sa réponse dans le journal serveur.
 
 ---
 
